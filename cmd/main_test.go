@@ -21,8 +21,8 @@ func TestE2EScanFunctionality(t *testing.T) {
 	trivyPassword := "testpass"
 	ghcrToken := "testtoken"
 	org := "defenseunicorns"
-	packageName := "packages/uds/gitlab-runner"
-	tag := "16.10.0-uds.0-upstream"
+	packageName := "packages/uds/mattermost"
+	tag := "9.8.0-uds.0-upstream"
 
 	// Create the scanner
 	scanner, err := scan.New(ctx, logger, trivyUsername, trivyPassword, ghcrToken)
