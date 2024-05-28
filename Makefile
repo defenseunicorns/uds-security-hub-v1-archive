@@ -7,7 +7,7 @@ build: test
 
 # Run tests
 test:
-	go test ./... -v
+	go test ./... -v -coverprofile=unit-tes-coverage.out
 
 # Lint the code
 lint:
@@ -18,6 +18,6 @@ clean:
 	rm -rf bin/
 
 e2e:
-	go test -tags e2e ./... -v
+	go test -tags e2e ./... -v -coverprofile=coverage.out
 
 .PHONY: all build test lint run clean e2e
