@@ -17,4 +17,7 @@ lint:
 clean:
 	rm -rf bin/
 
-.PHONY: all build test lint run clean
+e2e:
+	go test -tags e2e ./... -v
+
+.PHONY: all build test lint run clean e2e
