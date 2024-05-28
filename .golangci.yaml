@@ -1,0 +1,156 @@
+---
+run:
+  concurrency: 6
+  timeout: 5m
+issues:
+  # Maximum issues count per one linter.
+  # Set to 0 to disable.
+  # Default: 50
+  max-issues-per-linter: 0
+  # Maximum count of issues with the same text.
+  # Set to 0 to disable.
+  # Default: 3
+  max-same-issues: 0
+  new-from-rev: ""
+  exclude-rules:
+    - path: '(.+)_test\.go'
+      linters:
+        - funlen
+        - goconst
+        - gocyclo
+        - lll
+        - wrapcheck
+linters:
+  enable:
+    - asciicheck
+    - dogsled
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forbidigo
+    - gci
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - gofmt
+    - goheader
+    - goimports
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - makezero
+    - mirror
+    - misspell
+    - nakedret
+    - nestif
+    - nolintlint
+    - predeclared
+    - staticcheck
+    - stylecheck
+    - tenv
+    - thelper
+    - typecheck
+    - unconvert
+    - unused
+    - usestdlibvars
+    - whitespace
+    - wrapcheck
+  disable:
+    - exhaustruct 
+    - testpackage 
+    - paralleltest
+    - tparallel
+  presets:
+    - bugs
+    - test
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  exhaustive:
+    # https://golangci-lint.run/usage/linters/#exhaustive
+    default-signifies-exhaustive: true
+  forbidigo:
+    forbid:
+      - p: "^fmt\\.Print.*$"
+        msg: "Do not commit print statements. Output to stdout interferes with users who redirect JSON results to files."
+  govet:
+    enable:
+      - fieldalignment
+  godox:
+    keywords:
+      - BUG
+      - FIXME
+      - HACK
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/defenseunicorns/uds-security-hub)
+  gocritic:
+    enabled-checks:
+      # Diagnostic
+      - appendAssign
+      - badCond
+      - caseOrder
+      - codegenComment
+      - commentedOutCode
+      - deprecatedComment
+      - dupBranchBody
+      - dupCase
+      - dupSubExpr
+      - exitAfterDefer
+      - flagName
+      - nilValReturn
+      - weakCond
+      - octalLiteral
+
+      # Performance
+      - appendCombine
+      - hugeParam
+      - rangeExprCopy
+      - rangeValCopy
+
+      # Style
+      - boolExprSimplify
+      - captLocal
+      - commentFormatting
+      - commentedOutImport
+      - defaultCaseOrder
+      - docStub
+      - elseif
+      - emptyFallthrough
+      - hexLiteral
+      - ifElseChain
+      - methodExprCall
+      - singleCaseSwitch
+      - typeAssertChain
+      - typeSwitchVar
+      - underef
+      - unlabelStmt
+      - unlambda
+
+      # Opinionated
+      - builtinShadow
+      - importShadow
+      - initClause
+      - nestingReduce
+      - paramTypeCombine
+      - ptrToRefParam
+      - typeUnparen
+      - unnecessaryBlock
+  nolintlint:
+    # `//nolint` should mention specific linter such as `//nolint:my-linter`
+    # Overly broad directives can hide unrelated issues
+    require-specific: true

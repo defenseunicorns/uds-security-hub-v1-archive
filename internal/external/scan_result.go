@@ -7,28 +7,28 @@ import (
 )
 
 type ScanResult struct {
-	SchemaVersion int            `json:"SchemaVersion"`
-	CreatedAt     time.Time      `json:"CreatedAt"`
-	ArtifactName  string         `json:"ArtifactName"`
-	ArtifactType  string         `json:"ArtifactType"`
-	Metadata      model.Metadata `json:"Metadata"`
-	Results       []struct {
+	Metadata     model.Metadata `json:"Metadata"`
+	CreatedAt    time.Time      `json:"CreatedAt"`
+	ArtifactName string         `json:"ArtifactName"`
+	ArtifactType string         `json:"ArtifactType"`
+	Results      []struct {
 		Target          string                `json:"Target"`
 		Class           string                `json:"Class"`
 		Type            string                `json:"Type"`
 		Vulnerabilities []model.Vulnerability `json:"Vulnerabilities"`
 	} `json:"Results"`
+	SchemaVersion int `json:"SchemaVersion"`
 }
 type ScanDTO struct {
-	SchemaVersion   int
+	Metadata        model.Metadata
 	CreatedAt       time.Time
 	ArtifactName    string
 	ArtifactType    string
-	Metadata        model.Metadata
 	Vulnerabilities []model.Vulnerability
+	SchemaVersion   int
 }
 
-func MapScanResultToDTO(result ScanResult) []ScanDTO {
+func MapScanResultToDTO(result *ScanResult) []ScanDTO {
 	var dtos []ScanDTO
 	for _, res := range result.Results {
 		dto := ScanDTO{
