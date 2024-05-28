@@ -1,0 +1,3536 @@
+{
+    "SchemaVersion": 2,
+    "CreatedAt": "2024-05-23T10:46:55.266949-05:00",
+    "ArtifactName": "ghcr.io/defenseunicorns/leapfrogai/rag:0.3.1",
+    "ArtifactType": "container_image",
+    "Metadata": {
+      "OS": {
+        "Family": "wolfi",
+        "Name": "20230201"
+      },
+      "ImageID": "sha256:59055e0ccba886b6d06a64f695ddc15e3aec8a57462c2de52dabe442d1970941",
+      "DiffIDs": [
+        "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3",
+        "sha256:7b25155cfcf28abb246dce7b13a3e0de4303cd90b779528457d345ca64991780",
+        "sha256:e17155acfffb38d6bca1b9216eb91a0615697336b779a89f6793aa712181635e",
+        "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f",
+        "sha256:3b8b7645c6c63dd81fe26ba93636770d6858206cdcd82979a327fcdf3a43e940"
+      ],
+      "RepoTags": [
+        "ghcr.io/defenseunicorns/leapfrogai/rag:0.3.1"
+      ],
+      "RepoDigests": [
+        "ghcr.io/defenseunicorns/leapfrogai/rag@sha256:2bef055e18c4a673c2ba2de2c652f537b2e816863dabb7bfbdfc9efdce0d436e"
+      ],
+      "ImageConfig": {
+        "architecture": "amd64",
+        "author": "github.com/chainguard-dev/apko",
+        "created": "2024-03-12T19:16:57.059808325Z",
+        "history": [
+          {
+            "author": "apko",
+            "created": "2023-12-04T02:15:51Z",
+            "created_by": "apko",
+            "comment": "This is an apko single-layer image"
+          },
+          {
+            "created": "2024-03-12T19:13:04.550982179Z",
+            "created_by": "WORKDIR /leapfrogai",
+            "comment": "buildkit.dockerfile.v0"
+          },
+          {
+            "created": "2024-03-12T19:16:28.18421732Z",
+            "created_by": "ENV PATH=/leapfrogai/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+          },
+          {
+            "created": "2024-03-12T19:16:28.18421732Z",
+            "created_by": "COPY /leapfrogai/tokenizer-cache/ /leapfrogai/tokenizer-cache/ # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+          },
+          {
+            "created": "2024-03-12T19:16:56.561311331Z",
+            "created_by": "COPY /leapfrogai/.venv /leapfrogai/.venv # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+          },
+          {
+            "created": "2024-03-12T19:16:57.059808325Z",
+            "created_by": "COPY src/ . # buildkit",
+            "comment": "buildkit.dockerfile.v0"
+          },
+          {
+            "created": "2024-03-12T19:16:57.059808325Z",
+            "created_by": "EXPOSE map[8000/tcp:{}]",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+          },
+          {
+            "created": "2024-03-12T19:16:57.059808325Z",
+            "created_by": "ENTRYPOINT [\"uvicorn\" \"main:app\" \"--proxy-headers\" \"--host\" \"0.0.0.0\" \"--port\" \"8000\"]",
+            "comment": "buildkit.dockerfile.v0",
+            "empty_layer": true
+          }
+        ],
+        "os": "linux",
+        "rootfs": {
+          "type": "layers",
+          "diff_ids": [
+            "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3",
+            "sha256:7b25155cfcf28abb246dce7b13a3e0de4303cd90b779528457d345ca64991780",
+            "sha256:e17155acfffb38d6bca1b9216eb91a0615697336b779a89f6793aa712181635e",
+            "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f",
+            "sha256:3b8b7645c6c63dd81fe26ba93636770d6858206cdcd82979a327fcdf3a43e940"
+          ]
+        },
+        "config": {
+          "Entrypoint": [
+            "uvicorn",
+            "main:app",
+            "--proxy-headers",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8000"
+          ],
+          "Env": [
+            "PATH=/leapfrogai/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt"
+          ],
+          "User": "65532",
+          "WorkingDir": "/leapfrogai",
+          "ExposedPorts": {
+            "8000/tcp": {}
+          }
+        }
+      }
+    },
+    "Results": [
+      {
+        "Target": "ghcr.io/defenseunicorns/leapfrogai/rag:0.3.1 (wolfi 20230201)",
+        "Class": "os-pkgs",
+        "Type": "wolfi",
+        "Vulnerabilities": [
+          {
+            "VulnerabilityID": "CVE-2023-6246",
+            "PkgID": "glibc@2.38-r6",
+            "PkgName": "glibc",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc@2.38-r6?arch=x86_64",
+              "UID": "f4c42bae162f071c"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6246",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: heap-based buffer overflow in __vsyslog_internal()",
+            "Description": "A heap-based buffer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when the openlog function was not called, or called with the ident argument set to NULL, and the program name (the basename of argv[0]) is bigger than 1024 bytes, resulting in an application crash or local privilege escalation. This issue affects glibc 2.36 and newer.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787",
+              "CWE-122"
+            ],
+            "VendorSeverity": {
+              "nvd": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 7.8
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 8.4
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176931/glibc-qsort-Out-Of-Bounds-Read-Write.html",
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "http://seclists.org/fulldisclosure/2024/Feb/5",
+              "https://access.redhat.com/security/cve/CVE-2023-6246",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2249053",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6246",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://security.netapp.com/advisory/ntap-20240216-0007/",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6246",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.42Z",
+            "LastModifiedDate": "2024-02-16T13:15:10.023Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6779",
+            "PkgID": "glibc@2.38-r6",
+            "PkgName": "glibc",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc@2.38-r6?arch=x86_64",
+              "UID": "f4c42bae162f071c"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6779",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: off-by-one heap-based buffer overflow in __vsyslog_internal()",
+            "Description": "An off-by-one heap-based buffer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when these functions are called with a message bigger than INT_MAX bytes, leading to an incorrect calculation of the buffer size to store the message, resulting in an application crash. This issue affects glibc 2.37 and newer.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787",
+              "CWE-122"
+            ],
+            "VendorSeverity": {
+              "nvd": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 7.5
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:H",
+                "V3Score": 8.2
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "https://access.redhat.com/security/cve/CVE-2023-6779",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2254395",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6779",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://security.netapp.com/advisory/ntap-20240223-0006/",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6779",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.7Z",
+            "LastModifiedDate": "2024-02-27T17:26:48.247Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-2961",
+            "PkgID": "glibc@2.38-r6",
+            "PkgName": "glibc",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc@2.38-r6?arch=x86_64",
+              "UID": "f4c42bae162f071c"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r2",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-2961",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: Out of bounds write in iconv may lead to remote code execution",
+            "Description": "The iconv() function in the GNU C Library versions 2.39 and older may overflow the output buffer passed to it by up to 4 bytes when converting strings to the ISO-2022-CN-EXT character set, which may be used to crash an application or overwrite a neighbouring variable.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787"
+            ],
+            "VendorSeverity": {
+              "alma": 3,
+              "amazon": 3,
+              "oracle-oval": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 8.8
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/04/17/9",
+              "http://www.openwall.com/lists/oss-security/2024/04/18/4",
+              "http://www.openwall.com/lists/oss-security/2024/04/24/2",
+              "https://access.redhat.com/errata/RHSA-2024:2722",
+              "https://access.redhat.com/security/cve/CVE-2024-2961",
+              "https://bugzilla.redhat.com/2273404",
+              "https://errata.almalinux.org/8/ALSA-2024-2722.html",
+              "https://linux.oracle.com/cve/CVE-2024-2961.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2722.html",
+              "https://lists.debian.org/debian-lts-announce/2024/05/msg00001.html",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/BTJFBGHDYG5PEIFD5WSSSKSFZ2AZWC5N/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/P3I4KYS6EU6S7QZ47WFNTPVAHFIUQNEL/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YAMJQI3Y6BHWV3CUTYBXOZONCUJNOB2Z/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-2961",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0004",
+              "https://ubuntu.com/security/notices/USN-6737-1",
+              "https://ubuntu.com/security/notices/USN-6737-2",
+              "https://ubuntu.com/security/notices/USN-6762-1",
+              "https://www.cve.org/CVERecord?id=CVE-2024-2961",
+              "https://www.openwall.com/lists/oss-security/2024/04/17/9"
+            ],
+            "PublishedDate": "2024-04-17T18:15:15.833Z",
+            "LastModifiedDate": "2024-05-04T01:15:06.243Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33599",
+            "PkgID": "glibc@2.38-r6",
+            "PkgName": "glibc",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc@2.38-r6?arch=x86_64",
+              "UID": "f4c42bae162f071c"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33599",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: stack-based buffer overflow in netgroup cache",
+            "Description": "nscd: Stack-based buffer overflow in netgroup cache\n\nIf the Name Service Cache Daemon's (nscd) fixed size cache is exhausted\nby client requests then a subsequent client request for netgroup data\nmay result in a stack-based buffer overflow.  This flaw was introduced\nin glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-121"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "redhat": 3
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:H",
+                "V3Score": 7.6
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33599",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33599",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0005",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33599"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.437Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6780",
+            "PkgID": "glibc@2.38-r6",
+            "PkgName": "glibc",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc@2.38-r6?arch=x86_64",
+              "UID": "f4c42bae162f071c"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6780",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: integer overflow in __vsyslog_internal()",
+            "Description": "An integer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when these functions are called with a very long message, leading to an incorrect calculation of the buffer size to store the message, resulting in undefined behavior. This issue affects glibc 2.37 and newer.",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-131",
+              "CWE-190"
+            ],
+            "VendorSeverity": {
+              "nvd": 2,
+              "photon": 4,
+              "redhat": 1,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "https://access.redhat.com/security/cve/CVE-2023-6780",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2254396",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6780",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6780",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.917Z",
+            "LastModifiedDate": "2024-03-26T16:15:10.083Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33600",
+            "PkgID": "glibc@2.38-r6",
+            "PkgName": "glibc",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc@2.38-r6?arch=x86_64",
+              "UID": "f4c42bae162f071c"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33600",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: null pointer dereferences after failed netgroup cache insertion",
+            "Description": "nscd: Null pointer crashes after notfound response\n\nIf the Name Service Cache Daemon's (nscd) cache fails to add a not-found\nnetgroup response to the cache, the client request can result in a null\npointer dereference.  This flaw was introduced in glibc 2.15 when the\ncache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-476"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "redhat": 2
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33600",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33600",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0006",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33600"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.523Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33601",
+            "PkgID": "glibc@2.38-r6",
+            "PkgName": "glibc",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc@2.38-r6?arch=x86_64",
+              "UID": "f4c42bae162f071c"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33601",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: netgroup cache may terminate daemon on memory allocation failure",
+            "Description": "nscd: netgroup cache may terminate daemon on memory allocation failure\n\nThe Name Service Cache Daemon's (nscd) netgroup cache uses xmalloc or\nxrealloc and these functions may terminate the process due to a memory\nallocation failure resulting in a denial of service to the clients.  The\nflaw was introduced in glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-617"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "redhat": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33601",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33601",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0007",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33601"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.603Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33602",
+            "PkgID": "glibc@2.38-r6",
+            "PkgName": "glibc",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc@2.38-r6?arch=x86_64",
+              "UID": "f4c42bae162f071c"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33602",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: netgroup cache assumes NSS callback uses in-buffer strings",
+            "Description": "nscd: netgroup cache assumes NSS callback uses in-buffer strings\n\nThe Name Service Cache Daemon's (nscd) netgroup cache can corrupt memory\nwhen the NSS callback does not store all strings in the provided buffer.\nThe flaw was introduced in glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-466"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "redhat": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33602",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33602",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0008",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33602"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.68Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6246",
+            "PkgID": "glibc-locale-posix@2.38-r6",
+            "PkgName": "glibc-locale-posix",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc-locale-posix@2.38-r6?arch=x86_64",
+              "UID": "73206bd83582ebc7"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6246",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: heap-based buffer overflow in __vsyslog_internal()",
+            "Description": "A heap-based buffer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when the openlog function was not called, or called with the ident argument set to NULL, and the program name (the basename of argv[0]) is bigger than 1024 bytes, resulting in an application crash or local privilege escalation. This issue affects glibc 2.36 and newer.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787",
+              "CWE-122"
+            ],
+            "VendorSeverity": {
+              "nvd": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 7.8
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 8.4
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176931/glibc-qsort-Out-Of-Bounds-Read-Write.html",
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "http://seclists.org/fulldisclosure/2024/Feb/5",
+              "https://access.redhat.com/security/cve/CVE-2023-6246",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2249053",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6246",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://security.netapp.com/advisory/ntap-20240216-0007/",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6246",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.42Z",
+            "LastModifiedDate": "2024-02-16T13:15:10.023Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6779",
+            "PkgID": "glibc-locale-posix@2.38-r6",
+            "PkgName": "glibc-locale-posix",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc-locale-posix@2.38-r6?arch=x86_64",
+              "UID": "73206bd83582ebc7"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6779",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: off-by-one heap-based buffer overflow in __vsyslog_internal()",
+            "Description": "An off-by-one heap-based buffer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when these functions are called with a message bigger than INT_MAX bytes, leading to an incorrect calculation of the buffer size to store the message, resulting in an application crash. This issue affects glibc 2.37 and newer.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787",
+              "CWE-122"
+            ],
+            "VendorSeverity": {
+              "nvd": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 7.5
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:H",
+                "V3Score": 8.2
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "https://access.redhat.com/security/cve/CVE-2023-6779",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2254395",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6779",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://security.netapp.com/advisory/ntap-20240223-0006/",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6779",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.7Z",
+            "LastModifiedDate": "2024-02-27T17:26:48.247Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-2961",
+            "PkgID": "glibc-locale-posix@2.38-r6",
+            "PkgName": "glibc-locale-posix",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc-locale-posix@2.38-r6?arch=x86_64",
+              "UID": "73206bd83582ebc7"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r2",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-2961",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: Out of bounds write in iconv may lead to remote code execution",
+            "Description": "The iconv() function in the GNU C Library versions 2.39 and older may overflow the output buffer passed to it by up to 4 bytes when converting strings to the ISO-2022-CN-EXT character set, which may be used to crash an application or overwrite a neighbouring variable.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787"
+            ],
+            "VendorSeverity": {
+              "alma": 3,
+              "amazon": 3,
+              "oracle-oval": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 8.8
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/04/17/9",
+              "http://www.openwall.com/lists/oss-security/2024/04/18/4",
+              "http://www.openwall.com/lists/oss-security/2024/04/24/2",
+              "https://access.redhat.com/errata/RHSA-2024:2722",
+              "https://access.redhat.com/security/cve/CVE-2024-2961",
+              "https://bugzilla.redhat.com/2273404",
+              "https://errata.almalinux.org/8/ALSA-2024-2722.html",
+              "https://linux.oracle.com/cve/CVE-2024-2961.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2722.html",
+              "https://lists.debian.org/debian-lts-announce/2024/05/msg00001.html",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/BTJFBGHDYG5PEIFD5WSSSKSFZ2AZWC5N/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/P3I4KYS6EU6S7QZ47WFNTPVAHFIUQNEL/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YAMJQI3Y6BHWV3CUTYBXOZONCUJNOB2Z/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-2961",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0004",
+              "https://ubuntu.com/security/notices/USN-6737-1",
+              "https://ubuntu.com/security/notices/USN-6737-2",
+              "https://ubuntu.com/security/notices/USN-6762-1",
+              "https://www.cve.org/CVERecord?id=CVE-2024-2961",
+              "https://www.openwall.com/lists/oss-security/2024/04/17/9"
+            ],
+            "PublishedDate": "2024-04-17T18:15:15.833Z",
+            "LastModifiedDate": "2024-05-04T01:15:06.243Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33599",
+            "PkgID": "glibc-locale-posix@2.38-r6",
+            "PkgName": "glibc-locale-posix",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc-locale-posix@2.38-r6?arch=x86_64",
+              "UID": "73206bd83582ebc7"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33599",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: stack-based buffer overflow in netgroup cache",
+            "Description": "nscd: Stack-based buffer overflow in netgroup cache\n\nIf the Name Service Cache Daemon's (nscd) fixed size cache is exhausted\nby client requests then a subsequent client request for netgroup data\nmay result in a stack-based buffer overflow.  This flaw was introduced\nin glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-121"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "redhat": 3
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:H",
+                "V3Score": 7.6
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33599",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33599",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0005",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33599"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.437Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6780",
+            "PkgID": "glibc-locale-posix@2.38-r6",
+            "PkgName": "glibc-locale-posix",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc-locale-posix@2.38-r6?arch=x86_64",
+              "UID": "73206bd83582ebc7"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6780",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: integer overflow in __vsyslog_internal()",
+            "Description": "An integer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when these functions are called with a very long message, leading to an incorrect calculation of the buffer size to store the message, resulting in undefined behavior. This issue affects glibc 2.37 and newer.",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-131",
+              "CWE-190"
+            ],
+            "VendorSeverity": {
+              "nvd": 2,
+              "photon": 4,
+              "redhat": 1,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "https://access.redhat.com/security/cve/CVE-2023-6780",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2254396",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6780",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6780",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.917Z",
+            "LastModifiedDate": "2024-03-26T16:15:10.083Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33600",
+            "PkgID": "glibc-locale-posix@2.38-r6",
+            "PkgName": "glibc-locale-posix",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc-locale-posix@2.38-r6?arch=x86_64",
+              "UID": "73206bd83582ebc7"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33600",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: null pointer dereferences after failed netgroup cache insertion",
+            "Description": "nscd: Null pointer crashes after notfound response\n\nIf the Name Service Cache Daemon's (nscd) cache fails to add a not-found\nnetgroup response to the cache, the client request can result in a null\npointer dereference.  This flaw was introduced in glibc 2.15 when the\ncache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-476"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "redhat": 2
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33600",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33600",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0006",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33600"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.523Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33601",
+            "PkgID": "glibc-locale-posix@2.38-r6",
+            "PkgName": "glibc-locale-posix",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc-locale-posix@2.38-r6?arch=x86_64",
+              "UID": "73206bd83582ebc7"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33601",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: netgroup cache may terminate daemon on memory allocation failure",
+            "Description": "nscd: netgroup cache may terminate daemon on memory allocation failure\n\nThe Name Service Cache Daemon's (nscd) netgroup cache uses xmalloc or\nxrealloc and these functions may terminate the process due to a memory\nallocation failure resulting in a denial of service to the clients.  The\nflaw was introduced in glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-617"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "redhat": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33601",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33601",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0007",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33601"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.603Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33602",
+            "PkgID": "glibc-locale-posix@2.38-r6",
+            "PkgName": "glibc-locale-posix",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/glibc-locale-posix@2.38-r6?arch=x86_64",
+              "UID": "73206bd83582ebc7"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33602",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: netgroup cache assumes NSS callback uses in-buffer strings",
+            "Description": "nscd: netgroup cache assumes NSS callback uses in-buffer strings\n\nThe Name Service Cache Daemon's (nscd) netgroup cache can corrupt memory\nwhen the NSS callback does not store all strings in the provided buffer.\nThe flaw was introduced in glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-466"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "redhat": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33602",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33602",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0008",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33602"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.68Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6246",
+            "PkgID": "ld-linux@2.38-r6",
+            "PkgName": "ld-linux",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/ld-linux@2.38-r6?arch=x86_64",
+              "UID": "a3c04b4c1c0e9526"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6246",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: heap-based buffer overflow in __vsyslog_internal()",
+            "Description": "A heap-based buffer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when the openlog function was not called, or called with the ident argument set to NULL, and the program name (the basename of argv[0]) is bigger than 1024 bytes, resulting in an application crash or local privilege escalation. This issue affects glibc 2.36 and newer.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787",
+              "CWE-122"
+            ],
+            "VendorSeverity": {
+              "nvd": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 7.8
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 8.4
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176931/glibc-qsort-Out-Of-Bounds-Read-Write.html",
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "http://seclists.org/fulldisclosure/2024/Feb/5",
+              "https://access.redhat.com/security/cve/CVE-2023-6246",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2249053",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6246",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://security.netapp.com/advisory/ntap-20240216-0007/",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6246",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.42Z",
+            "LastModifiedDate": "2024-02-16T13:15:10.023Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6779",
+            "PkgID": "ld-linux@2.38-r6",
+            "PkgName": "ld-linux",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/ld-linux@2.38-r6?arch=x86_64",
+              "UID": "a3c04b4c1c0e9526"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6779",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: off-by-one heap-based buffer overflow in __vsyslog_internal()",
+            "Description": "An off-by-one heap-based buffer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when these functions are called with a message bigger than INT_MAX bytes, leading to an incorrect calculation of the buffer size to store the message, resulting in an application crash. This issue affects glibc 2.37 and newer.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787",
+              "CWE-122"
+            ],
+            "VendorSeverity": {
+              "nvd": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 7.5
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:H",
+                "V3Score": 8.2
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "https://access.redhat.com/security/cve/CVE-2023-6779",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2254395",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6779",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://security.netapp.com/advisory/ntap-20240223-0006/",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6779",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.7Z",
+            "LastModifiedDate": "2024-02-27T17:26:48.247Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-2961",
+            "PkgID": "ld-linux@2.38-r6",
+            "PkgName": "ld-linux",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/ld-linux@2.38-r6?arch=x86_64",
+              "UID": "a3c04b4c1c0e9526"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r2",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-2961",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: Out of bounds write in iconv may lead to remote code execution",
+            "Description": "The iconv() function in the GNU C Library versions 2.39 and older may overflow the output buffer passed to it by up to 4 bytes when converting strings to the ISO-2022-CN-EXT character set, which may be used to crash an application or overwrite a neighbouring variable.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787"
+            ],
+            "VendorSeverity": {
+              "alma": 3,
+              "amazon": 3,
+              "oracle-oval": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 8.8
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/04/17/9",
+              "http://www.openwall.com/lists/oss-security/2024/04/18/4",
+              "http://www.openwall.com/lists/oss-security/2024/04/24/2",
+              "https://access.redhat.com/errata/RHSA-2024:2722",
+              "https://access.redhat.com/security/cve/CVE-2024-2961",
+              "https://bugzilla.redhat.com/2273404",
+              "https://errata.almalinux.org/8/ALSA-2024-2722.html",
+              "https://linux.oracle.com/cve/CVE-2024-2961.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2722.html",
+              "https://lists.debian.org/debian-lts-announce/2024/05/msg00001.html",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/BTJFBGHDYG5PEIFD5WSSSKSFZ2AZWC5N/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/P3I4KYS6EU6S7QZ47WFNTPVAHFIUQNEL/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YAMJQI3Y6BHWV3CUTYBXOZONCUJNOB2Z/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-2961",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0004",
+              "https://ubuntu.com/security/notices/USN-6737-1",
+              "https://ubuntu.com/security/notices/USN-6737-2",
+              "https://ubuntu.com/security/notices/USN-6762-1",
+              "https://www.cve.org/CVERecord?id=CVE-2024-2961",
+              "https://www.openwall.com/lists/oss-security/2024/04/17/9"
+            ],
+            "PublishedDate": "2024-04-17T18:15:15.833Z",
+            "LastModifiedDate": "2024-05-04T01:15:06.243Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33599",
+            "PkgID": "ld-linux@2.38-r6",
+            "PkgName": "ld-linux",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/ld-linux@2.38-r6?arch=x86_64",
+              "UID": "a3c04b4c1c0e9526"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33599",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: stack-based buffer overflow in netgroup cache",
+            "Description": "nscd: Stack-based buffer overflow in netgroup cache\n\nIf the Name Service Cache Daemon's (nscd) fixed size cache is exhausted\nby client requests then a subsequent client request for netgroup data\nmay result in a stack-based buffer overflow.  This flaw was introduced\nin glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-121"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "redhat": 3
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:H",
+                "V3Score": 7.6
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33599",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33599",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0005",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33599"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.437Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6780",
+            "PkgID": "ld-linux@2.38-r6",
+            "PkgName": "ld-linux",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/ld-linux@2.38-r6?arch=x86_64",
+              "UID": "a3c04b4c1c0e9526"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6780",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: integer overflow in __vsyslog_internal()",
+            "Description": "An integer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when these functions are called with a very long message, leading to an incorrect calculation of the buffer size to store the message, resulting in undefined behavior. This issue affects glibc 2.37 and newer.",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-131",
+              "CWE-190"
+            ],
+            "VendorSeverity": {
+              "nvd": 2,
+              "photon": 4,
+              "redhat": 1,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "https://access.redhat.com/security/cve/CVE-2023-6780",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2254396",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6780",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6780",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.917Z",
+            "LastModifiedDate": "2024-03-26T16:15:10.083Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33600",
+            "PkgID": "ld-linux@2.38-r6",
+            "PkgName": "ld-linux",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/ld-linux@2.38-r6?arch=x86_64",
+              "UID": "a3c04b4c1c0e9526"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33600",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: null pointer dereferences after failed netgroup cache insertion",
+            "Description": "nscd: Null pointer crashes after notfound response\n\nIf the Name Service Cache Daemon's (nscd) cache fails to add a not-found\nnetgroup response to the cache, the client request can result in a null\npointer dereference.  This flaw was introduced in glibc 2.15 when the\ncache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-476"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "redhat": 2
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33600",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33600",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0006",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33600"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.523Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33601",
+            "PkgID": "ld-linux@2.38-r6",
+            "PkgName": "ld-linux",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/ld-linux@2.38-r6?arch=x86_64",
+              "UID": "a3c04b4c1c0e9526"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33601",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: netgroup cache may terminate daemon on memory allocation failure",
+            "Description": "nscd: netgroup cache may terminate daemon on memory allocation failure\n\nThe Name Service Cache Daemon's (nscd) netgroup cache uses xmalloc or\nxrealloc and these functions may terminate the process due to a memory\nallocation failure resulting in a denial of service to the clients.  The\nflaw was introduced in glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-617"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "redhat": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33601",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33601",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0007",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33601"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.603Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33602",
+            "PkgID": "ld-linux@2.38-r6",
+            "PkgName": "ld-linux",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/ld-linux@2.38-r6?arch=x86_64",
+              "UID": "a3c04b4c1c0e9526"
+            },
+            "InstalledVersion": "2.38-r6",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33602",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: netgroup cache assumes NSS callback uses in-buffer strings",
+            "Description": "nscd: netgroup cache assumes NSS callback uses in-buffer strings\n\nThe Name Service Cache Daemon's (nscd) netgroup cache can corrupt memory\nwhen the NSS callback does not store all strings in the provided buffer.\nThe flaw was introduced in glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-466"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "redhat": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33602",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33602",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0008",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33602"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.68Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6246",
+            "PkgID": "libcrypt1@2.38-r5",
+            "PkgName": "libcrypt1",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypt1@2.38-r5?arch=x86_64",
+              "UID": "468d2942b03cf6df"
+            },
+            "InstalledVersion": "2.38-r5",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6246",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: heap-based buffer overflow in __vsyslog_internal()",
+            "Description": "A heap-based buffer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when the openlog function was not called, or called with the ident argument set to NULL, and the program name (the basename of argv[0]) is bigger than 1024 bytes, resulting in an application crash or local privilege escalation. This issue affects glibc 2.36 and newer.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787",
+              "CWE-122"
+            ],
+            "VendorSeverity": {
+              "nvd": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 7.8
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 8.4
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176931/glibc-qsort-Out-Of-Bounds-Read-Write.html",
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "http://seclists.org/fulldisclosure/2024/Feb/5",
+              "https://access.redhat.com/security/cve/CVE-2023-6246",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2249053",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6246",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://security.netapp.com/advisory/ntap-20240216-0007/",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6246",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.42Z",
+            "LastModifiedDate": "2024-02-16T13:15:10.023Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6779",
+            "PkgID": "libcrypt1@2.38-r5",
+            "PkgName": "libcrypt1",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypt1@2.38-r5?arch=x86_64",
+              "UID": "468d2942b03cf6df"
+            },
+            "InstalledVersion": "2.38-r5",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6779",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: off-by-one heap-based buffer overflow in __vsyslog_internal()",
+            "Description": "An off-by-one heap-based buffer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when these functions are called with a message bigger than INT_MAX bytes, leading to an incorrect calculation of the buffer size to store the message, resulting in an application crash. This issue affects glibc 2.37 and newer.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787",
+              "CWE-122"
+            ],
+            "VendorSeverity": {
+              "nvd": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 7.5
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:H",
+                "V3Score": 8.2
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "https://access.redhat.com/security/cve/CVE-2023-6779",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2254395",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6779",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://security.netapp.com/advisory/ntap-20240223-0006/",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6779",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.7Z",
+            "LastModifiedDate": "2024-02-27T17:26:48.247Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-2961",
+            "PkgID": "libcrypt1@2.38-r5",
+            "PkgName": "libcrypt1",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypt1@2.38-r5?arch=x86_64",
+              "UID": "468d2942b03cf6df"
+            },
+            "InstalledVersion": "2.38-r5",
+            "FixedVersion": "2.39-r2",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-2961",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: Out of bounds write in iconv may lead to remote code execution",
+            "Description": "The iconv() function in the GNU C Library versions 2.39 and older may overflow the output buffer passed to it by up to 4 bytes when converting strings to the ISO-2022-CN-EXT character set, which may be used to crash an application or overwrite a neighbouring variable.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-787"
+            ],
+            "VendorSeverity": {
+              "alma": 3,
+              "amazon": 3,
+              "oracle-oval": 3,
+              "photon": 3,
+              "redhat": 3,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "V3Score": 8.8
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/04/17/9",
+              "http://www.openwall.com/lists/oss-security/2024/04/18/4",
+              "http://www.openwall.com/lists/oss-security/2024/04/24/2",
+              "https://access.redhat.com/errata/RHSA-2024:2722",
+              "https://access.redhat.com/security/cve/CVE-2024-2961",
+              "https://bugzilla.redhat.com/2273404",
+              "https://errata.almalinux.org/8/ALSA-2024-2722.html",
+              "https://linux.oracle.com/cve/CVE-2024-2961.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2722.html",
+              "https://lists.debian.org/debian-lts-announce/2024/05/msg00001.html",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/BTJFBGHDYG5PEIFD5WSSSKSFZ2AZWC5N/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/P3I4KYS6EU6S7QZ47WFNTPVAHFIUQNEL/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YAMJQI3Y6BHWV3CUTYBXOZONCUJNOB2Z/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-2961",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0004",
+              "https://ubuntu.com/security/notices/USN-6737-1",
+              "https://ubuntu.com/security/notices/USN-6737-2",
+              "https://ubuntu.com/security/notices/USN-6762-1",
+              "https://www.cve.org/CVERecord?id=CVE-2024-2961",
+              "https://www.openwall.com/lists/oss-security/2024/04/17/9"
+            ],
+            "PublishedDate": "2024-04-17T18:15:15.833Z",
+            "LastModifiedDate": "2024-05-04T01:15:06.243Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33599",
+            "PkgID": "libcrypt1@2.38-r5",
+            "PkgName": "libcrypt1",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypt1@2.38-r5?arch=x86_64",
+              "UID": "468d2942b03cf6df"
+            },
+            "InstalledVersion": "2.38-r5",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33599",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: stack-based buffer overflow in netgroup cache",
+            "Description": "nscd: Stack-based buffer overflow in netgroup cache\n\nIf the Name Service Cache Daemon's (nscd) fixed size cache is exhausted\nby client requests then a subsequent client request for netgroup data\nmay result in a stack-based buffer overflow.  This flaw was introduced\nin glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-121"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "redhat": 3
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:H",
+                "V3Score": 7.6
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33599",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33599",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0005",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33599"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.437Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6780",
+            "PkgID": "libcrypt1@2.38-r5",
+            "PkgName": "libcrypt1",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypt1@2.38-r5?arch=x86_64",
+              "UID": "468d2942b03cf6df"
+            },
+            "InstalledVersion": "2.38-r5",
+            "FixedVersion": "2.38-r11",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6780",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: integer overflow in __vsyslog_internal()",
+            "Description": "An integer overflow was found in the __vsyslog_internal function of the glibc library. This function is called by the syslog and vsyslog functions. This issue occurs when these functions are called with a very long message, leading to an incorrect calculation of the buffer size to store the message, resulting in undefined behavior. This issue affects glibc 2.37 and newer.",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-131",
+              "CWE-190"
+            ],
+            "VendorSeverity": {
+              "nvd": 2,
+              "photon": 4,
+              "redhat": 1,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "http://packetstormsecurity.com/files/176932/glibc-syslog-Heap-Based-Buffer-Overflow.html",
+              "http://seclists.org/fulldisclosure/2024/Feb/3",
+              "https://access.redhat.com/security/cve/CVE-2023-6780",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2254396",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/D2FIH77VHY3KCRROCXOT6L27WMZXSJ2G/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MWQ6BZJ6CV5UAW4VZSKJ6TO4KIW2KWAQ/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6780",
+              "https://security.gentoo.org/glsa/202402-01",
+              "https://ubuntu.com/security/notices/USN-6620-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6780",
+              "https://www.openwall.com/lists/oss-security/2024/01/30/6",
+              "https://www.qualys.com/2024/01/30/cve-2023-6246/syslog.txt"
+            ],
+            "PublishedDate": "2024-01-31T14:15:48.917Z",
+            "LastModifiedDate": "2024-03-26T16:15:10.083Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33600",
+            "PkgID": "libcrypt1@2.38-r5",
+            "PkgName": "libcrypt1",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypt1@2.38-r5?arch=x86_64",
+              "UID": "468d2942b03cf6df"
+            },
+            "InstalledVersion": "2.38-r5",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33600",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: null pointer dereferences after failed netgroup cache insertion",
+            "Description": "nscd: Null pointer crashes after notfound response\n\nIf the Name Service Cache Daemon's (nscd) cache fails to add a not-found\nnetgroup response to the cache, the client request can result in a null\npointer dereference.  This flaw was introduced in glibc 2.15 when the\ncache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-476"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "redhat": 2
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33600",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33600",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0006",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33600"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.523Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33601",
+            "PkgID": "libcrypt1@2.38-r5",
+            "PkgName": "libcrypt1",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypt1@2.38-r5?arch=x86_64",
+              "UID": "468d2942b03cf6df"
+            },
+            "InstalledVersion": "2.38-r5",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33601",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: netgroup cache may terminate daemon on memory allocation failure",
+            "Description": "nscd: netgroup cache may terminate daemon on memory allocation failure\n\nThe Name Service Cache Daemon's (nscd) netgroup cache uses xmalloc or\nxrealloc and these functions may terminate the process due to a memory\nallocation failure resulting in a denial of service to the clients.  The\nflaw was introduced in glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-617"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "redhat": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33601",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33601",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0007",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33601"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.603Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-33602",
+            "PkgID": "libcrypt1@2.38-r5",
+            "PkgName": "libcrypt1",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypt1@2.38-r5?arch=x86_64",
+              "UID": "468d2942b03cf6df"
+            },
+            "InstalledVersion": "2.38-r5",
+            "FixedVersion": "2.39-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33602",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "glibc: netgroup cache assumes NSS callback uses in-buffer strings",
+            "Description": "nscd: netgroup cache assumes NSS callback uses in-buffer strings\n\nThe Name Service Cache Daemon's (nscd) netgroup cache can corrupt memory\nwhen the NSS callback does not store all strings in the provided buffer.\nThe flaw was introduced in glibc 2.15 when the cache was added to nscd.\n\nThis vulnerability is only present in the nscd binary.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-466"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "redhat": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-33602",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-33602",
+              "https://sourceware.org/git/?p=glibc.git;a=blob;f=advisories/GLIBC-SA-2024-0008",
+              "https://www.cve.org/CVERecord?id=CVE-2024-33602"
+            ],
+            "PublishedDate": "2024-05-06T20:15:11.68Z",
+            "LastModifiedDate": "2024-05-07T13:39:32.71Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6237",
+            "PkgID": "libcrypto3@3.2.0-r0",
+            "PkgName": "libcrypto3",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypto3@3.2.0-r0?arch=x86_64",
+              "UID": "67dd2f07f4687aff"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.3.0-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6237",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: Excessive time spent checking invalid RSA public keys",
+            "Description": "Issue summary: Checking excessively long invalid RSA public keys may take\na long time.\n\nImpact summary: Applications that use the function EVP_PKEY_public_check()\nto check RSA public keys may experience long delays. Where the key that\nis being checked has been obtained from an untrusted source this may lead\nto a Denial of Service.\n\nWhen function EVP_PKEY_public_check() is called on RSA public keys,\na computation is done to confirm that the RSA modulus, n, is composite.\nFor valid RSA keys, n is a product of two or more large primes and this\ncomputation completes quickly. However, if n is an overly large prime,\nthen this computation would take a long time.\n\nAn application that calls EVP_PKEY_public_check() and supplies an RSA key\nobtained from an untrusted source could be vulnerable to a Denial of Service\nattack.\n\nThe function EVP_PKEY_public_check() is not called from other OpenSSL\nfunctions however it is called from the OpenSSL pkey command line\napplication. For that reason that application is also vulnerable if used\nwith the '-pubin' and '-check' options on untrusted data.\n\nThe OpenSSL SSL/TLS implementation is not affected by this issue.\n\nThe OpenSSL 3.0 and 3.1 FIPS providers are affected by this issue.",
+            "Severity": "MEDIUM",
+            "VendorSeverity": {
+              "alma": 1,
+              "amazon": 2,
+              "cbl-mariner": 2,
+              "oracle-oval": 1,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 5.9
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/03/11/1",
+              "https://access.redhat.com/errata/RHSA-2024:2447",
+              "https://access.redhat.com/security/cve/CVE-2023-6237",
+              "https://bugzilla.redhat.com/2223016",
+              "https://bugzilla.redhat.com/2224962",
+              "https://bugzilla.redhat.com/2227852",
+              "https://bugzilla.redhat.com/2248616",
+              "https://bugzilla.redhat.com/2257571",
+              "https://bugzilla.redhat.com/2258502",
+              "https://bugzilla.redhat.com/2259944",
+              "https://errata.almalinux.org/9/ALSA-2024-2447.html",
+              "https://github.com/openssl/openssl/commit/0b0f7abfb37350794a4b8960fafc292cd5d1b84d",
+              "https://github.com/openssl/openssl/commit/18c02492138d1eb8b6548cb26e7b625fb2414a2a",
+              "https://github.com/openssl/openssl/commit/a830f551557d3d66a84bbb18a5b889c640c36294",
+              "https://linux.oracle.com/cve/CVE-2023-6237.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2447.html",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6237",
+              "https://ubuntu.com/security/notices/USN-6622-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6237",
+              "https://www.openssl.org/news/secadv/20240115.txt",
+              "https://www.openwall.com/lists/oss-security/2024/01/15/2"
+            ],
+            "PublishedDate": "2024-04-25T07:15:45.27Z",
+            "LastModifiedDate": "2024-05-01T18:15:12.59Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-0727",
+            "PkgID": "libcrypto3@3.2.0-r0",
+            "PkgName": "libcrypto3",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypto3@3.2.0-r0?arch=x86_64",
+              "UID": "67dd2f07f4687aff"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.2.1-r0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-0727",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: denial of service via null dereference",
+            "Description": "Issue summary: Processing a maliciously formatted PKCS12 file may lead OpenSSL\nto crash leading to a potential Denial of Service attack\n\nImpact summary: Applications loading files in the PKCS12 format from untrusted\nsources might terminate abruptly.\n\nA file in PKCS12 format can contain certificates and keys and may come from an\nuntrusted source. The PKCS12 specification allows certain fields to be NULL, but\nOpenSSL does not correctly check for this case. This can lead to a NULL pointer\ndereference that results in OpenSSL crashing. If an application processes PKCS12\nfiles from an untrusted source using the OpenSSL APIs then that application will\nbe vulnerable to this issue.\n\nOpenSSL APIs that are vulnerable to this are: PKCS12_parse(),\nPKCS12_unpack_p7data(), PKCS12_unpack_p7encdata(), PKCS12_unpack_authsafes()\nand PKCS12_newpass().\n\nWe have also fixed a similar issue in SMIME_write_PKCS7(). However since this\nfunction is related to writing data we do not consider it security significant.\n\nThe FIPS modules in 3.2, 3.1 and 3.0 are not affected by this issue.",
+            "Severity": "MEDIUM",
+            "VendorSeverity": {
+              "alma": 1,
+              "amazon": 2,
+              "cbl-mariner": 2,
+              "ghsa": 2,
+              "nvd": 2,
+              "oracle-oval": 1,
+              "photon": 2,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              },
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/03/11/1",
+              "https://access.redhat.com/errata/RHSA-2024:2447",
+              "https://access.redhat.com/security/cve/CVE-2024-0727",
+              "https://bugzilla.redhat.com/2223016",
+              "https://bugzilla.redhat.com/2224962",
+              "https://bugzilla.redhat.com/2227852",
+              "https://bugzilla.redhat.com/2248616",
+              "https://bugzilla.redhat.com/2257571",
+              "https://bugzilla.redhat.com/2258502",
+              "https://bugzilla.redhat.com/2259944",
+              "https://errata.almalinux.org/9/ALSA-2024-2447.html",
+              "https://github.com/alexcrichton/openssl-src-rs/commit/add20f73b6b42be7451af2e1044d4e0e778992b2",
+              "https://github.com/github/advisory-database/pull/3472",
+              "https://github.com/openssl/openssl/commit/09df4395b5071217b76dc7d3d2e630eb8c5a79c2",
+              "https://github.com/openssl/openssl/commit/775acfdbd0c6af9ac855f34969cdab0c0c90844a",
+              "https://github.com/openssl/openssl/commit/d135eeab8a5dbf72b3da5240bab9ddb7678dbd2c",
+              "https://github.com/openssl/openssl/pull/23362",
+              "https://github.com/pyca/cryptography/commit/3519591d255d4506fbcd0d04037d45271903c64d",
+              "https://github.openssl.org/openssl/extended-releases/commit/03b3941d60c4bce58fab69a0c22377ab439bc0e8",
+              "https://github.openssl.org/openssl/extended-releases/commit/aebaa5883e31122b404e450732dc833dc9dee539",
+              "https://linux.oracle.com/cve/CVE-2024-0727.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2447.html",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-0727",
+              "https://security.netapp.com/advisory/ntap-20240208-0006",
+              "https://security.netapp.com/advisory/ntap-20240208-0006/",
+              "https://ubuntu.com/security/notices/USN-6622-1",
+              "https://ubuntu.com/security/notices/USN-6632-1",
+              "https://ubuntu.com/security/notices/USN-6709-1",
+              "https://www.cve.org/CVERecord?id=CVE-2024-0727",
+              "https://www.openssl.org/news/secadv/20240125.txt"
+            ],
+            "PublishedDate": "2024-01-26T09:15:07.637Z",
+            "LastModifiedDate": "2024-05-01T18:15:13.057Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-2511",
+            "PkgID": "libcrypto3@3.2.0-r0",
+            "PkgName": "libcrypto3",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libcrypto3@3.2.0-r0?arch=x86_64",
+              "UID": "67dd2f07f4687aff"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.3.0-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-2511",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: Unbounded memory growth with session handling in TLSv1.3",
+            "Description": "Issue summary: Some non-default TLS server configurations can cause unbounded\nmemory growth when processing TLSv1.3 sessions\n\nImpact summary: An attacker may exploit certain server configurations to trigger\nunbounded memory growth that would lead to a Denial of Service\n\nThis problem can occur in TLSv1.3 if the non-default SSL_OP_NO_TICKET option is\nbeing used (but not if early_data support is also configured and the default\nanti-replay protection is in use). In this case, under certain conditions, the\nsession cache can get into an incorrect state and it will fail to flush properly\nas it fills. The session cache will continue to grow in an unbounded manner. A\nmalicious client could deliberately create the scenario for this failure to\nforce a Denial of Service. It may also happen by accident in normal operation.\n\nThis issue only affects TLS servers supporting TLSv1.3. It does not affect TLS\nclients.\n\nThe FIPS modules in 3.2, 3.1 and 3.0 are not affected by this issue. OpenSSL\n1.0.2 is also not affected by this issue.",
+            "Severity": "LOW",
+            "VendorSeverity": {
+              "amazon": 2,
+              "photon": 3,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 3.7
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/04/08/5",
+              "https://access.redhat.com/security/cve/CVE-2024-2511",
+              "https://github.com/openssl/openssl/commit/7e4d731b1c07201ad9374c1cd9ac5263bdf35bce",
+              "https://github.com/openssl/openssl/commit/b52867a9f618bb955bed2a3ce3db4d4f97ed8e5d",
+              "https://github.com/openssl/openssl/commit/e9d7083e241670332e0443da0f0d4ffb52829f08",
+              "https://github.openssl.org/openssl/extended-releases/commit/5f8d25770ae6437db119dfc951e207271a326640",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-2511",
+              "https://security.netapp.com/advisory/ntap-20240503-0013/",
+              "https://www.cve.org/CVERecord?id=CVE-2024-2511",
+              "https://www.openssl.org/news/secadv/20240408.txt",
+              "https://www.openssl.org/news/vulnerabilities.html"
+            ],
+            "PublishedDate": "2024-04-08T14:15:07.66Z",
+            "LastModifiedDate": "2024-05-03T13:15:21.93Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6237",
+            "PkgID": "libssl3@3.2.0-r0",
+            "PkgName": "libssl3",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libssl3@3.2.0-r0?arch=x86_64",
+              "UID": "7f1ac9c51aaf54f6"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.3.0-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6237",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: Excessive time spent checking invalid RSA public keys",
+            "Description": "Issue summary: Checking excessively long invalid RSA public keys may take\na long time.\n\nImpact summary: Applications that use the function EVP_PKEY_public_check()\nto check RSA public keys may experience long delays. Where the key that\nis being checked has been obtained from an untrusted source this may lead\nto a Denial of Service.\n\nWhen function EVP_PKEY_public_check() is called on RSA public keys,\na computation is done to confirm that the RSA modulus, n, is composite.\nFor valid RSA keys, n is a product of two or more large primes and this\ncomputation completes quickly. However, if n is an overly large prime,\nthen this computation would take a long time.\n\nAn application that calls EVP_PKEY_public_check() and supplies an RSA key\nobtained from an untrusted source could be vulnerable to a Denial of Service\nattack.\n\nThe function EVP_PKEY_public_check() is not called from other OpenSSL\nfunctions however it is called from the OpenSSL pkey command line\napplication. For that reason that application is also vulnerable if used\nwith the '-pubin' and '-check' options on untrusted data.\n\nThe OpenSSL SSL/TLS implementation is not affected by this issue.\n\nThe OpenSSL 3.0 and 3.1 FIPS providers are affected by this issue.",
+            "Severity": "MEDIUM",
+            "VendorSeverity": {
+              "alma": 1,
+              "amazon": 2,
+              "cbl-mariner": 2,
+              "oracle-oval": 1,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 5.9
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/03/11/1",
+              "https://access.redhat.com/errata/RHSA-2024:2447",
+              "https://access.redhat.com/security/cve/CVE-2023-6237",
+              "https://bugzilla.redhat.com/2223016",
+              "https://bugzilla.redhat.com/2224962",
+              "https://bugzilla.redhat.com/2227852",
+              "https://bugzilla.redhat.com/2248616",
+              "https://bugzilla.redhat.com/2257571",
+              "https://bugzilla.redhat.com/2258502",
+              "https://bugzilla.redhat.com/2259944",
+              "https://errata.almalinux.org/9/ALSA-2024-2447.html",
+              "https://github.com/openssl/openssl/commit/0b0f7abfb37350794a4b8960fafc292cd5d1b84d",
+              "https://github.com/openssl/openssl/commit/18c02492138d1eb8b6548cb26e7b625fb2414a2a",
+              "https://github.com/openssl/openssl/commit/a830f551557d3d66a84bbb18a5b889c640c36294",
+              "https://linux.oracle.com/cve/CVE-2023-6237.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2447.html",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6237",
+              "https://ubuntu.com/security/notices/USN-6622-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6237",
+              "https://www.openssl.org/news/secadv/20240115.txt",
+              "https://www.openwall.com/lists/oss-security/2024/01/15/2"
+            ],
+            "PublishedDate": "2024-04-25T07:15:45.27Z",
+            "LastModifiedDate": "2024-05-01T18:15:12.59Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-0727",
+            "PkgID": "libssl3@3.2.0-r0",
+            "PkgName": "libssl3",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libssl3@3.2.0-r0?arch=x86_64",
+              "UID": "7f1ac9c51aaf54f6"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.2.1-r0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-0727",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: denial of service via null dereference",
+            "Description": "Issue summary: Processing a maliciously formatted PKCS12 file may lead OpenSSL\nto crash leading to a potential Denial of Service attack\n\nImpact summary: Applications loading files in the PKCS12 format from untrusted\nsources might terminate abruptly.\n\nA file in PKCS12 format can contain certificates and keys and may come from an\nuntrusted source. The PKCS12 specification allows certain fields to be NULL, but\nOpenSSL does not correctly check for this case. This can lead to a NULL pointer\ndereference that results in OpenSSL crashing. If an application processes PKCS12\nfiles from an untrusted source using the OpenSSL APIs then that application will\nbe vulnerable to this issue.\n\nOpenSSL APIs that are vulnerable to this are: PKCS12_parse(),\nPKCS12_unpack_p7data(), PKCS12_unpack_p7encdata(), PKCS12_unpack_authsafes()\nand PKCS12_newpass().\n\nWe have also fixed a similar issue in SMIME_write_PKCS7(). However since this\nfunction is related to writing data we do not consider it security significant.\n\nThe FIPS modules in 3.2, 3.1 and 3.0 are not affected by this issue.",
+            "Severity": "MEDIUM",
+            "VendorSeverity": {
+              "alma": 1,
+              "amazon": 2,
+              "cbl-mariner": 2,
+              "ghsa": 2,
+              "nvd": 2,
+              "oracle-oval": 1,
+              "photon": 2,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              },
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/03/11/1",
+              "https://access.redhat.com/errata/RHSA-2024:2447",
+              "https://access.redhat.com/security/cve/CVE-2024-0727",
+              "https://bugzilla.redhat.com/2223016",
+              "https://bugzilla.redhat.com/2224962",
+              "https://bugzilla.redhat.com/2227852",
+              "https://bugzilla.redhat.com/2248616",
+              "https://bugzilla.redhat.com/2257571",
+              "https://bugzilla.redhat.com/2258502",
+              "https://bugzilla.redhat.com/2259944",
+              "https://errata.almalinux.org/9/ALSA-2024-2447.html",
+              "https://github.com/alexcrichton/openssl-src-rs/commit/add20f73b6b42be7451af2e1044d4e0e778992b2",
+              "https://github.com/github/advisory-database/pull/3472",
+              "https://github.com/openssl/openssl/commit/09df4395b5071217b76dc7d3d2e630eb8c5a79c2",
+              "https://github.com/openssl/openssl/commit/775acfdbd0c6af9ac855f34969cdab0c0c90844a",
+              "https://github.com/openssl/openssl/commit/d135eeab8a5dbf72b3da5240bab9ddb7678dbd2c",
+              "https://github.com/openssl/openssl/pull/23362",
+              "https://github.com/pyca/cryptography/commit/3519591d255d4506fbcd0d04037d45271903c64d",
+              "https://github.openssl.org/openssl/extended-releases/commit/03b3941d60c4bce58fab69a0c22377ab439bc0e8",
+              "https://github.openssl.org/openssl/extended-releases/commit/aebaa5883e31122b404e450732dc833dc9dee539",
+              "https://linux.oracle.com/cve/CVE-2024-0727.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2447.html",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-0727",
+              "https://security.netapp.com/advisory/ntap-20240208-0006",
+              "https://security.netapp.com/advisory/ntap-20240208-0006/",
+              "https://ubuntu.com/security/notices/USN-6622-1",
+              "https://ubuntu.com/security/notices/USN-6632-1",
+              "https://ubuntu.com/security/notices/USN-6709-1",
+              "https://www.cve.org/CVERecord?id=CVE-2024-0727",
+              "https://www.openssl.org/news/secadv/20240125.txt"
+            ],
+            "PublishedDate": "2024-01-26T09:15:07.637Z",
+            "LastModifiedDate": "2024-05-01T18:15:13.057Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-2511",
+            "PkgID": "libssl3@3.2.0-r0",
+            "PkgName": "libssl3",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/libssl3@3.2.0-r0?arch=x86_64",
+              "UID": "7f1ac9c51aaf54f6"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.3.0-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-2511",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: Unbounded memory growth with session handling in TLSv1.3",
+            "Description": "Issue summary: Some non-default TLS server configurations can cause unbounded\nmemory growth when processing TLSv1.3 sessions\n\nImpact summary: An attacker may exploit certain server configurations to trigger\nunbounded memory growth that would lead to a Denial of Service\n\nThis problem can occur in TLSv1.3 if the non-default SSL_OP_NO_TICKET option is\nbeing used (but not if early_data support is also configured and the default\nanti-replay protection is in use). In this case, under certain conditions, the\nsession cache can get into an incorrect state and it will fail to flush properly\nas it fills. The session cache will continue to grow in an unbounded manner. A\nmalicious client could deliberately create the scenario for this failure to\nforce a Denial of Service. It may also happen by accident in normal operation.\n\nThis issue only affects TLS servers supporting TLSv1.3. It does not affect TLS\nclients.\n\nThe FIPS modules in 3.2, 3.1 and 3.0 are not affected by this issue. OpenSSL\n1.0.2 is also not affected by this issue.",
+            "Severity": "LOW",
+            "VendorSeverity": {
+              "amazon": 2,
+              "photon": 3,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 3.7
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/04/08/5",
+              "https://access.redhat.com/security/cve/CVE-2024-2511",
+              "https://github.com/openssl/openssl/commit/7e4d731b1c07201ad9374c1cd9ac5263bdf35bce",
+              "https://github.com/openssl/openssl/commit/b52867a9f618bb955bed2a3ce3db4d4f97ed8e5d",
+              "https://github.com/openssl/openssl/commit/e9d7083e241670332e0443da0f0d4ffb52829f08",
+              "https://github.openssl.org/openssl/extended-releases/commit/5f8d25770ae6437db119dfc951e207271a326640",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-2511",
+              "https://security.netapp.com/advisory/ntap-20240503-0013/",
+              "https://www.cve.org/CVERecord?id=CVE-2024-2511",
+              "https://www.openssl.org/news/secadv/20240408.txt",
+              "https://www.openssl.org/news/vulnerabilities.html"
+            ],
+            "PublishedDate": "2024-04-08T14:15:07.66Z",
+            "LastModifiedDate": "2024-05-03T13:15:21.93Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6237",
+            "PkgID": "openssl-config@3.2.0-r0",
+            "PkgName": "openssl-config",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/openssl-config@3.2.0-r0?arch=x86_64",
+              "UID": "999354b3c0656223"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.3.0-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6237",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: Excessive time spent checking invalid RSA public keys",
+            "Description": "Issue summary: Checking excessively long invalid RSA public keys may take\na long time.\n\nImpact summary: Applications that use the function EVP_PKEY_public_check()\nto check RSA public keys may experience long delays. Where the key that\nis being checked has been obtained from an untrusted source this may lead\nto a Denial of Service.\n\nWhen function EVP_PKEY_public_check() is called on RSA public keys,\na computation is done to confirm that the RSA modulus, n, is composite.\nFor valid RSA keys, n is a product of two or more large primes and this\ncomputation completes quickly. However, if n is an overly large prime,\nthen this computation would take a long time.\n\nAn application that calls EVP_PKEY_public_check() and supplies an RSA key\nobtained from an untrusted source could be vulnerable to a Denial of Service\nattack.\n\nThe function EVP_PKEY_public_check() is not called from other OpenSSL\nfunctions however it is called from the OpenSSL pkey command line\napplication. For that reason that application is also vulnerable if used\nwith the '-pubin' and '-check' options on untrusted data.\n\nThe OpenSSL SSL/TLS implementation is not affected by this issue.\n\nThe OpenSSL 3.0 and 3.1 FIPS providers are affected by this issue.",
+            "Severity": "MEDIUM",
+            "VendorSeverity": {
+              "alma": 1,
+              "amazon": 2,
+              "cbl-mariner": 2,
+              "oracle-oval": 1,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 5.9
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/03/11/1",
+              "https://access.redhat.com/errata/RHSA-2024:2447",
+              "https://access.redhat.com/security/cve/CVE-2023-6237",
+              "https://bugzilla.redhat.com/2223016",
+              "https://bugzilla.redhat.com/2224962",
+              "https://bugzilla.redhat.com/2227852",
+              "https://bugzilla.redhat.com/2248616",
+              "https://bugzilla.redhat.com/2257571",
+              "https://bugzilla.redhat.com/2258502",
+              "https://bugzilla.redhat.com/2259944",
+              "https://errata.almalinux.org/9/ALSA-2024-2447.html",
+              "https://github.com/openssl/openssl/commit/0b0f7abfb37350794a4b8960fafc292cd5d1b84d",
+              "https://github.com/openssl/openssl/commit/18c02492138d1eb8b6548cb26e7b625fb2414a2a",
+              "https://github.com/openssl/openssl/commit/a830f551557d3d66a84bbb18a5b889c640c36294",
+              "https://linux.oracle.com/cve/CVE-2023-6237.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2447.html",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6237",
+              "https://ubuntu.com/security/notices/USN-6622-1",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6237",
+              "https://www.openssl.org/news/secadv/20240115.txt",
+              "https://www.openwall.com/lists/oss-security/2024/01/15/2"
+            ],
+            "PublishedDate": "2024-04-25T07:15:45.27Z",
+            "LastModifiedDate": "2024-05-01T18:15:12.59Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-0727",
+            "PkgID": "openssl-config@3.2.0-r0",
+            "PkgName": "openssl-config",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/openssl-config@3.2.0-r0?arch=x86_64",
+              "UID": "999354b3c0656223"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.2.1-r0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-0727",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: denial of service via null dereference",
+            "Description": "Issue summary: Processing a maliciously formatted PKCS12 file may lead OpenSSL\nto crash leading to a potential Denial of Service attack\n\nImpact summary: Applications loading files in the PKCS12 format from untrusted\nsources might terminate abruptly.\n\nA file in PKCS12 format can contain certificates and keys and may come from an\nuntrusted source. The PKCS12 specification allows certain fields to be NULL, but\nOpenSSL does not correctly check for this case. This can lead to a NULL pointer\ndereference that results in OpenSSL crashing. If an application processes PKCS12\nfiles from an untrusted source using the OpenSSL APIs then that application will\nbe vulnerable to this issue.\n\nOpenSSL APIs that are vulnerable to this are: PKCS12_parse(),\nPKCS12_unpack_p7data(), PKCS12_unpack_p7encdata(), PKCS12_unpack_authsafes()\nand PKCS12_newpass().\n\nWe have also fixed a similar issue in SMIME_write_PKCS7(). However since this\nfunction is related to writing data we do not consider it security significant.\n\nThe FIPS modules in 3.2, 3.1 and 3.0 are not affected by this issue.",
+            "Severity": "MEDIUM",
+            "VendorSeverity": {
+              "alma": 1,
+              "amazon": 2,
+              "cbl-mariner": 2,
+              "ghsa": 2,
+              "nvd": 2,
+              "oracle-oval": 1,
+              "photon": 2,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              },
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H",
+                "V3Score": 5.5
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/03/11/1",
+              "https://access.redhat.com/errata/RHSA-2024:2447",
+              "https://access.redhat.com/security/cve/CVE-2024-0727",
+              "https://bugzilla.redhat.com/2223016",
+              "https://bugzilla.redhat.com/2224962",
+              "https://bugzilla.redhat.com/2227852",
+              "https://bugzilla.redhat.com/2248616",
+              "https://bugzilla.redhat.com/2257571",
+              "https://bugzilla.redhat.com/2258502",
+              "https://bugzilla.redhat.com/2259944",
+              "https://errata.almalinux.org/9/ALSA-2024-2447.html",
+              "https://github.com/alexcrichton/openssl-src-rs/commit/add20f73b6b42be7451af2e1044d4e0e778992b2",
+              "https://github.com/github/advisory-database/pull/3472",
+              "https://github.com/openssl/openssl/commit/09df4395b5071217b76dc7d3d2e630eb8c5a79c2",
+              "https://github.com/openssl/openssl/commit/775acfdbd0c6af9ac855f34969cdab0c0c90844a",
+              "https://github.com/openssl/openssl/commit/d135eeab8a5dbf72b3da5240bab9ddb7678dbd2c",
+              "https://github.com/openssl/openssl/pull/23362",
+              "https://github.com/pyca/cryptography/commit/3519591d255d4506fbcd0d04037d45271903c64d",
+              "https://github.openssl.org/openssl/extended-releases/commit/03b3941d60c4bce58fab69a0c22377ab439bc0e8",
+              "https://github.openssl.org/openssl/extended-releases/commit/aebaa5883e31122b404e450732dc833dc9dee539",
+              "https://linux.oracle.com/cve/CVE-2024-0727.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2447.html",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-0727",
+              "https://security.netapp.com/advisory/ntap-20240208-0006",
+              "https://security.netapp.com/advisory/ntap-20240208-0006/",
+              "https://ubuntu.com/security/notices/USN-6622-1",
+              "https://ubuntu.com/security/notices/USN-6632-1",
+              "https://ubuntu.com/security/notices/USN-6709-1",
+              "https://www.cve.org/CVERecord?id=CVE-2024-0727",
+              "https://www.openssl.org/news/secadv/20240125.txt"
+            ],
+            "PublishedDate": "2024-01-26T09:15:07.637Z",
+            "LastModifiedDate": "2024-05-01T18:15:13.057Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-2511",
+            "PkgID": "openssl-config@3.2.0-r0",
+            "PkgName": "openssl-config",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/openssl-config@3.2.0-r0?arch=x86_64",
+              "UID": "999354b3c0656223"
+            },
+            "InstalledVersion": "3.2.0-r0",
+            "FixedVersion": "3.3.0-r5",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-2511",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "openssl: Unbounded memory growth with session handling in TLSv1.3",
+            "Description": "Issue summary: Some non-default TLS server configurations can cause unbounded\nmemory growth when processing TLSv1.3 sessions\n\nImpact summary: An attacker may exploit certain server configurations to trigger\nunbounded memory growth that would lead to a Denial of Service\n\nThis problem can occur in TLSv1.3 if the non-default SSL_OP_NO_TICKET option is\nbeing used (but not if early_data support is also configured and the default\nanti-replay protection is in use). In this case, under certain conditions, the\nsession cache can get into an incorrect state and it will fail to flush properly\nas it fills. The session cache will continue to grow in an unbounded manner. A\nmalicious client could deliberately create the scenario for this failure to\nforce a Denial of Service. It may also happen by accident in normal operation.\n\nThis issue only affects TLS servers supporting TLSv1.3. It does not affect TLS\nclients.\n\nThe FIPS modules in 3.2, 3.1 and 3.0 are not affected by this issue. OpenSSL\n1.0.2 is also not affected by this issue.",
+            "Severity": "LOW",
+            "VendorSeverity": {
+              "amazon": 2,
+              "photon": 3,
+              "redhat": 1,
+              "ubuntu": 1
+            },
+            "CVSS": {
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                "V3Score": 3.7
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/04/08/5",
+              "https://access.redhat.com/security/cve/CVE-2024-2511",
+              "https://github.com/openssl/openssl/commit/7e4d731b1c07201ad9374c1cd9ac5263bdf35bce",
+              "https://github.com/openssl/openssl/commit/b52867a9f618bb955bed2a3ce3db4d4f97ed8e5d",
+              "https://github.com/openssl/openssl/commit/e9d7083e241670332e0443da0f0d4ffb52829f08",
+              "https://github.openssl.org/openssl/extended-releases/commit/5f8d25770ae6437db119dfc951e207271a326640",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-2511",
+              "https://security.netapp.com/advisory/ntap-20240503-0013/",
+              "https://www.cve.org/CVERecord?id=CVE-2024-2511",
+              "https://www.openssl.org/news/secadv/20240408.txt",
+              "https://www.openssl.org/news/vulnerabilities.html"
+            ],
+            "PublishedDate": "2024-04-08T14:15:07.66Z",
+            "LastModifiedDate": "2024-05-03T13:15:21.93Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-6597",
+            "PkgID": "python-3.11@3.11.6-r0",
+            "PkgName": "python-3.11",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/python-3.11@3.11.6-r0?arch=x86_64",
+              "UID": "57b092f98c2d4c91"
+            },
+            "InstalledVersion": "3.11.6-r0",
+            "FixedVersion": "3.11.8-r0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-6597",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "python: Path traversal on tempfile.TemporaryDirectory",
+            "Description": "An issue was found in the CPython `tempfile.TemporaryDirectory` class affecting versions 3.12.1, 3.11.7, 3.10.13, 3.9.18, and 3.8.18 and prior.\n\nThe tempfile.TemporaryDirectory class would dereference symlinks during cleanup of permissions-related errors. This means users which can run privileged programs are potentially able to modify permissions of files referenced by symlinks in some circumstances.\n",
+            "Severity": "HIGH",
+            "VendorSeverity": {
+              "amazon": 3,
+              "bitnami": 3,
+              "cbl-mariner": 3,
+              "redhat": 3
+            },
+            "CVSS": {
+              "bitnami": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:N",
+                "V3Score": 7.8
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:N",
+                "V3Score": 7.8
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/03/20/5",
+              "https://access.redhat.com/security/cve/CVE-2023-6597",
+              "https://github.com/python/cpython/commit/02a9259c717738dfe6b463c44d7e17f2b6d2cb3a",
+              "https://github.com/python/cpython/commit/5585334d772b253a01a6730e8202ffb1607c3d25",
+              "https://github.com/python/cpython/commit/6ceb8aeda504b079fef7a57b8d81472f15cdd9a5",
+              "https://github.com/python/cpython/commit/81c16cd94ec38d61aa478b9a452436dc3b1b524d",
+              "https://github.com/python/cpython/commit/8eaeefe49d179ca4908d052745e3bb8b6f238f82",
+              "https://github.com/python/cpython/commit/d54e22a669ae6e987199bb5d2c69bb5a46b0083b",
+              "https://github.com/python/cpython/issues/91133",
+              "https://lists.debian.org/debian-lts-announce/2024/03/msg00025.html",
+              "https://mail.python.org/archives/list/security-announce@python.org/thread/Q5C6ATFC67K53XFV4KE45325S7NS62LD/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-6597",
+              "https://www.cve.org/CVERecord?id=CVE-2023-6597"
+            ],
+            "PublishedDate": "2024-03-19T16:15:08.743Z",
+            "LastModifiedDate": "2024-05-01T18:15:12.78Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-27043",
+            "PkgID": "python-3.11@3.11.6-r0",
+            "PkgName": "python-3.11",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/python-3.11@3.11.6-r0?arch=x86_64",
+              "UID": "57b092f98c2d4c91"
+            },
+            "InstalledVersion": "3.11.6-r0",
+            "FixedVersion": "3.11.8-r1",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "SeveritySource": "nvd",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-27043",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "python: Parsing errors in email/_parseaddr.py lead to incorrect value in email address part of tuple",
+            "Description": "The email module of Python through 3.11.3 incorrectly parses e-mail addresses that contain a special character. The wrong portion of an RFC2822 header is identified as the value of the addr-spec. In some applications, an attacker can bypass a protection mechanism in which application access is granted only after verifying receipt of e-mail to a specific domain (e.g., only @company.example.com addresses may be used for signup). This occurs in email/_parseaddr.py in recent versions of Python.",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-20"
+            ],
+            "VendorSeverity": {
+              "alma": 2,
+              "amazon": 2,
+              "bitnami": 2,
+              "nvd": 2,
+              "oracle-oval": 2,
+              "photon": 2,
+              "redhat": 2,
+              "rocky": 2,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "bitnami": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+                "V3Score": 5.3
+              },
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+                "V3Score": 5.3
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+                "V3Score": 5.3
+              }
+            },
+            "References": [
+              "http://python.org",
+              "https://access.redhat.com/articles/7051467",
+              "https://access.redhat.com/errata/RHSA-2024:2292",
+              "https://access.redhat.com/security/cve/CVE-2023-27043",
+              "https://bugzilla.redhat.com/2196183",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2196183",
+              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-27043",
+              "https://errata.almalinux.org/9/ALSA-2024-2292.html",
+              "https://errata.rockylinux.org/RLSA-2024:0256",
+              "https://github.com/python/cpython/issues/102988",
+              "https://github.com/python/cpython/pull/102990",
+              "https://github.com/python/cpython/pull/105127",
+              "https://linux.oracle.com/cve/CVE-2023-27043.html",
+              "https://linux.oracle.com/errata/ELSA-2024-2292.html",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/4ZAEFSFZDNBNJPNOUTLG5COISGQDLMGV/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/75DTHSTNOFFNAWHXKMDXS7EJWC6W2FUC/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ARI7VDSNTQVXRQFM6IK5GSSLEIYV4VZH/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/BQAKLUJMHFGVBRDPEY57BJGNCE5UUPHW/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/HXYVPEZUA3465AEFX5JVFVP7KIFZMF3N/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/N6M5I6OQHJABNEYY555HUMMKX3Y4P25Z/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/NEUNZSZ3CVSM2QWVYH3N2XGOCDWNYUA3/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ORLXS5YTKN65E2Q2NWKXMFS5FWQHRNZW/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/P2MAICLFDDO3QVNHTZ2OCERZQ34R2PIC/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/P2W2BZQIHMCKRI5FNBJERFYMS5PK6TAH/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/PHVGRKQAGANCSGFI3QMYOCIMS4IFOZA5/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/PU6Y2S5CBN5BWCBDAJFTGIBZLK3S2G3J/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/QDRDDPDN3VFIYXJIYEABY6USX5EU66AG/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/RDDC2VOX7OQC6OHMYTVD4HLFZIV6PYBC/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SINP4OVYNB2AGDYI2GS37EMW3H3F7XPZ/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/SOX7BCN6YL7B3RFPEEXPIU5CMTEHJOKR/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/VZXC32CJ7TWDPJO6GY2XIQRO7JZX5FLP/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/XWMBD4LNHWEXRI6YVFWJMTJQUL5WOFTS/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/YQVY5C5REXWJIORJIL2FIL3ALOEJEF72/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-27043",
+              "https://python-security.readthedocs.io/vuln/email-parseaddr-realname.html",
+              "https://security.netapp.com/advisory/ntap-20230601-0003/",
+              "https://www.cve.org/CVERecord?id=CVE-2023-27043"
+            ],
+            "PublishedDate": "2023-04-19T00:15:07.973Z",
+            "LastModifiedDate": "2024-02-26T16:27:45.78Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-0450",
+            "PkgID": "python-3.11@3.11.6-r0",
+            "PkgName": "python-3.11",
+            "PkgIdentifier": {
+              "PURL": "pkg:wolfi/python-3.11@3.11.6-r0?arch=x86_64",
+              "UID": "57b092f98c2d4c91"
+            },
+            "InstalledVersion": "3.11.6-r0",
+            "FixedVersion": "3.11.8-r0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:e3dba0a35ff388a56f0e525661707f966e95bc8ef8d269e9a3152f7c243bb5f6",
+              "DiffID": "sha256:ac8ede0a141bf51ce9537d6eba70e0fba01c45acf71bf3091fb25ec4cdbb8fd3"
+            },
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-0450",
+            "DataSource": {
+              "ID": "wolfi",
+              "Name": "Wolfi Secdb",
+              "URL": "https://packages.wolfi.dev/os/security.json"
+            },
+            "Title": "python: The zipfile module is vulnerable to zip-bombs leading to denial of service",
+            "Description": "An issue was found in the CPython `zipfile` module affecting versions 3.12.1, 3.11.7, 3.10.13, 3.9.18, and 3.8.18 and prior.\n\nThe zipfile module is vulnerable to “quoted-overlap” zip-bombs which exploit the zip format to create a zip-bomb with a high compression ratio. The fixed versions of CPython makes the zipfile module reject zip archives which overlap entries in the archive.\n\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-405"
+            ],
+            "VendorSeverity": {
+              "amazon": 2,
+              "bitnami": 2,
+              "cbl-mariner": 2,
+              "redhat": 2
+            },
+            "CVSS": {
+              "bitnami": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 6.2
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 6.2
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/03/20/5",
+              "https://access.redhat.com/security/cve/CVE-2024-0450",
+              "https://github.com/python/cpython/commit/30fe5d853b56138dbec62432d370a1f99409fc85",
+              "https://github.com/python/cpython/commit/66363b9a7b9fe7c99eba3a185b74c5fdbf842eba",
+              "https://github.com/python/cpython/commit/70497218351ba44bffc8b571201ecb5652d84675",
+              "https://github.com/python/cpython/commit/a2c59992e9e8d35baba9695eb186ad6c6ff85c51",
+              "https://github.com/python/cpython/commit/a956e510f6336d5ae111ba429a61c3ade30a7549",
+              "https://github.com/python/cpython/commit/d05bac0b74153beb541b88b4fca33bf053990183",
+              "https://github.com/python/cpython/commit/fa181fcf2156f703347b03a3b1966ce47be8ab3b",
+              "https://github.com/python/cpython/issues/109858",
+              "https://lists.debian.org/debian-lts-announce/2024/03/msg00024.html",
+              "https://lists.debian.org/debian-lts-announce/2024/03/msg00025.html",
+              "https://mail.python.org/archives/list/security-announce@python.org/thread/XELNUX2L3IOHBTFU7RQHCY6OUVEWZ2FG/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-0450",
+              "https://www.bamsoftware.com/hacks/zipbomb/",
+              "https://www.cve.org/CVERecord?id=CVE-2024-0450"
+            ],
+            "PublishedDate": "2024-03-19T16:15:09.18Z",
+            "LastModifiedDate": "2024-05-07T22:15:07.43Z"
+          }
+        ]
+      },
+      {
+        "Target": "Python",
+        "Class": "lang-pkgs",
+        "Type": "python-pkg",
+        "Vulnerabilities": [
+          {
+            "VulnerabilityID": "CVE-2024-34064",
+            "PkgName": "Jinja2",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/Jinja2-3.1.3.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/jinja2@3.1.3",
+              "UID": "c6941c8f2556dd90"
+            },
+            "InstalledVersion": "3.1.3",
+            "FixedVersion": "3.1.4",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-34064",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "jinja2: accepts keys containing non-attribute characters",
+            "Description": "Jinja is an extensible templating engine. The `xmlattr` filter in affected versions of Jinja accepts keys containing non-attribute characters. XML/HTML attributes cannot contain spaces, `/`, `\u003e`, or `=`, as each would then be interpreted as starting a separate attribute. If an application accepts keys (as opposed to only values) as user input, and renders these in pages that other users see as well, an attacker could use this to inject other attributes and perform XSS. The fix for CVE-2024-22195 only addressed spaces but not other characters. Accepting keys as user input is now explicitly considered an unintended use case of the `xmlattr` filter, and code that does so without otherwise validating the input should be flagged as insecure, regardless of Jinja version. Accepting _values_ as user input continues to be safe. This vulnerability is fixed in 3.1.4.",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-79"
+            ],
+            "VendorSeverity": {
+              "ghsa": 2,
+              "redhat": 2,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N",
+                "V3Score": 5.4
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N",
+                "V3Score": 5.4
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-34064",
+              "https://github.com/pallets/jinja",
+              "https://github.com/pallets/jinja/commit/0668239dc6b44ef38e7a6c9f91f312fd4ca581cb",
+              "https://github.com/pallets/jinja/security/advisories/GHSA-h75v-3vvj-5mfj",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-34064",
+              "https://www.cve.org/CVERecord?id=CVE-2024-34064"
+            ],
+            "PublishedDate": "2024-05-06T15:15:23.803Z",
+            "LastModifiedDate": "2024-05-06T16:00:59.253Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-30251",
+            "PkgName": "aiohttp",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/aiohttp-3.9.3.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/aiohttp@3.9.3",
+              "UID": "1208bed17e665d25"
+            },
+            "InstalledVersion": "3.9.3",
+            "FixedVersion": "3.9.4",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-30251",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "aiohttp: DoS when trying to parse malformed POST requests",
+            "Description": "aiohttp is an asynchronous HTTP client/server framework for asyncio and Python. In affected versions an attacker can send a specially crafted POST (multipart/form-data) request. When the aiohttp server processes it, the server will enter an infinite loop and be unable to process any further requests. An attacker can stop the application from serving requests after sending a single request. This issue has been addressed in version 3.9.4. Users are advised to upgrade. Users unable to upgrade may manually apply a patch to their systems. Please see the linked GHSA for instructions.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-835"
+            ],
+            "VendorSeverity": {
+              "ghsa": 3,
+              "redhat": 3
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 7.5
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 7.5
+              }
+            },
+            "References": [
+              "http://www.openwall.com/lists/oss-security/2024/05/02/4",
+              "https://access.redhat.com/security/cve/CVE-2024-30251",
+              "https://github.com/aio-libs/aiohttp",
+              "https://github.com/aio-libs/aiohttp/commit/7eecdff163ccf029fbb1ddc9de4169d4aaeb6597",
+              "https://github.com/aio-libs/aiohttp/commit/cebe526b9c34dc3a3da9140409db63014bc4cf19",
+              "https://github.com/aio-libs/aiohttp/commit/f21c6f2ca512a026ce7f0f6c6311f62d6a638866",
+              "https://github.com/aio-libs/aiohttp/security/advisories/GHSA-5m98-qgg9-wh84",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-30251",
+              "https://www.cve.org/CVERecord?id=CVE-2024-30251",
+              "https://www.openwall.com/lists/oss-security/2024/05/02/4"
+            ],
+            "PublishedDate": "2024-05-02T14:15:09.627Z",
+            "LastModifiedDate": "2024-05-02T18:00:37.36Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-27306",
+            "PkgName": "aiohttp",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/aiohttp-3.9.3.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/aiohttp@3.9.3",
+              "UID": "1208bed17e665d25"
+            },
+            "InstalledVersion": "3.9.3",
+            "FixedVersion": "3.9.4",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-27306",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "aiohttp: XSS on index pages for static file handling",
+            "Description": "aiohttp is an asynchronous HTTP client/server framework for asyncio and Python. A XSS vulnerability exists on index pages for static file handling. This vulnerability is fixed in 3.9.4. We have always recommended using a reverse proxy server (e.g. nginx) for serving static files. Users following the recommendation are unaffected. Other users can disable `show_index` if unable to upgrade.",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-79",
+              "CWE-80"
+            ],
+            "VendorSeverity": {
+              "ghsa": 2,
+              "redhat": 2
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+                "V3Score": 6.1
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+                "V3Score": 6.1
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-27306",
+              "https://github.com/aio-libs/aiohttp",
+              "https://github.com/aio-libs/aiohttp/commit/28335525d1eac015a7e7584137678cbb6ff19397",
+              "https://github.com/aio-libs/aiohttp/pull/8319",
+              "https://github.com/aio-libs/aiohttp/pull/8319/files",
+              "https://github.com/aio-libs/aiohttp/security/advisories/GHSA-7gpw-8wmc-pm8g",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/2EXRGTN2WG7VZLUZ7WOXU5GQJKCPPHKP",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/2EXRGTN2WG7VZLUZ7WOXU5GQJKCPPHKP/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/NWEI6NIHZ3G7DURDZVMRK7ZEFC2BTD3U",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/NWEI6NIHZ3G7DURDZVMRK7ZEFC2BTD3U/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZIVBMPEY7WWOFMC3CWXFBRQPFECV4SW3",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZIVBMPEY7WWOFMC3CWXFBRQPFECV4SW3/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-27306",
+              "https://www.cve.org/CVERecord?id=CVE-2024-27306"
+            ],
+            "PublishedDate": "2024-04-18T15:15:29.05Z",
+            "LastModifiedDate": "2024-05-02T03:15:14.943Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-3651",
+            "PkgName": "idna",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/idna-3.6.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/idna@3.6",
+              "UID": "7d26b89b840ee016"
+            },
+            "InstalledVersion": "3.6",
+            "FixedVersion": "3.7",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-3651",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "python-idna: potential DoS via resource consumption via specially crafted inputs to idna.encode()",
+            "Description": "A flaw was found in the python-idna library. A malicious argument was sent to the idna.encode() function can trigger an uncontrolled resource consumption, resulting in a denial of service.",
+            "Severity": "MEDIUM",
+            "VendorSeverity": {
+              "ghsa": 2,
+              "redhat": 2
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 6.2
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 6.5
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-3651",
+              "https://github.com/kjd/idna",
+              "https://github.com/kjd/idna/security/advisories/GHSA-jjg7-2v4v-x38h",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-3651",
+              "https://www.cve.org/CVERecord?id=CVE-2024-3651"
+            ]
+          },
+          {
+            "VulnerabilityID": "CVE-2024-1455",
+            "PkgName": "langchain-core",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/langchain_core-0.1.23.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/langchain-core@0.1.23",
+              "UID": "9983b1c62cc71b3a"
+            },
+            "InstalledVersion": "0.1.23",
+            "FixedVersion": "0.1.35",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-1455",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "LangChain's XMLOutputParser vulnerable to XML Entity Expansion",
+            "Description": "A vulnerability in the langchain-ai/langchain repository allows for a Billion Laughs Attack, a type of XML External Entity (XXE) exploitation. By nesting multiple layers of entities within an XML document, an attacker can cause the XML parser to consume excessive CPU and memory resources, leading to a denial of service (DoS). ",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-776"
+            ],
+            "VendorSeverity": {
+              "ghsa": 2
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 5.9
+              }
+            },
+            "References": [
+              "https://github.com/langchain-ai/langchain",
+              "https://github.com/langchain-ai/langchain/commit/727d5023ce88e18e3074ef620a98137d26ff92a3",
+              "https://github.com/langchain-ai/langchain/pull/17250",
+              "https://github.com/langchain-ai/langchain/pull/19653",
+              "https://github.com/langchain-ai/langchain/pull/19660",
+              "https://huntr.com/bounties/4353571f-c70d-4bfd-ac08-3a89cecb45b6",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-1455"
+            ],
+            "PublishedDate": "2024-03-26T14:15:08.45Z",
+            "LastModifiedDate": "2024-04-16T12:15:09.23Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-28088",
+            "PkgName": "langchain-core",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/langchain_core-0.1.23.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/langchain-core@0.1.23",
+              "UID": "9983b1c62cc71b3a"
+            },
+            "InstalledVersion": "0.1.23",
+            "FixedVersion": "0.1.30",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-28088",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "LangChain directory traversal vulnerability",
+            "Description": "LangChain through 0.1.10 allows ../ directory traversal by an actor who is able to control the final part of the path parameter in a load_chain call. This bypasses the intended behavior of loading configurations only from the hwchase17/langchain-hub GitHub repository. The outcome can be disclosure of an API key for a large language model online service, or remote code execution. (A patch is available as of release 0.1.29 of langchain-core.)",
+            "Severity": "LOW",
+            "VendorSeverity": {
+              "ghsa": 1
+            },
+            "References": [
+              "https://github.com/PinkDraconian/PoC-Langchain-RCE/blob/main/README.md",
+              "https://github.com/langchain-ai/langchain",
+              "https://github.com/langchain-ai/langchain/blob/f96dd57501131840b713ed7c2e86cbf1ddc2761f/libs/core/langchain_core/utils/loading.py",
+              "https://github.com/langchain-ai/langchain/commit/e1924b3e93d513ca950c72f8e80e1c133749fba5",
+              "https://github.com/langchain-ai/langchain/pull/18600",
+              "https://github.com/pypa/advisory-database/tree/main/vulns/langchain-core/PYSEC-2024-45.yaml",
+              "https://github.com/pypa/advisory-database/tree/main/vulns/langchain/PYSEC-2024-43.yaml",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-28088"
+            ],
+            "PublishedDate": "2024-03-04T00:15:47.017Z",
+            "LastModifiedDate": "2024-03-13T21:16:00.38Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-4181",
+            "PkgName": "llama-index",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/llama_index-0.9.48.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/llama-index@0.9.48",
+              "UID": "3a37b9424141c7de"
+            },
+            "InstalledVersion": "0.9.48",
+            "FixedVersion": "0.10.13",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-4181",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "RunGptLLM class in LlamaIndex has a command injection",
+            "Description": "A command injection vulnerability exists in the RunGptLLM class of the llama_index library, version 0.9.47, used by the RunGpt framework from JinaAI to connect to Language Learning Models (LLMs). The vulnerability arises from the improper use of the eval function, allowing a malicious or compromised LLM hosting provider to execute arbitrary commands on the client's machine. This issue was fixed in version 0.10.13. The exploitation of this vulnerability could lead to a hosting provider gaining full control over client machines.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-94"
+            ],
+            "VendorSeverity": {
+              "ghsa": 3
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+                "V3Score": 8.8
+              }
+            },
+            "References": [
+              "https://github.com/run-llama/llama_index",
+              "https://github.com/run-llama/llama_index/commit/d73715eaf0642705583e7897c78b9c8dd2d3a7ba",
+              "https://huntr.com/bounties/1a204520-598a-434e-b13d-0d34f2a5ddc1",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-4181"
+            ],
+            "PublishedDate": "2024-05-16T09:15:15.553Z",
+            "LastModifiedDate": "2024-05-16T13:03:05.353Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-27318",
+            "PkgName": "onnx",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/onnx-1.15.0.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/onnx@1.15.0",
+              "UID": "de82b2a11e61ee8e"
+            },
+            "InstalledVersion": "1.15.0",
+            "FixedVersion": "1.16.0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-27318",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "CVE-2024-27318 affecting package pytorch for versions less than 2.0.0-6",
+            "Description": "Versions of the package onnx before and including 1.15.0 are vulnerable to Directory Traversal as the external_data field of the tensor proto can have a path to the file which is outside the model current directory or user-provided directory. The vulnerability occurs as a bypass for the patch added for CVE-2022-25882.\n",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-22"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 3,
+              "ghsa": 3
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+                "V3Score": 7.5
+              }
+            },
+            "References": [
+              "https://github.com/onnx/onnx",
+              "https://github.com/onnx/onnx/commit/66b7fb630903fdcf3e83b6b6d56d82e904264a20",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/FGTBH5ZYL2LGYHIJDHN2MAUURIR5E7PY",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/FGTBH5ZYL2LGYHIJDHN2MAUURIR5E7PY/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/TFJJID2IZDOLFDMWVYTBDI75ZJQC6JOL",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/TFJJID2IZDOLFDMWVYTBDI75ZJQC6JOL/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-27318",
+              "https://security.snyk.io/vuln/SNYK-PYTHON-ONNX-2395479"
+            ],
+            "PublishedDate": "2024-02-23T18:15:50.767Z",
+            "LastModifiedDate": "2024-03-30T02:15:08.007Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-27319",
+            "PkgName": "onnx",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/onnx-1.15.0.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/onnx@1.15.0",
+              "UID": "de82b2a11e61ee8e"
+            },
+            "InstalledVersion": "1.15.0",
+            "FixedVersion": "1.16.0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-27319",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "CVE-2024-27319 affecting package pytorch for versions less than 2.0.0-4",
+            "Description": "Versions of the package onnx before and including 1.15.0 are vulnerable to Out-of-bounds Read as the ONNX_ASSERT and ONNX_ASSERTM functions have an off by one string copy.\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-125"
+            ],
+            "VendorSeverity": {
+              "cbl-mariner": 2,
+              "ghsa": 2
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:L",
+                "V3Score": 4.4
+              }
+            },
+            "References": [
+              "https://github.com/onnx/onnx",
+              "https://github.com/onnx/onnx/commit/08a399ba75a805b7813ab8936b91d0e274b08287",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/FGTBH5ZYL2LGYHIJDHN2MAUURIR5E7PY",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/FGTBH5ZYL2LGYHIJDHN2MAUURIR5E7PY/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/TFJJID2IZDOLFDMWVYTBDI75ZJQC6JOL",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/TFJJID2IZDOLFDMWVYTBDI75ZJQC6JOL/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-27319"
+            ],
+            "PublishedDate": "2024-02-23T18:15:50.96Z",
+            "LastModifiedDate": "2024-03-30T02:15:08.09Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-28219",
+            "PkgName": "pillow",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/pillow-10.2.0.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/pillow@10.2.0",
+              "UID": "6b7edbbc72e6089b"
+            },
+            "InstalledVersion": "10.2.0",
+            "FixedVersion": "10.3.0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-28219",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "python-pillow: buffer overflow in _imagingcms.c",
+            "Description": "In _imagingcms.c in Pillow before 10.3.0, a buffer overflow exists because strcpy is used instead of strncpy.",
+            "Severity": "MEDIUM",
+            "VendorSeverity": {
+              "ghsa": 2,
+              "redhat": 2,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:H/I:H/A:H",
+                "V3Score": 6.7
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:H",
+                "V3Score": 6.5
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-28219",
+              "https://github.com/python-pillow/Pillow",
+              "https://github.com/python-pillow/Pillow/commit/2a93aba5cfcf6e241ab4f9392c13e3b74032c061",
+              "https://lists.debian.org/debian-lts-announce/2024/04/msg00008.html",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/4XLPUT3VK4GQ6EVY525TT2QNUIXNRU5M",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/4XLPUT3VK4GQ6EVY525TT2QNUIXNRU5M/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-28219",
+              "https://pillow.readthedocs.io/en/stable/releasenotes/10.3.0.html#security",
+              "https://ubuntu.com/security/notices/USN-6744-1",
+              "https://ubuntu.com/security/notices/USN-6744-2",
+              "https://ubuntu.com/security/notices/USN-6744-3",
+              "https://www.cve.org/CVERecord?id=CVE-2024-28219"
+            ],
+            "PublishedDate": "2024-04-03T03:15:09.71Z",
+            "LastModifiedDate": "2024-04-10T22:15:07.193Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2023-5752",
+            "PkgName": "pip",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/pip-23.2.1.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/pip@23.2.1",
+              "UID": "7d5809b8007c4e23"
+            },
+            "InstalledVersion": "23.2.1",
+            "FixedVersion": "23.3",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-5752",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "pip: Mercurial configuration injectable in repo revision when installing via pip",
+            "Description": "When installing a package from a Mercurial VCS URL  (ie \"pip install \nhg+...\") with pip prior to v23.3, the specified Mercurial revision could\n be used to inject arbitrary configuration options to the \"hg clone\" \ncall (ie \"--config\"). Controlling the Mercurial configuration can modify\n how and which repository is installed. This vulnerability does not \naffect users who aren't installing from Mercurial.\n",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-77"
+            ],
+            "VendorSeverity": {
+              "amazon": 2,
+              "bitnami": 1,
+              "ghsa": 2,
+              "nvd": 1,
+              "redhat": 1
+            },
+            "CVSS": {
+              "bitnami": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+                "V3Score": 3.3
+              },
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N",
+                "V3Score": 5.5
+              },
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+                "V3Score": 3.3
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+                "V3Score": 3.3
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2023-5752",
+              "https://github.com/pypa/advisory-database/tree/main/vulns/pip/PYSEC-2023-228.yaml",
+              "https://github.com/pypa/pip",
+              "https://github.com/pypa/pip/commit/389cb799d0da9a840749fcd14878928467ed49b4",
+              "https://github.com/pypa/pip/pull/12306",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/KFC2SPFG5FLCZBYY2K3T5MFW2D22NG6E",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/KFC2SPFG5FLCZBYY2K3T5MFW2D22NG6E/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YBSB3SUPQ3VIFYUMHPO3MEQI4BJAXKCZ",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YBSB3SUPQ3VIFYUMHPO3MEQI4BJAXKCZ/",
+              "https://mail.python.org/archives/list/security-announce@python.org/thread/F4PL35U6X4VVHZ5ILJU3PWUWN7H7LZXL",
+              "https://mail.python.org/archives/list/security-announce@python.org/thread/F4PL35U6X4VVHZ5ILJU3PWUWN7H7LZXL/",
+              "https://nvd.nist.gov/vuln/detail/CVE-2023-5752",
+              "https://www.cve.org/CVERecord?id=CVE-2023-5752"
+            ],
+            "PublishedDate": "2023-10-25T18:17:44.867Z",
+            "LastModifiedDate": "2024-05-03T03:16:26.62Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-35195",
+            "PkgName": "requests",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/requests-2.31.0.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/requests@2.31.0",
+              "UID": "58ae3d720789c60e"
+            },
+            "InstalledVersion": "2.31.0",
+            "FixedVersion": "2.32.0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-35195",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "requests: subsequent requests to the same host ignore cert verification",
+            "Description": "Requests is a HTTP library. Prior to 2.32.0, when making requests through a Requests `Session`, if the first request is made with `verify=False` to disable cert verification, all subsequent requests to the same host will continue to ignore cert verification regardless of changes to the value of `verify`. This behavior will continue for the lifecycle of the connection in the connection pool. This vulnerability is fixed in 2.32.0.",
+            "Severity": "MEDIUM",
+            "CweIDs": [
+              "CWE-670"
+            ],
+            "VendorSeverity": {
+              "ghsa": 2,
+              "redhat": 2,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N",
+                "V3Score": 5.6
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N",
+                "V3Score": 5.6
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-35195",
+              "https://github.com/psf/requests",
+              "https://github.com/psf/requests/commit/a58d7f2ffb4d00b46dca2d70a3932a0b37e22fac",
+              "https://github.com/psf/requests/pull/6655",
+              "https://github.com/psf/requests/security/advisories/GHSA-9wx4-h78v-vm56",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-35195",
+              "https://www.cve.org/CVERecord?id=CVE-2024-35195"
+            ],
+            "PublishedDate": "2024-05-20T21:15:09.99Z",
+            "LastModifiedDate": "2024-05-21T12:37:59.687Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2022-40897",
+            "PkgName": "setuptools",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/setuptools-65.5.0.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/setuptools@65.5.0",
+              "UID": "f38ed5ba4e78b3a"
+            },
+            "InstalledVersion": "65.5.0",
+            "FixedVersion": "65.5.1",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2022-40897",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "pypa-setuptools: Regular Expression Denial of Service (ReDoS) in package_index.py",
+            "Description": "Python Packaging Authority (PyPA) setuptools before 65.5.1 allows remote attackers to cause a denial of service via HTML in a crafted package or custom PackageIndex page. There is a Regular Expression Denial of Service (ReDoS) in package_index.py.",
+            "Severity": "HIGH",
+            "CweIDs": [
+              "CWE-1333"
+            ],
+            "VendorSeverity": {
+              "alma": 2,
+              "amazon": 2,
+              "bitnami": 2,
+              "cbl-mariner": 2,
+              "ghsa": 3,
+              "nvd": 2,
+              "oracle-oval": 3,
+              "photon": 2,
+              "redhat": 2,
+              "rocky": 2,
+              "ubuntu": 2
+            },
+            "CVSS": {
+              "bitnami": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 5.9
+              },
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 7.5
+              },
+              "nvd": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 5.9
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "V3Score": 5.9
+              }
+            },
+            "References": [
+              "https://access.redhat.com/errata/RHSA-2023:0952",
+              "https://access.redhat.com/security/cve/CVE-2022-40897",
+              "https://bugzilla.redhat.com/2158559",
+              "https://bugzilla.redhat.com/show_bug.cgi?id=2158559",
+              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-40897",
+              "https://errata.almalinux.org/9/ALSA-2023-0952.html",
+              "https://errata.rockylinux.org/RLSA-2023:0835",
+              "https://github.com/pypa/setuptools",
+              "https://github.com/pypa/setuptools/blob/fe8a98e696241487ba6ac9f91faa38ade939ec5d/setuptools/package_index.py#L200",
+              "https://github.com/pypa/setuptools/commit/43a9c9bfa6aa626ec2a22540bea28d2ca77964be",
+              "https://github.com/pypa/setuptools/compare/v65.5.0...v65.5.1",
+              "https://github.com/pypa/setuptools/issues/3659",
+              "https://linux.oracle.com/cve/CVE-2022-40897.html",
+              "https://linux.oracle.com/errata/ELSA-2023-12348.html",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ADES3NLOE5QJKBLGNZNI2RGVOSQXA37R/",
+              "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/YNA2BAH2ACBZ4TVJZKFLCR7L23BG5C3H/",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ADES3NLOE5QJKBLGNZNI2RGVOSQXA37R",
+              "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YNA2BAH2ACBZ4TVJZKFLCR7L23BG5C3H",
+              "https://nvd.nist.gov/vuln/detail/CVE-2022-40897",
+              "https://pyup.io/posts/pyup-discovers-redos-vulnerabilities-in-top-python-packages",
+              "https://pyup.io/posts/pyup-discovers-redos-vulnerabilities-in-top-python-packages/",
+              "https://pyup.io/vulnerabilities/CVE-2022-40897/52495",
+              "https://pyup.io/vulnerabilities/CVE-2022-40897/52495/",
+              "https://security.netapp.com/advisory/ntap-20230214-0001",
+              "https://security.netapp.com/advisory/ntap-20230214-0001/",
+              "https://setuptools.pypa.io/en/latest",
+              "https://ubuntu.com/security/notices/USN-5817-1",
+              "https://www.cve.org/CVERecord?id=CVE-2022-40897"
+            ],
+            "PublishedDate": "2022-12-23T00:15:13.987Z",
+            "LastModifiedDate": "2023-11-07T03:52:38.44Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-34062",
+            "PkgName": "tqdm",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/tqdm-4.66.2.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/tqdm@4.66.2",
+              "UID": "7050dcac82e4d156"
+            },
+            "InstalledVersion": "4.66.2",
+            "FixedVersion": "4.66.3",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-34062",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "python-tqdm: non-boolean CLI arguments may lead to local code execution",
+            "Description": "tqdm is an open source progress bar for Python and CLI. Any optional non-boolean CLI arguments (e.g. `--delim`, `--buf-size`, `--manpath`) are passed through python's `eval`, allowing arbitrary code execution. This issue is only locally exploitable and had been addressed in release version 4.66.3. All users are advised to upgrade. There are no known workarounds for this vulnerability.",
+            "Severity": "LOW",
+            "CweIDs": [
+              "CWE-74"
+            ],
+            "VendorSeverity": {
+              "ghsa": 1,
+              "redhat": 2
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+                "V3Score": 3.9
+              },
+              "redhat": {
+                "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:H",
+                "V3Score": 7.3
+              }
+            },
+            "References": [
+              "https://access.redhat.com/security/cve/CVE-2024-34062",
+              "https://github.com/tqdm/tqdm",
+              "https://github.com/tqdm/tqdm/commit/4e613f84ed2ae029559f539464df83fa91feb316",
+              "https://github.com/tqdm/tqdm/security/advisories/GHSA-g7vv-2v7x-gj9p",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-34062",
+              "https://www.cve.org/CVERecord?id=CVE-2024-34062"
+            ],
+            "PublishedDate": "2024-05-03T10:15:08.5Z",
+            "LastModifiedDate": "2024-05-03T12:48:41.067Z"
+          },
+          {
+            "VulnerabilityID": "CVE-2024-3568",
+            "PkgName": "transformers",
+            "PkgPath": "leapfrogai/.venv/lib/python3.11/site-packages/transformers-4.37.2.dist-info/METADATA",
+            "PkgIdentifier": {
+              "PURL": "pkg:pypi/transformers@4.37.2",
+              "UID": "1f08d71f2a43c1c3"
+            },
+            "InstalledVersion": "4.37.2",
+            "FixedVersion": "4.38.0",
+            "Status": "fixed",
+            "Layer": {
+              "Digest": "sha256:3570400c124f5eb2e156d785c12d97dc50ece9b31f25b540afc8334a2f9930b2",
+              "DiffID": "sha256:4a7231a7d74baaafcfb89ca1760fb7c59f3b7e39c5aa0b1a31eba9c780d4653f"
+            },
+            "SeveritySource": "ghsa",
+            "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-3568",
+            "DataSource": {
+              "ID": "ghsa",
+              "Name": "GitHub Security Advisory pip",
+              "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+            },
+            "Title": "Transformers Deserialization of Untrusted Data vulnerability",
+            "Description": "The huggingface/transformers library is vulnerable to arbitrary code execution through deserialization of untrusted data within the `load_repo_checkpoint()` function of the `TFPreTrainedModel()` class. Attackers can execute arbitrary code and commands by crafting a malicious serialized payload, exploiting the use of `pickle.load()` on data from potentially untrusted sources. This vulnerability allows for remote code execution (RCE) by deceiving victims into loading a seemingly harmless checkpoint during a normal training process, thereby enabling attackers to execute arbitrary code on the targeted machine.",
+            "Severity": "LOW",
+            "CweIDs": [
+              "CWE-502"
+            ],
+            "VendorSeverity": {
+              "ghsa": 1
+            },
+            "CVSS": {
+              "ghsa": {
+                "V3Vector": "CVSS:3.0/AV:N/AC:H/PR:N/UI:R/S:C/C:N/I:N/A:L",
+                "V3Score": 3.4
+              }
+            },
+            "References": [
+              "https://github.com/huggingface/transformers",
+              "https://github.com/huggingface/transformers/commit/693667b8ac8138b83f8adb6522ddaf42fa07c125",
+              "https://huntr.com/bounties/b3c36992-5264-4d7f-9906-a996efafba8f",
+              "https://nvd.nist.gov/vuln/detail/CVE-2024-3568"
+            ],
+            "PublishedDate": "2024-04-10T17:15:58.16Z",
+            "LastModifiedDate": "2024-04-10T19:49:51.183Z"
+          }
+        ]
+      }
+    ]
+  }
+  
