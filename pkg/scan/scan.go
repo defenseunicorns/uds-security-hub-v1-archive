@@ -53,11 +53,11 @@ func (s *localScanResult) GetVulnerabilities() []types.VulnerabilityInfo {
 // Each row represents a single vulnerability found in the scanned artifact.
 func (s *localScanResult) GetResultsAsCSV() string {
 	var sb strings.Builder
-	sb.WriteString("ArtifactName,VulnerabilityID,PkgName,InstalledVersion,FixedVersion,Severity,Description\n")
+	sb.WriteString("\"ArtifactName\",\"VulnerabilityID\",\"PkgName\",\"InstalledVersion\",\"FixedVersion\",\"Severity\",\"Description\"\n") //nolint:lll
 
 	vulnerabilities := s.GetVulnerabilities()
 	for _, vuln := range vulnerabilities {
-		sb.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s\n",
+		sb.WriteString(fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
 			s.GetArtifactName(),
 			vuln.VulnerabilityID,
 			vuln.PkgName,
