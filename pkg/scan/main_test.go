@@ -1,6 +1,4 @@
-//go:build e2e
-
-package main
+package scan
 
 import (
 	"context"
@@ -8,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
-	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 )
 
 func TestE2EScanFunctionality(t *testing.T) {
@@ -25,7 +22,7 @@ func TestE2EScanFunctionality(t *testing.T) {
 	tag := "9.8.0-uds.0-upstream"
 
 	// Create the scanner
-	scanner, err := scan.New(ctx, logger, trivyUsername, trivyPassword, ghcrToken)
+	scanner, err := New(ctx, logger, trivyUsername, trivyPassword, ghcrToken)
 	if err != nil {
 		t.Fatalf("Error creating scanner: %v", err)
 	}
