@@ -299,3 +299,188 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 		})
 	}
 }
+
+func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
+	type fields struct {
+		ScanResult types.ScanResult
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "Single Vulnerability",
+			fields: fields{
+				ScanResult: types.ScanResult{
+					Results: []struct {
+						Vulnerabilities []types.VulnerabilityInfo `json:"Vulnerabilities"`
+					}{
+						{
+							Vulnerabilities: []types.VulnerabilityInfo{
+								{
+									VulnerabilityID: "CVE-2021-1234",
+									Description:     "Test vulnerability",
+									Severity:        "HIGH",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: "ArtifactName,VulnerabilityID,PkgName,InstalledVersion,FixedVersion,Severity,Description\n,CVE-2021-1234,,,,HIGH,Test vulnerability\n",
+		},
+		{
+			name: "Multiple Vulnerabilities",
+			fields: fields{
+				ScanResult: types.ScanResult{
+					Results: []struct {
+						Vulnerabilities []types.VulnerabilityInfo `json:"Vulnerabilities"`
+					}{
+						{
+							Vulnerabilities: []types.VulnerabilityInfo{
+								{
+									VulnerabilityID: "CVE-2021-1234",
+									Description:     "Test vulnerability 1",
+									Severity:        "HIGH",
+								},
+								{
+									VulnerabilityID: "CVE-2021-5678",
+									Description:     "Test vulnerability 2",
+									Severity:        "MEDIUM",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: "ArtifactName,VulnerabilityID,PkgName,InstalledVersion,FixedVersion,Severity,Description\n,CVE-2021-1234,,,,HIGH,Test vulnerability 1\n,CVE-2021-5678,,,,MEDIUM,Test vulnerability 2\n",
+		},
+		{
+			name: "No Vulnerabilities",
+			fields: fields{
+				ScanResult: types.ScanResult{
+					Results: []struct {
+						Vulnerabilities []types.VulnerabilityInfo `json:"Vulnerabilities"`
+					}{
+						{
+							Vulnerabilities: []types.VulnerabilityInfo{},
+						},
+					},
+				},
+			},
+			want: "ArtifactName,VulnerabilityID,PkgName,InstalledVersion,FixedVersion,Severity,Description\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &localScanResult{
+				ScanResult: tt.fields.ScanResult,
+			}
+			if got := s.GetResultsAsCSV(); got != tt.want {
+				t.Errorf("GetResultsAsCSV() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_localScanResult_GetVulnerabilities(t *testing.T) {
+	type fields struct {
+		ScanResult types.ScanResult
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   []types.VulnerabilityInfo
+	}{
+		{
+			name: "Single Vulnerability",
+			fields: fields{
+				ScanResult: types.ScanResult{
+					Results: []struct {
+						Vulnerabilities []types.VulnerabilityInfo `json:"Vulnerabilities"`
+					}{
+						{
+							Vulnerabilities: []types.VulnerabilityInfo{
+								{
+									VulnerabilityID: "CVE-2021-1234",
+									Description:     "Test vulnerability",
+									Severity:        "HIGH",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []types.VulnerabilityInfo{
+				{
+					VulnerabilityID: "CVE-2021-1234",
+					Description:     "Test vulnerability",
+					Severity:        "HIGH",
+				},
+			},
+		},
+		{
+			name: "Multiple Vulnerabilities",
+			fields: fields{
+				ScanResult: types.ScanResult{
+					Results: []struct {
+						Vulnerabilities []types.VulnerabilityInfo `json:"Vulnerabilities"`
+					}{
+						{
+							Vulnerabilities: []types.VulnerabilityInfo{
+								{
+									VulnerabilityID: "CVE-2021-1234",
+									Description:     "Test vulnerability 1",
+									Severity:        "HIGH",
+								},
+								{
+									VulnerabilityID: "CVE-2021-5678",
+									Description:     "Test vulnerability 2",
+									Severity:        "MEDIUM",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []types.VulnerabilityInfo{
+				{
+					VulnerabilityID: "CVE-2021-1234",
+					Description:     "Test vulnerability 1",
+					Severity:        "HIGH",
+				},
+				{
+					VulnerabilityID: "CVE-2021-5678",
+					Description:     "Test vulnerability 2",
+					Severity:        "MEDIUM",
+				},
+			},
+		},
+		{
+			name: "No Vulnerabilities",
+			fields: fields{
+				ScanResult: types.ScanResult{
+					Results: []struct {
+						Vulnerabilities []types.VulnerabilityInfo `json:"Vulnerabilities"`
+					}{
+						{
+							Vulnerabilities: []types.VulnerabilityInfo{},
+						},
+					},
+				},
+			},
+			want: []types.VulnerabilityInfo{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &localScanResult{
+				ScanResult: tt.fields.ScanResult,
+			}
+			if got := s.GetVulnerabilities(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetVulnerabilities() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

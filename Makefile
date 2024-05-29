@@ -7,7 +7,7 @@ build: test
 
 # Run tests
 test:
-	go test ./... -v -coverprofile=unit-tes-coverage.out
+	go test ./... -v -coverprofile=unit-test-coverage.out
 
 # Lint the code
 lint:
