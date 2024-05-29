@@ -30,7 +30,7 @@ jobs:
           sudo apt-get install trivy -y
 
     - name: E2E Tests
-      run: make e2e
+      run: make test
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4.0.1

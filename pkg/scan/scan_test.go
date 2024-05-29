@@ -304,7 +304,7 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 	type fields struct {
 		ScanResult types.ScanResult
 	}
-	tests := []struct {
+	tests := []struct { //nolint:govet
 		name   string
 		fields fields
 		want   string
