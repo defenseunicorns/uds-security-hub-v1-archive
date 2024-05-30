@@ -23,8 +23,3 @@ updates:
       # These actions directly influence the build process and are excluded from grouped updates
       exclude-patterns:
         - "actions/setup-go"
-
-- package-ecosystem: gomod
-  directory: /
-  schedule:
-    interval: daily
