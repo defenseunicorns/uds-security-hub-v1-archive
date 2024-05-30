@@ -5,6 +5,7 @@
 [![golangci-lint](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/lint.yaml/badge.svg)](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/lint.yaml)
 [![Build and Test](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/build.yaml/badge.svg)](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/build.yaml)
 [![E2E Tests](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/test.yaml/badge.svg)](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/test.yaml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/defenseunicorns/uds-security-hub/badge)](https://scorecard.dev/viewer/?uri=github.com/defenseunicorns/uds-security-hub)
 
 _This is ALPHA and expect things to change._
 
