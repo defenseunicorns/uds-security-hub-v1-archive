@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -42,6 +41,7 @@ func main() {
 	rootCmd.PersistentFlags().StringP("org", "o", "", "Organization")
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag")
+	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for CSV results")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -56,6 +56,7 @@ func runScanner(cmd *cobra.Command, args []string) {
 	org, _ := cmd.Flags().GetString("org")                      //nolint:errcheck
 	packageName, _ := cmd.Flags().GetString("package-name")     //nolint:errcheck
 	tag, _ := cmd.Flags().GetString("tag")                      //nolint:errcheck
+	outputFile, _ := cmd.Flags().GetString("output-file")       //nolint:errcheck
 
 	scanner, err := scan.New(context.Background(), logger, trivyUsername, trivyPassword, ghcrToken)
 	if err != nil {
@@ -67,19 +68,23 @@ func runScanner(cmd *cobra.Command, args []string) {
 	}
 
 	var combinedCSV string
-	for i, v := range results {
+	for _, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
-			logger.Error("Error scanning: %v", err)
-			continue
+			logger.Fatalf("Error scanning: %v", err)
 		}
 
 		csv := r.GetResultsAsCSV()
-		if i == 0 {
-			combinedCSV = csv
-		} else {
-			combinedCSV += "\n" + csv[strings.Index(csv, "\n")+1:]
-		}
+		combinedCSV += csv
 	}
-	logger.Info(combinedCSV)
+
+	if outputFile != "" {
+		err := os.WriteFile(outputFile, []byte(combinedCSV), 0o600)
+		if err != nil {
+			logger.Fatalf("Error writing to file: %v", err)
+		}
+		logger.Info("Results written to %s", outputFile)
+	} else {
+		logger.Info(combinedCSV)
+	}
 }
