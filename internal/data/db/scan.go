@@ -27,6 +27,7 @@ type GormScanManager struct {
 	db *gorm.DB
 }
 
+// NewGormScanManager creates a new GormScanManager.
 func NewGormScanManager(db *gorm.DB) (*GormScanManager, error) {
 	if db == nil {
 		return nil, fmt.Errorf("db cannot be nil")

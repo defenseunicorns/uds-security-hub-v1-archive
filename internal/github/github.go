@@ -13,6 +13,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
+// PackageVersion is a struct that represents the package version.
 type PackageVersion struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
@@ -29,6 +30,7 @@ type PackageVersion struct {
 	ID int `json:"id"`
 }
 
+// VersionTagDate is a struct that represents the version tag date.
 type VersionTagDate struct {
 	Date time.Time `json:"date"`
 	Tags []string  `json:"tags"`

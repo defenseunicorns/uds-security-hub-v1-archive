@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestGenerateConfigText tests the GenerateConfigText function.
 func TestGenerateConfigText(t *testing.T) {
 	type args struct {
 		credentialsMap map[string]RegistryCredentials
@@ -69,6 +70,7 @@ func TestGenerateConfigText(t *testing.T) {
 	}
 }
 
+// TestWriteConfigToTempDir tests the WriteConfigToTempDir function.
 func TestWriteConfigToTempDir(t *testing.T) {
 	type args struct {
 		configText string
