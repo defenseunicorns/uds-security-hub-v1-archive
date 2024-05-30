@@ -21,7 +21,7 @@ func main() {
 		Short: "Scan is a tool for scanning packages",
 		Run:   runScanner,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			requiredFlags := []string{"ghcr-token", "org", "package-name", "tag"}
+			requiredFlags := []string{"org", "package-name", "tag"}
 			for _, flag := range requiredFlags {
 				value, err := cmd.Flags().GetString(flag)
 				if err != nil {
@@ -35,9 +35,11 @@ func main() {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringP("trivy-username", "u", "", "Username for Trivy")
-	rootCmd.PersistentFlags().StringP("trivy-password", "p", "", "Password for Trivy")
-	rootCmd.PersistentFlags().StringP("ghcr-token", "t", "", "Token for GHCR")
+	rootCmd.PersistentFlags().StringP("docker-username", "u", "",
+		"Optional: Docker username for registry access, accepts CSV values")
+	rootCmd.PersistentFlags().StringP("docker-password", "p", "",
+		"Optional: Docker password for registry access, accepts CSV values")
+	rootCmd.PersistentFlags().StringP("ghcr-token", "t", "", "Optional: Token for GHCR")
 	rootCmd.PersistentFlags().StringP("org", "o", "", "Organization")
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag")
@@ -50,15 +52,15 @@ func main() {
 
 func runScanner(cmd *cobra.Command, args []string) {
 	logger := log.NewLogger(context.Background())
-	trivyUsername, _ := cmd.Flags().GetString("trivy-username") //nolint:errcheck
-	trivyPassword, _ := cmd.Flags().GetString("trivy-password") //nolint:errcheck
-	ghcrToken, _ := cmd.Flags().GetString("ghcr-token")         //nolint:errcheck
-	org, _ := cmd.Flags().GetString("org")                      //nolint:errcheck
-	packageName, _ := cmd.Flags().GetString("package-name")     //nolint:errcheck
-	tag, _ := cmd.Flags().GetString("tag")                      //nolint:errcheck
-	outputFile, _ := cmd.Flags().GetString("output-file")       //nolint:errcheck
+	dockerUsername, _ := cmd.Flags().GetString("docker-username") //nolint:errcheck
+	dockerPassword, _ := cmd.Flags().GetString("docker-password") //nolint:errcheck
+	ghcrToken, _ := cmd.Flags().GetString("ghcr-token")           //nolint:errcheck
+	org, _ := cmd.Flags().GetString("org")                        //nolint:errcheck
+	packageName, _ := cmd.Flags().GetString("package-name")       //nolint:errcheck
+	tag, _ := cmd.Flags().GetString("tag")                        //nolint:errcheck
+	outputFile, _ := cmd.Flags().GetString("output-file")         //nolint:errcheck
 
-	scanner, err := scan.New(context.Background(), logger, trivyUsername, trivyPassword, ghcrToken)
+	scanner, err := scan.New(context.Background(), logger, dockerUsername, dockerPassword, ghcrToken)
 	if err != nil {
 		logger.Fatalf("Error creating scanner: %v", err)
 	}

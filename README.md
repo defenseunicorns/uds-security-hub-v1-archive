@@ -1,4 +1,3 @@
-
 # UDS Security Hub - Scan Package
 [![codecov](https://codecov.io/gh/defenseunicorns/uds-security-hub/graph/badge.svg?token=WEEJUGX5VA)](https://codecov.io/gh/defenseunicorns/uds-security-hub)
 [![Go Report Card](https://goreportcard.com/badge/github.com/defenseunicorns/uds-security-hub)](https://goreportcard.com/report/github.com/defenseunicorns/uds-security-hub)
@@ -30,7 +29,7 @@ The main entry point is the `Scanner` struct, which provides the following metho
 Here's an example of how to use the `ScanZarfPackage` method:
 
 ```go
-scanner, err := scan.New(context.Background(), logger, "trivyUsername", "trivyPassword", "ghcrToken") // username and password to connect to example registry1
+scanner, err := scan.New(context.Background(), logger, "dockerUsername", "dockerPassword", "ghcrToken") // Optional credentials for Docker registry access
 if err != nil {
     // Handle error
 }
