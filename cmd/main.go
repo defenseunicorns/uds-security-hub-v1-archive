@@ -12,9 +12,13 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 )
 
+// errFlagRetrieval is the error message for when a flag cannot be retrieved.
 var errFlagRetrieval = errors.New("error getting flag")
+
+// errRequiredFlagEmpty is the error message for a required flag that is empty.
 var errRequiredFlagEmpty = errors.New("is required and cannot be empty")
 
+// main is the main entry point for the scanner.
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "scan",
@@ -50,6 +54,7 @@ func main() {
 	}
 }
 
+// runScanner is the main entry point for the scanner.
 func runScanner(cmd *cobra.Command, args []string) {
 	logger := log.NewLogger(context.Background())
 	dockerUsername, _ := cmd.Flags().GetString("docker-username") //nolint:errcheck

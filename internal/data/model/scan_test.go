@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// TestScanModel tests the Scan model.
 func TestScanModel(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 	if err != nil {

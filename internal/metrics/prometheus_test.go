@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
+// TestRegisterCounter tests the RegisterCounter method of the Collector.
 func TestRegisterCounter(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")
@@ -40,6 +41,7 @@ func TestRegisterCounter(t *testing.T) {
 	}
 }
 
+// TestRegisterHistogram tests the RegisterHistogram method of the Collector.
 func TestRegisterHistogram(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")
@@ -55,6 +57,7 @@ func TestRegisterHistogram(t *testing.T) {
 	}
 }
 
+// TestRegisterGauge tests the RegisterGauge method of the Collector.
 func TestRegisterGauge(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")
@@ -79,6 +82,7 @@ func TestRegisterGauge(t *testing.T) {
 	}
 }
 
+// TestMetricsHandler tests the MetricsHandler method of the Collector.
 func TestMetricsHandler(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")
@@ -98,6 +102,7 @@ func TestMetricsHandler(t *testing.T) {
 	}
 }
 
+// TestNonExistingCounter tests the AddCounter method of the Collector.
 func TestNonExistingCounter(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")

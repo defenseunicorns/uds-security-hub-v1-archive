@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 )
 
+// ImageBuildTime retrieves the build time of an OCI image.
 func ImageBuildTime(imageRef string) (*time.Time, error) {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// TestRealCommandExecutor_ExecuteCommand tests the ExecuteCommand method of the RealCommandExecutor.
 func TestRealCommandExecutor_ExecuteCommand(t *testing.T) {
 	type fields struct {
 		ctx context.Context

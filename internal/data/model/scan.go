@@ -103,6 +103,7 @@ func (e ExposedPorts) Value() (driver.Value, error) {
 	return val, nil
 }
 
+// Scan implements the sql.Scanner interface for database deserialization.
 func (e *ExposedPorts) Scan(value interface{}) error {
 	bytes, ok := value.([]byte)
 	if !ok {
@@ -114,6 +115,7 @@ func (e *ExposedPorts) Scan(value interface{}) error {
 	return nil
 }
 
+// History represents the history of the image.
 type History struct {
 	Author     string `json:"author,omitempty"`
 	Created    string `json:"created"`
@@ -122,6 +124,7 @@ type History struct {
 	EmptyLayer bool   `json:"empty_layer,omitempty"`
 }
 
+// Value implements the driver.Valuer interface for database serialization.
 func (h History) Value() (driver.Value, error) {
 	b, err := json.Marshal(h)
 	if err != nil {
@@ -130,6 +133,7 @@ func (h History) Value() (driver.Value, error) {
 	return string(b), nil
 }
 
+// Scan implements the sql.Scanner interface for database deserialization.
 func (h *History) Scan(value interface{}) error {
 	b, ok := value.(string)
 	if !ok {
