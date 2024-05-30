@@ -53,11 +53,11 @@ func (s *localScanResult) GetVulnerabilities() []types.VulnerabilityInfo {
 // Each row represents a single vulnerability found in the scanned artifact.
 func (s *localScanResult) GetResultsAsCSV() string {
 	var sb strings.Builder
-	sb.WriteString("ArtifactName,VulnerabilityID,PkgName,InstalledVersion,FixedVersion,Severity,Description\n")
+	sb.WriteString("\"ArtifactName\",\"VulnerabilityID\",\"PkgName\",\"InstalledVersion\",\"FixedVersion\",\"Severity\",\"Description\"\n") //nolint:lll
 
 	vulnerabilities := s.GetVulnerabilities()
 	for _, vuln := range vulnerabilities {
-		sb.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s\n",
+		sb.WriteString(fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
 			s.GetArtifactName(),
 			vuln.VulnerabilityID,
 			vuln.PkgName,
@@ -72,13 +72,13 @@ func (s *localScanResult) GetResultsAsCSV() string {
 // New creates a new Scanner.
 func New(ctx context.Context, logger types.Logger, trivyUsername, trivyPassword, ghcrToken string) (*Scanner, error) {
 	if trivyUsername == "" {
-		return nil, fmt.Errorf("trivyUsername cannot be empty") //nolint: err113
+		return nil, fmt.Errorf("trivyUsername cannot be empty")
 	}
 	if trivyPassword == "" {
-		return nil, fmt.Errorf("trivyPassword cannot be empty") //nolint: err113
+		return nil, fmt.Errorf("trivyPassword cannot be empty")
 	}
 	if ghcrToken == "" {
-		return nil, fmt.Errorf("ghcrToken cannot be empty") //nolint: err113
+		return nil, fmt.Errorf("ghcrToken cannot be empty")
 	}
 	return &Scanner{
 		logger:          logger,
@@ -100,7 +100,7 @@ func New(ctx context.Context, logger types.Logger, trivyUsername, trivyPassword,
 //   - error: An error if the file cannot be opened or the JSON cannot be decoded.
 func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader, error) {
 	if jsonFilePath == "" {
-		return nil, fmt.Errorf("jsonFilePath cannot be empty") //nolint: err113
+		return nil, fmt.Errorf("jsonFilePath cannot be empty")
 	}
 
 	file, err := os.Open(jsonFilePath)
@@ -130,13 +130,13 @@ func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader,
 //   - error: An error if the scan operation fails.
 func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]string, error) {
 	if org == "" {
-		return nil, fmt.Errorf("org cannot be empty") //nolint: err113
+		return nil, fmt.Errorf("org cannot be empty")
 	}
 	if packageName == "" {
-		return nil, fmt.Errorf("packageName cannot be empty") //nolint: err113
+		return nil, fmt.Errorf("packageName cannot be empty")
 	}
 	if tag == "" {
-		return nil, fmt.Errorf("tag cannot be empty") //nolint: err113
+		return nil, fmt.Errorf("tag cannot be empty")
 	}
 
 	commandExecutor := executor.NewCommandExecutor(s.ctx)
@@ -348,7 +348,7 @@ func (s *Scanner) scanWithTrivy(imageRef, userName, password string,
 //   - error: An error if the operation fails.
 func (s *Scanner) extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]string, error) {
 	if layer == nil {
-		return nil, fmt.Errorf("layer cannot be nil") //nolint: err113
+		return nil, fmt.Errorf("layer cannot be nil")
 	}
 
 	layerReader, err := writeLayerToTempFile(ctx, layer)
@@ -429,7 +429,7 @@ func readTagsFromLayerFile(_ context.Context, r io.Reader) ([]string, error) {
 //   - error: An error if any issues occur during the writing process.
 func writeLayerToTempFile(_ context.Context, layer v1.Layer) (io.ReadCloser, error) {
 	if layer == nil {
-		return nil, fmt.Errorf("layer cannot be nil") //nolint: err113
+		return nil, fmt.Errorf("layer cannot be nil")
 	}
 
 	// Create a temporary file with a prefix of "layer-" and a suffix of ".tar"

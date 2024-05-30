@@ -4,10 +4,13 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/csv"
 	"io"
 	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	version "github.com/google/go-containerregistry/pkg/v1/types"
 
@@ -304,10 +307,10 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 	type fields struct {
 		ScanResult types.ScanResult
 	}
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name   string
 		fields fields
-		want   string
+		want   [][]string
 	}{
 		{
 			name: "Single Vulnerability",
@@ -328,7 +331,10 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 					},
 				},
 			},
-			want: "ArtifactName,VulnerabilityID,PkgName,InstalledVersion,FixedVersion,Severity,Description\n,CVE-2021-1234,,,,HIGH,Test vulnerability\n",
+			want: [][]string{
+				{"ArtifactName", "VulnerabilityID", "PkgName", "InstalledVersion", "FixedVersion", "Severity", "Description"},
+				{"", "CVE-2021-1234", "", "", "", "HIGH", "Test vulnerability"},
+			},
 		},
 		{
 			name: "Multiple Vulnerabilities",
@@ -354,7 +360,11 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 					},
 				},
 			},
-			want: "ArtifactName,VulnerabilityID,PkgName,InstalledVersion,FixedVersion,Severity,Description\n,CVE-2021-1234,,,,HIGH,Test vulnerability 1\n,CVE-2021-5678,,,,MEDIUM,Test vulnerability 2\n",
+			want: [][]string{
+				{"ArtifactName", "VulnerabilityID", "PkgName", "InstalledVersion", "FixedVersion", "Severity", "Description"},
+				{"", "CVE-2021-1234", "", "", "", "HIGH", "Test vulnerability 1"},
+				{"", "CVE-2021-5678", "", "", "", "MEDIUM", "Test vulnerability 2"},
+			},
 		},
 		{
 			name: "No Vulnerabilities",
@@ -369,7 +379,9 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 					},
 				},
 			},
-			want: "ArtifactName,VulnerabilityID,PkgName,InstalledVersion,FixedVersion,Severity,Description\n",
+			want: [][]string{
+				{"ArtifactName", "VulnerabilityID", "PkgName", "InstalledVersion", "FixedVersion", "Severity", "Description"},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -377,8 +389,14 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 			s := &localScanResult{
 				ScanResult: tt.fields.ScanResult,
 			}
-			if got := s.GetResultsAsCSV(); got != tt.want {
-				t.Errorf("GetResultsAsCSV() = %v, want %v", got, tt.want)
+			got := s.GetResultsAsCSV()
+			r := csv.NewReader(strings.NewReader(got))
+			records, err := r.ReadAll()
+			if err != nil {
+				t.Fatalf("Failed to parse CSV: %v", err)
+			}
+			if diff := cmp.Diff(records, tt.want); diff != "" {
+				t.Errorf("GetResultsAsCSV() mismatch (-got +want):\n%s", diff)
 			}
 		})
 	}
