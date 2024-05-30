@@ -225,8 +225,8 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 		commandExecutor types.CommandExecutor
 		logger          types.Logger
 		ctx             context.Context
-		trivyUsername   string
-		trivyPassword   string
+		dockerUsername  string
+		dockerPassword  string
 		ghrcToken       string
 	}
 	type args struct { //nolint:govet
@@ -248,8 +248,8 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 				ctx:             context.Background(),
 				commandExecutor: &MockCommandExecutor{output: "scan result", err: nil},
 				logger:          nil,
-				trivyUsername:   "trivyUsername",
-				trivyPassword:   "trivyPassword",
+				dockerUsername:  "dockerUsername",
+				dockerPassword:  "dockerPassword",
 				ghrcToken:       "ghcrToken",
 			},
 			args: args{
@@ -267,8 +267,8 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 				ctx:             context.Background(),
 				commandExecutor: &MockCommandExecutor{output: "", err: io.ErrUnexpectedEOF},
 				logger:          nil,
-				trivyUsername:   "trivyUsername",
-				trivyPassword:   "trivyPassword",
+				dockerUsername:  "dockerUsername",
+				dockerPassword:  "dockerPassword",
 				ghrcToken:       "ghcrToken",
 			},
 			args: args{
@@ -287,8 +287,8 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 				ctx:             tt.fields.ctx,
 				commandExecutor: tt.fields.commandExecutor,
 				logger:          tt.fields.logger,
-				trivyUsername:   tt.fields.trivyUsername,
-				trivyPassword:   tt.fields.trivyPassword,
+				dockerUsername:  tt.fields.dockerUsername,
+				dockerPassword:  tt.fields.dockerPassword,
 				ghrcToken:       tt.fields.ghrcToken,
 			}
 			got, err := s.scanWithTrivy(tt.args.imageRef, tt.args.userName, tt.args.password, tt.args.commandExecutor)

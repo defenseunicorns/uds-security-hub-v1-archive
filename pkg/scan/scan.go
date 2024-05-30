@@ -32,8 +32,8 @@ type Scanner struct {
 	logger          types.Logger
 	ctx             context.Context
 	commandExecutor types.CommandExecutor
-	trivyUsername   string
-	trivyPassword   string
+	dockerUsername  string
+	dockerPassword  string
 	ghrcToken       string
 }
 
@@ -70,12 +70,12 @@ func (s *localScanResult) GetResultsAsCSV() string {
 }
 
 // New creates a new Scanner.
-func New(ctx context.Context, logger types.Logger, trivyUsername, trivyPassword, ghcrToken string) (*Scanner, error) {
-	if trivyUsername == "" {
-		return nil, fmt.Errorf("trivyUsername cannot be empty")
+func New(ctx context.Context, logger types.Logger, dockerUsername, dockerPassword, ghcrToken string) (*Scanner, error) {
+	if dockerUsername == "" {
+		return nil, fmt.Errorf("dockerUsername cannot be empty")
 	}
-	if trivyPassword == "" {
-		return nil, fmt.Errorf("trivyPassword cannot be empty")
+	if dockerPassword == "" {
+		return nil, fmt.Errorf("dockerPassword cannot be empty")
 	}
 	if ghcrToken == "" {
 		return nil, fmt.Errorf("ghcrToken cannot be empty")
@@ -83,8 +83,8 @@ func New(ctx context.Context, logger types.Logger, trivyUsername, trivyPassword,
 	return &Scanner{
 		logger:          logger,
 		commandExecutor: executor.NewCommandExecutor(ctx),
-		trivyUsername:   trivyUsername,
-		trivyPassword:   trivyPassword,
+		dockerUsername:  dockerUsername,
+		dockerPassword:  dockerPassword,
 		ghrcToken:       ghcrToken,
 	}, nil
 }
@@ -142,7 +142,7 @@ func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]string, error
 	commandExecutor := executor.NewCommandExecutor(s.ctx)
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", org, packageName, tag)
 
-	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.trivyUsername, s.trivyPassword, commandExecutor)
+	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerUsername, s.dockerPassword, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
 	}

@@ -154,3 +154,10 @@ linters-settings:
     # `//nolint` should mention specific linter such as `//nolint:my-linter`
     # Overly broad directives can hide unrelated issues
     require-specific: true
+  godot:
+    # Check top-level declaration comments by default
+    scope: declarations
+    # Ensure periods at the end of sentences
+    period: true
+    # Optionally, ensure that the first letter of each sentence is capitalized
+    capital: false

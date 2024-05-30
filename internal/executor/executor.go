@@ -8,6 +8,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
+// RealCommandExecutor is a struct that implements the CommandExecutor interface.
 type RealCommandExecutor struct {
 	ctx context.Context
 }
@@ -26,6 +27,7 @@ func (r *RealCommandExecutor) ExecuteCommand(name string, args []string,
 	return outb.String(), errb.String(), err
 }
 
+// NewCommandExecutor creates a new instance of the RealCommandExecutor.
 func NewCommandExecutor(ctx context.Context) types.CommandExecutor {
 	return &RealCommandExecutor{ctx: ctx}
 }

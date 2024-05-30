@@ -12,11 +12,13 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
+// MockHTTPClient is a struct that implements the HTTPClientInterface.
 type MockHTTPClient struct {
 	mockResp   string
 	mockStatus int
 }
 
+// Do is a mock implementation of the Do method.
 func (m *MockHTTPClient) Do(_ *http.Request) (*http.Response, error) {
 	resp := &http.Response{
 		StatusCode: m.mockStatus,
@@ -25,6 +27,7 @@ func (m *MockHTTPClient) Do(_ *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
+// NewMockHTTPClient creates a new instance of the MockHTTPClient.
 func NewMockHTTPClient(mockStatus int, mockResp string) types.HTTPClientInterface {
 	return &MockHTTPClient{
 		mockResp:   mockResp,
@@ -32,6 +35,7 @@ func NewMockHTTPClient(mockStatus int, mockResp string) types.HTTPClientInterfac
 	}
 }
 
+// TestGetPackageVersions tests the GetPackageVersions function.
 func TestGetPackageVersions(t *testing.T) {
 	type args struct {
 		ctx         context.Context

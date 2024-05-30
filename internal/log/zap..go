@@ -8,12 +8,15 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
+// zapLogger is a struct that implements the Logger interface.
 type zapLogger struct {
 	logger *zap.Logger
 }
 
+// contextKey is the key used to store the logger in the context.
 type contextKey string
 
+// loggerKey is the key used to store the logger in the context.
 const loggerKey contextKey = "logger"
 
 // NewLogger returns a new logger instance.

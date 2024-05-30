@@ -6,6 +6,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 )
 
+// ScanResult is a struct that represents the scan result.
 type ScanResult struct {
 	Metadata     model.Metadata `json:"Metadata"`
 	CreatedAt    time.Time      `json:"CreatedAt"`
@@ -19,6 +20,8 @@ type ScanResult struct {
 	} `json:"Results"`
 	SchemaVersion int `json:"SchemaVersion"`
 }
+
+// ScanDTO is a struct that represents the scan data transfer object.
 type ScanDTO struct {
 	Metadata        model.Metadata
 	CreatedAt       time.Time
@@ -28,6 +31,7 @@ type ScanDTO struct {
 	SchemaVersion   int
 }
 
+// MapScanResultToDTO maps the ScanResult to a slice of ScanDTO.
 func MapScanResultToDTO(result *ScanResult) []ScanDTO {
 	var dtos []ScanDTO
 	for _, res := range result.Results {

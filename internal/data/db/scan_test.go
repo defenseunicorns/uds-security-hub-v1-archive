@@ -13,6 +13,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 )
 
+// TestInsertScan tests the InsertScan method of the GormScanManager.
 func TestInsertScan(t *testing.T) {
 	type args struct {
 		db  *gorm.DB
@@ -50,6 +51,8 @@ func TestInsertScan(t *testing.T) {
 		})
 	}
 }
+
+// setupSQLiteDB sets up a SQLite database for testing.
 func setupSQLiteDB(t *testing.T) *gorm.DB {
 	t.Helper() // Mark this function as a test helper
 	// Using a unique identifier for each database instance to ensure it's unique

@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestScanResultDeserialization tests the ScanResultDeserialization function.
 func TestScanResultDeserialization(t *testing.T) {
 	// Load the JSON data from the file
 	data, err := os.ReadFile("testdata/scanresult.json")
