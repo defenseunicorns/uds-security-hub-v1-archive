@@ -1,6 +1,8 @@
 name: SLSA Builds
 
-permissions: read-all
+permissions:
+  contents: read
+  actions: read
 
 on:
   push:
