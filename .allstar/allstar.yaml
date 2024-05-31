@@ -1,0 +1,3 @@
+optConfig:
+  optOutStrategy: false
+  optOutRepos: []
