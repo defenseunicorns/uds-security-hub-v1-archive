@@ -20,6 +20,14 @@ var errRequiredFlagEmpty = errors.New("is required and cannot be empty")
 
 // main is the main entry point for the scanner.
 func main() {
+	rootCmd := newRootCmd()
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+// newRootCmd creates the root command for the scanner.
+func newRootCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "scan",
 		Short: "Scan is a tool for scanning packages",
@@ -49,13 +57,11 @@ func main() {
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag")
 	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for CSV results")
 
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
-	}
+	return rootCmd
 }
 
 // runScanner is the main entry point for the scanner.
-func runScanner(cmd *cobra.Command, args []string) {
+func runScanner(cmd *cobra.Command, _ []string) {
 	logger := log.NewLogger(context.Background())
 	dockerUsername, _ := cmd.Flags().GetString("docker-username") //nolint:errcheck
 	dockerPassword, _ := cmd.Flags().GetString("docker-password") //nolint:errcheck
