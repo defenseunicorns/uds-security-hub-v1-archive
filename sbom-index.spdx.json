@@ -1,0 +1,128 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sbom-sha256:64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48",
+  "spdxVersion": "SPDX-2.3",
+  "creationInfo": {
+    "created": "2024-05-30T12:05:55Z",
+    "creators": [
+      "Tool: apko (0.14.5)",
+      "Organization: Chainguard, Inc"
+    ],
+    "licenseListVersion": "3.16"
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://spdx.org/spdxdocs/apko/",
+  "documentDescribes": [
+    "SPDXRef-Package-sha256-64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48"
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-sha256-64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48",
+      "name": "sha256:64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48",
+      "versionInfo": "sha256:64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48",
+      "filesAnalyzed": false,
+      "description": "Multi-arch image index",
+      "downloadLocation": "NOASSERTION",
+      "supplier": "Organization: Chainguard, Inc.",
+      "sourceInfo": "Generated at image build time by apko",
+      "primaryPackagePurpose": "CONTAINER",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:oci/uds-security-hub@sha256%3A64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48?mediaType=application%2Fvnd.oci.image.index.v1%2Bjson",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-sha256-83908cc926a2b6ef7feacdbc1b2ad5e5d715ac00e95236af30faae3f6059edc9",
+      "name": "sha256:83908cc926a2b6ef7feacdbc1b2ad5e5d715ac00e95236af30faae3f6059edc9",
+      "versionInfo": "sha256:83908cc926a2b6ef7feacdbc1b2ad5e5d715ac00e95236af30faae3f6059edc9",
+      "filesAnalyzed": false,
+      "downloadLocation": "NOASSERTION",
+      "supplier": "Organization: Chainguard, Inc.",
+      "primaryPackagePurpose": "CONTAINER",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "83908cc926a2b6ef7feacdbc1b2ad5e5d715ac00e95236af30faae3f6059edc9"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:oci/uds-security-hub@sha256%3A83908cc926a2b6ef7feacdbc1b2ad5e5d715ac00e95236af30faae3f6059edc9?arch=amd64\u0026mediaType=application%2Fvnd.oci.image.manifest.v1%2Bjson\u0026os=linux",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-sha256-1d03841bc97aceb1d4589d5986fec6669bc58fe33bfe7367f4feff33ca8b8ece",
+      "name": "sha256:1d03841bc97aceb1d4589d5986fec6669bc58fe33bfe7367f4feff33ca8b8ece",
+      "versionInfo": "sha256:1d03841bc97aceb1d4589d5986fec6669bc58fe33bfe7367f4feff33ca8b8ece",
+      "filesAnalyzed": false,
+      "downloadLocation": "NOASSERTION",
+      "supplier": "Organization: Chainguard, Inc.",
+      "primaryPackagePurpose": "CONTAINER",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1d03841bc97aceb1d4589d5986fec6669bc58fe33bfe7367f4feff33ca8b8ece"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:oci/uds-security-hub@sha256%3A1d03841bc97aceb1d4589d5986fec6669bc58fe33bfe7367f4feff33ca8b8ece?arch=arm64\u0026mediaType=application%2Fvnd.oci.image.manifest.v1%2Bjson\u0026os=linux",
+          "referenceType": "purl"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-Package-gitC43ssh-C47C47github.comC47defenseunicornsC47uds-security-hub.gitC641fa9c4219a153c127c494273354bb85b69999587",
+      "name": "github.com/defenseunicorns/uds-security-hub.git",
+      "versionInfo": "1fa9c4219a153c127c494273354bb85b69999587",
+      "filesAnalyzed": false,
+      "description": "Image configuration source",
+      "downloadLocation": "git+ssh://github.com/defenseunicorns/uds-security-hub.git@1fa9c4219a153c127c494273354bb85b69999587",
+      "supplier": "Organization: Chainguard, Inc.",
+      "primaryPackagePurpose": "SOURCE",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "1fa9c4219a153c127c494273354bb85b69999587"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:github/defenseunicorns/uds-security-hub@1fa9c4219a153c127c494273354bb85b69999587",
+          "referenceType": "purl"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-sha256-64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48",
+      "relationshipType": "VARIANT_OF",
+      "relatedSpdxElement": "SPDXRef-Package-sha256-83908cc926a2b6ef7feacdbc1b2ad5e5d715ac00e95236af30faae3f6059edc9"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-sha256-64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48",
+      "relationshipType": "VARIANT_OF",
+      "relatedSpdxElement": "SPDXRef-Package-sha256-1d03841bc97aceb1d4589d5986fec6669bc58fe33bfe7367f4feff33ca8b8ece"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-sha256-64f3a2ea9c67896f531195bd65481fd322983c46969b07c48f870c92b2b5cf48",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-Package-gitC43ssh-C47C47github.comC47defenseunicornsC47uds-security-hub.gitC641fa9c4219a153c127c494273354bb85b69999587"
+    }
+  ]
+}

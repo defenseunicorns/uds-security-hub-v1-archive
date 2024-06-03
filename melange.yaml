@@ -1,0 +1,38 @@
+---
+package:
+  name: uds-security-hub
+  version: 0.1.0
+  description: Data collection for base image CVEs etc.
+  target-architecture:
+    - amd64
+    - arm64
+  copyright:
+    - license: Apache-2.0
+      paths:
+        - "*"
+  dependencies:
+    runtime:
+      - trivy
+environment:
+  contents:
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    repositories:
+      - https://packages.wolfi.dev/os
+    packages:
+      - ca-certificates-bundle
+      - busybox
+      - go
+pipeline:
+  - name: Build Go application
+    runs: >
+      set -x
+
+      CGO_ENABLED=0 go build -o "${{targets.destdir}}/usr/sbin/uds-security-hub" cmd/main.go
+  - name: Create dummy Docker config for Google Cloud
+    runs: >
+      set -x
+
+      mkdir -p "${{targets.destdir}}/etc/uds-security-hub/docker-dummy"
+
+      echo '{}' > "${{targets.destdir}}/etc/uds-security-hub/docker-dummy/config.json"
