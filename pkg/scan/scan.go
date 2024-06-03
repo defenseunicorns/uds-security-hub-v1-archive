@@ -34,7 +34,6 @@ type Scanner struct {
 	commandExecutor types.CommandExecutor
 	dockerUsername  string
 	dockerPassword  string
-	ghrcToken       string
 }
 
 // GetVulnerabilities returns the vulnerabilities in the scan result.
@@ -70,22 +69,18 @@ func (s *localScanResult) GetResultsAsCSV() string {
 }
 
 // New creates a new Scanner.
-func New(ctx context.Context, logger types.Logger, dockerUsername, dockerPassword, ghcrToken string) (*Scanner, error) {
+func New(ctx context.Context, logger types.Logger, dockerUsername, dockerPassword string) (*Scanner, error) {
 	if dockerUsername == "" {
 		return nil, fmt.Errorf("dockerUsername cannot be empty")
 	}
 	if dockerPassword == "" {
 		return nil, fmt.Errorf("dockerPassword cannot be empty")
 	}
-	if ghcrToken == "" {
-		return nil, fmt.Errorf("ghcrToken cannot be empty")
-	}
 	return &Scanner{
 		logger:          logger,
 		commandExecutor: executor.NewCommandExecutor(ctx),
 		dockerUsername:  dockerUsername,
 		dockerPassword:  dockerPassword,
-		ghrcToken:       ghcrToken,
 	}, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 
@@ -18,8 +19,8 @@ var errFlagRetrieval = errors.New("error getting flag")
 // errRequiredFlagEmpty is the error message for a required flag that is empty.
 var errRequiredFlagEmpty = errors.New("is required and cannot be empty")
 
-// main is the main entry point for the scanner.
-func main() {
+// Execute is the main entry point for the scanner.
+func Execute() {
 	rootCmd := newRootCmd()
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -30,10 +31,15 @@ func main() {
 func newRootCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "scan",
-		Short: "[ALPHA] Scan will scan a zarf package for vulnerabilities and generate a report.",
-		Long:  "[ALPHA] Scan is a tool for scanning zarf packages for vulnerabilities and generating a report",
+		Short: "[ALPHA] Scan will scan a zarf package for vulnerabilities and generate a report with Trivy.",
+		Long:  "[ALPHA] Scan is a tool for scanning zarf packages for vulnerabilities and generating a report with Trivy",
 		Run:   runScanner,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Check if Trivy is installed
+			if _, err := exec.LookPath("trivy"); err != nil {
+				return fmt.Errorf("trivy is not installed: %w", err)
+			}
+
 			requiredFlags := []string{"org", "package-name", "tag"}
 			for _, flag := range requiredFlags {
 				value, err := cmd.Flags().GetString(flag)
@@ -52,7 +58,6 @@ func newRootCmd() *cobra.Command {
 		"Optional: Docker username for registry access, accepts CSV values")
 	rootCmd.PersistentFlags().StringP("docker-password", "p", "",
 		"Optional: Docker password for registry access, accepts CSV values")
-	rootCmd.PersistentFlags().StringP("ghcr-token", "t", "", "Optional: Token for GHCR")
 	rootCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
@@ -66,13 +71,12 @@ func runScanner(cmd *cobra.Command, _ []string) {
 	logger := log.NewLogger(context.Background())
 	dockerUsername, _ := cmd.Flags().GetString("docker-username") //nolint:errcheck
 	dockerPassword, _ := cmd.Flags().GetString("docker-password") //nolint:errcheck
-	ghcrToken, _ := cmd.Flags().GetString("ghcr-token")           //nolint:errcheck
 	org, _ := cmd.Flags().GetString("org")                        //nolint:errcheck
 	packageName, _ := cmd.Flags().GetString("package-name")       //nolint:errcheck
 	tag, _ := cmd.Flags().GetString("tag")                        //nolint:errcheck
 	outputFile, _ := cmd.Flags().GetString("output-file")         //nolint:errcheck
 
-	scanner, err := scan.New(context.Background(), logger, dockerUsername, dockerPassword, ghcrToken)
+	scanner, err := scan.New(context.Background(), logger, dockerUsername, dockerPassword)
 	if err != nil {
 		logger.Fatalf("Error creating scanner: %v", err)
 	}
@@ -97,8 +101,13 @@ func runScanner(cmd *cobra.Command, _ []string) {
 		if err != nil {
 			logger.Fatalf("Error writing to file: %v", err)
 		}
-		logger.Info("Results written to %s", outputFile)
+		logger.Info(fmt.Sprintf("Results written to %s", outputFile))
 	} else {
 		logger.Info(combinedCSV)
 	}
+}
+
+// main function remains to call Execute.
+func main() {
+	Execute()
 }
