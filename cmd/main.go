@@ -30,7 +30,8 @@ func main() {
 func newRootCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "scan",
-		Short: "Scan is a tool for scanning packages",
+		Short: "[ALPHA] Scan will scan a zarf package for vulnerabilities and generate a report.",
+		Long:  "[ALPHA] Scan is a tool for scanning zarf packages for vulnerabilities and generating a report",
 		Run:   runScanner,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			requiredFlags := []string{"org", "package-name", "tag"}
@@ -52,9 +53,9 @@ func newRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().StringP("docker-password", "p", "",
 		"Optional: Docker password for registry access, accepts CSV values")
 	rootCmd.PersistentFlags().StringP("ghcr-token", "t", "", "Optional: Token for GHCR")
-	rootCmd.PersistentFlags().StringP("org", "o", "", "Organization")
-	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name")
-	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag")
+	rootCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
+	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
+	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
 	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for CSV results")
 
 	return rootCmd
