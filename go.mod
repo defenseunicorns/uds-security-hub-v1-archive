@@ -5,7 +5,7 @@ go 1.22.1
 require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.19.1
-	github.com/prometheus/client_golang v1.19.1
+	github.com/prometheus/client_golang v1.18.0
 	github.com/spf13/cobra v1.8.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.20.0
@@ -27,6 +27,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
+	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
@@ -42,3 +43,8 @@ require (
 	golang.org/x/sys v0.17.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
+
+// this is because the uds-cli has indirect dependency on prometheus/client_golang v1.18.0
+replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.18.0
+
+replace github.com/prometheus/common => github.com/prometheus/common v0.45.0
