@@ -3,7 +3,7 @@ all: build
 
 # Build the project
 build:
-	go build -o bin/uds-security-hub cmd/main.go
+	go build -o bin/uds-security-hub main.go
 
 # Run tests
 test:
