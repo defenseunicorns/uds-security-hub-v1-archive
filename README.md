@@ -30,7 +30,7 @@ The `pkg/scan` package provides functionality for scanning `zarf` packages and g
 
 #### Example Usage
 ```go
-scanner, err := scan.New(context.Background(), logger, "dockerUsername", "dockerPassword", "ghcrToken") // Optional credentials for Docker registry access
+scanner, err := scan.New(context.Background(), logger, "dockerUsername", "dockerPassword") // Optional credentials for Docker registry access
 if err != nil {
     // Handle error
 }
@@ -56,7 +56,7 @@ for _, v := range results {
 To run the scanner via the command line and generate a CSV output, use the `scan` command with the necessary flags:
 
 ```bash
-scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -t [ghcr-token] -f [output-file]
+scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -f [output-file]
 ```
 
 - `-o, --org`: Organization
@@ -64,12 +64,11 @@ scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docke
 - `-g, --tag`: Tag
 - `-u, --docker-username`: (Optional) Docker username for registry access
 - `-p, --docker-password`: (Optional) Docker password for registry access
-- `-t, --ghcr-token`: (Optional) Token for GHCR
 - `-f, --output-file`: Output file for CSV results
 
 **Example Command:**
 ```bash
-scan -o defenseunicorns -n packages/uds/gitlab-runner -g 16.10.0-uds.0-upstream -u yourDockerUsername -p yourDockerPassword -t yourGHCRToken -f results.csv
+scan -o defenseunicorns -n packages/uds/gitlab-runner -g 16.10.0-uds.0-upstream -u yourDockerUsername -p yourDockerPassword -f results.csv
 ```
 ![alt text](image.png)
 
@@ -92,7 +91,7 @@ To effectively run the scanner using the Makefile, follow these improved and det
 
 4. **Run the Scanner**: Execute the scanner with the necessary parameters. Assuming the executable is named `uds-security-hub`, you would run:
    ```bash
-   ./bin/uds-security-hub scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -t [ghcr-token] -f [output-file]
+   ./bin/uds-security-hub scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -f [output-file]
    ```
    Replace the placeholders (e.g., `[organization]`, `[package-name]`) with actual values relevant to your scan.
 
@@ -102,4 +101,3 @@ These steps provide a clear and concise method to build and run the scanner usin
 
 ## Contributing
 If you encounter any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request on the project's repository.
-
