@@ -11,6 +11,8 @@
 
 _This is ALPHA and expect things to change._
 
+_This depends on [trivy](https://github.com/aquasecurity/trivy) for vulnerability scanning and trivy has to be installed on the host._
+
 ## Table of Contents
 - [Overview](#overview)
 - [Usage](#usage)

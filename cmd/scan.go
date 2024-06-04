@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"context"
@@ -105,9 +105,4 @@ func runScanner(cmd *cobra.Command, _ []string) {
 	} else {
 		logger.Info(combinedCSV)
 	}
-}
-
-// main function remains to call Execute.
-func main() {
-	Execute()
 }
