@@ -16,13 +16,12 @@ func TestE2EScanFunctionality(t *testing.T) {
 	// Define the test inputs
 	trivyUsername := "testuser"
 	trivyPassword := "testpass"
-	ghcrToken := "testtoken"
 	org := "defenseunicorns"
 	packageName := "packages/uds/mattermost"
 	tag := "9.8.0-uds.0-upstream"
 
 	// Create the scanner
-	scanner, err := New(ctx, logger, trivyUsername, trivyPassword, ghcrToken)
+	scanner, err := New(ctx, logger, trivyUsername, trivyPassword)
 	if err != nil {
 		t.Fatalf("Error creating scanner: %v", err)
 	}
