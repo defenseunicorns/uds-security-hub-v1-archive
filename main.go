@@ -1,8 +1,12 @@
 package main
 
-import "github.com/defenseunicorns/uds-security-hub/cmd"
+import (
+	"os"
+
+	"github.com/defenseunicorns/uds-security-hub/cmd"
+)
 
 // main function remains to call Execute.
 func main() {
-	cmd.Execute()
+	cmd.Execute(os.Args[1:])
 }
