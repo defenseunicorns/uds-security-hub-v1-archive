@@ -70,12 +70,6 @@ func (s *localScanResult) GetResultsAsCSV() string {
 
 // New creates a new Scanner.
 func New(ctx context.Context, logger types.Logger, dockerUsername, dockerPassword string) (*Scanner, error) {
-	if dockerUsername == "" {
-		return nil, fmt.Errorf("dockerUsername cannot be empty")
-	}
-	if dockerPassword == "" {
-		return nil, fmt.Errorf("dockerPassword cannot be empty")
-	}
 	return &Scanner{
 		logger:          logger,
 		commandExecutor: executor.NewCommandExecutor(ctx),
