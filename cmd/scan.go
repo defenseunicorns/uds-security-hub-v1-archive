@@ -20,8 +20,9 @@ var errFlagRetrieval = errors.New("error getting flag")
 var errRequiredFlagEmpty = errors.New("is required and cannot be empty")
 
 // Execute is the main entry point for the scanner.
-func Execute() {
+func Execute(args []string) {
 	rootCmd := newRootCmd()
+	rootCmd.SetArgs(args) // Set the arguments
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
