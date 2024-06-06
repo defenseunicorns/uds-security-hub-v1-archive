@@ -34,7 +34,7 @@ func newRootCmd() *cobra.Command {
 		Use:   "scan",
 		Short: "[ALPHA] Scan will scan a zarf package for vulnerabilities and generate a report with Trivy.",
 		Long:  "[ALPHA] Scan is a tool for scanning zarf packages for vulnerabilities and generating a report with Trivy",
-		Run:   runScanner,
+		RunE:  runScanner, // Use RunE instead of Run to handle errors
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Check if Trivy is installed
 			if _, err := exec.LookPath("trivy"); err != nil {
@@ -68,7 +68,7 @@ func newRootCmd() *cobra.Command {
 }
 
 // runScanner is the main entry point for the scanner.
-func runScanner(cmd *cobra.Command, _ []string) {
+func runScanner(cmd *cobra.Command, _ []string) error {
 	logger := log.NewLogger(context.Background())
 	dockerUsername, _ := cmd.Flags().GetString("docker-username") //nolint:errcheck
 	dockerPassword, _ := cmd.Flags().GetString("docker-password") //nolint:errcheck
@@ -79,18 +79,17 @@ func runScanner(cmd *cobra.Command, _ []string) {
 
 	scanner, err := scan.New(context.Background(), logger, dockerUsername, dockerPassword)
 	if err != nil {
-		logger.Fatalf("Error creating scanner: %v", err)
+		return fmt.Errorf("error creating scanner: %w", err)
 	}
 	results, err := scanner.ScanZarfPackage(org, packageName, tag)
 	if err != nil {
-		logger.Fatalf("Error scanning package: %v", err)
+		return fmt.Errorf("error scanning package: %w", err)
 	}
-
 	var combinedCSV string
 	for _, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
-			logger.Fatalf("Error scanning: %v", err)
+			return fmt.Errorf("error scanning: %w", err)
 		}
 
 		csv := r.GetResultsAsCSV()
@@ -100,10 +99,11 @@ func runScanner(cmd *cobra.Command, _ []string) {
 	if outputFile != "" {
 		err := os.WriteFile(outputFile, []byte(combinedCSV), 0o600)
 		if err != nil {
-			logger.Fatalf("Error writing to file: %v", err)
+			return fmt.Errorf("error writing to file: %w", err)
 		}
 		logger.Info(fmt.Sprintf("Results written to %s", outputFile))
 	} else {
 		logger.Info(combinedCSV)
 	}
+	return nil
 }
