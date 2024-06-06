@@ -28,4 +28,4 @@ changelog:
   skip: true
 
 # Entrypoint to compile.
-main: ./cmd/main.go
+main: main.go
