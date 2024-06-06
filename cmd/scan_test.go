@@ -71,3 +71,36 @@ func TestPreRunE_InvalidFlag(t *testing.T) {
 		t.Errorf("error message mismatch (-want +got):\n%s", diff)
 	}
 }
+
+// TestRunScannerWithValidFlags tests the runScanner function with valid flags.
+func TestRunScannerWithValidFlags(t *testing.T) {
+	cmd := newRootCmd()
+	cmd.SetArgs([]string{"--org", "test-org", "--package-name", "test-package", "--tag", "test-tag"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Errorf("expected no error but got %v", err)
+	}
+}
+
+// TestRunScannerWithInvalidFlags tests the runScanner function with invalid flags.
+func TestRunScannerWithInvalidFlags(t *testing.T) {
+	cmd := newRootCmd()
+	cmd.SetArgs([]string{"--org", "", "--package-name", "", "--tag", ""})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Errorf("expected an error but got nil")
+	}
+}
+
+// TestRunScannerWithoutFlags tests the runScanner function without any flags.
+func TestRunScannerWithoutFlags(t *testing.T) {
+	cmd := newRootCmd()
+	cmd.SetArgs([]string{})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Errorf("expected an error but got nil")
+	}
+}
