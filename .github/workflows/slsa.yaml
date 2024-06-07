@@ -1,33 +1,66 @@
-name: SLSA Builds
-
+name: SLSA releaser
 on:
-  push:
-    tags:
-      - "*"
   workflow_dispatch:
+  # push:
+  #   tags:
+  #     - "*"
+
+permissions: read-all
+
+env:
+  GO_VERSION: 1.22
 
 jobs:
+  # Generate ldflags dynamically.
+  args:
+    runs-on: ubuntu-latest
+    outputs:
+      ldflags: ${{ steps.ldflags.outputs.value }}
+      go-binary-name: ${{ steps.build.outputs.go-binary-name }}
+    steps:
+      - id: checkout
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          fetch-depth: 0
+  # Trusted builder.
   build:
     permissions:
       id-token: write
       contents: write
       actions: read
-    strategy:
-      matrix:
-        os: [linux, darwin]
-        arch: [amd64, arm64]
-    runs-on: ${{ matrix.os }}-latest
+    needs: args
+    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v2.0.0 #7f4fdb871876c23e455853d694197440c5a91506
+    with:
+      go-version: ${{ env.GO_VERSION }}
+      evaluated-envs: "VERSION_LDFLAGS:${{needs.args.outputs.ldflags}}"
+
+  verification:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions: read-all
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Install the verifier
+        uses: slsa-framework/slsa-verifier/actions/installer@v2.5.1
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
+      - name: Download the artifact
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
-          go-version: 1.22
+          name: "${{ needs.build.outputs.go-binary-name }}.intoto.jsonl"
 
-      - name: Build
-        uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v2.0.0
+      - name: Download the artifact
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
-          go-version: 1.22
-          config-file: .slsa-goreleaser/${{ matrix.os }}-${{ matrix.arch }}.yml
+          name: ${{ needs.build.outputs.go-binary-name }}
+
+      - name: Verify assets
+        env:
+          ARTIFACT: ${{ needs.build.outputs.go-binary-name }}
+          ATT_FILE_NAME: "${{ needs.build.outputs.go-binary-name }}.intoto.jsonl"
+        run: |
+          set -euo pipefail
+
+          echo "Verifying $ARTIFACT using $ATT_FILE_NAME"
+          slsa-verifier verify-artifact --provenance-path "$ATT_FILE_NAME" \
+                                        --source-uri "github.com/$GITHUB_REPOSITORY" \
+                                        "$ARTIFACT"
