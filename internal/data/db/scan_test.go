@@ -90,7 +90,8 @@ func TestUpdateScan(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
-			if err := manager.UpdateScan(context.Background(), &tt.args.dto); (err != nil) != tt.wantErr {
+			dt := tt.args.dto
+			if err := manager.UpdateScan(context.Background(), &dt); (err != nil) != tt.wantErr {
 				t.Errorf("UpdateScan() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -111,7 +112,7 @@ func TestGetScan(t *testing.T) {
 		{
 			name: "successful retrieval",
 			args: args{
-				db:  setupSQLiteDB(t),
+				db: setupSQLiteDB(t),
 				id: 1,
 			},
 			wantErr: false,
@@ -123,7 +124,7 @@ func TestGetScan(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
-			_, err = manager.GetScan(context.Background(), tt.args.id)
+			_, err = manager.GetScan(context.Background(), tt.args.db, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetScan() error = %v, wantErr %v", err, tt.wantErr)
 			}

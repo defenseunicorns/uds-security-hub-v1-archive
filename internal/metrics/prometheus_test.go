@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
@@ -21,6 +21,7 @@ func TestRegisterCounter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer collector.UnregisterCounter(ctx, "test_counter", "label1") //nolint:errcheck
 
 	err = collector.AddCounter(ctx, "test_counter", 1, "label1")
 	if err != nil {
@@ -51,6 +52,7 @@ func TestRegisterHistogram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer collector.UnregisterHistogram(ctx, "test_histogram", "label1") //nolint:errcheck
 
 	err = collector.ObserveHistogram(ctx, "test_histogram", 2.5, "label1")
 	if err != nil {
@@ -67,6 +69,7 @@ func TestRegisterGauge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer collector.UnregisterGauge(ctx, "test_gauge", "label1") //nolint:errcheck
 
 	a, ok := gaugeVec.(prometheus.Collector)
 	if !ok {
@@ -119,13 +122,34 @@ func TestMeasureFunctionExecutionTime(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")
 
-	startFunc, err := collector.MeasureFunctionExecutionTime(ctx, "test_function")
+	// Start measuring function execution time
+	stopFunc, err := collector.MeasureFunctionExecutionTime(ctx, "test_function")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Simulate function execution
-	startFunc()
+	time.Sleep(100 * time.Millisecond)
+	stopFunc()
+
+	// Validate the histogram
+	histogramVec, ok := collector.(*prometheusCollector).histograms["uds_security_hub_function_duration_seconds"]
+	if !ok {
+		t.Fatal("histogram 'uds_security_hub_function_duration_seconds' not found")
+	}
+
+	err = testutil.CollectAndCompare(histogramVec, strings.NewReader(`
+		# HELP uds_security_hub_function_duration_seconds Time spent executing functions.
+		# TYPE uds_security_hub_function_duration_seconds histogram
+		uds_security_hub_function_duration_seconds_bucket{function="test_function",le="0.25"} 1
+		uds_security_hub_function_duration_seconds_bucket{function="test_function",le="0.5"} 1
+		uds_security_hub_function_duration_seconds_bucket{function="test_function",le="1"} 1
+		uds_security_hub_function_duration_seconds_sum{function="test_function"} 0.101081208
+		uds_security_hub_function_duration_seconds_count{function="test_function"} 1
+	`), "uds_security_hub_function_duration_seconds_bucket", "uds_security_hub_function_duration_seconds_sum", "uds_security_hub_function_duration_seconds_count")
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 // TestUnregisterCounter tests the UnregisterCounter method of the Collector.
@@ -176,24 +200,77 @@ func TestUnregisterHistogram(t *testing.T) {
 	}
 }
 
-// TestMeasureGraphQLResponseDuration tests the MeasureGraphQLResponseDuration method of the Collector.
-func TestMeasureGraphQLResponseDuration(t *testing.T) {
+func Test_prometheusCollector_UnregisterGauge(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")
 
-	handler := collector.MeasureGraphQLResponseDuration(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/graphql", nil)
+	_, err := collector.RegisterGauge(ctx, "test_gauge", "label1")
 	if err != nil {
-		t.Fatalf("could not create request: %v", err)
+		t.Fatal(err)
 	}
 
-	rr := httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
+	err = collector.UnregisterGauge(ctx, "test_gauge", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+func Test_prometheusCollector_UnregisterHistogram(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = collector.UnregisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_prometheusCollector_UnregisterCounter(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterCounter(ctx, "test_counter", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = collector.UnregisterCounter(ctx, "test_counter", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_AddHistogram(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = collector.AddHistogram(ctx, "test_histogram", 2.5, "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_SetGauge(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterGauge(ctx, "test_gauge", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = collector.SetGauge(ctx, "test_gauge", 1, "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
 }

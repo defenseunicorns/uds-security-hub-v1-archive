@@ -1,13 +1,9 @@
 package metrics
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -179,14 +175,26 @@ func WithMetrics(ctx context.Context, name string) context.Context {
 //
 //	defer p.MeasureFunctionExecutionTime(ctx, "myFunction", "label1", "label2")()
 func (p *prometheusCollector) MeasureFunctionExecutionTime(_ context.Context, name string) (func(), error) {
-	name = fmt.Sprintf("%s_%s", p.name, name)
-	if _, ok := p.histograms[functionDuration]; !ok {
-		return nil, fmt.Errorf("histogram '%s' not found", name)
+	histogramName := fmt.Sprintf("%s_%s", p.name, functionDuration)
+	if _, ok := p.histograms[histogramName]; !ok {
+		// Register the histogram if it does not exist
+		histogramVec := prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    histogramName,
+				Help:    "Time spent executing functions.",
+				Buckets: prometheus.DefBuckets,
+			},
+			[]string{"function"},
+		)
+		p.histograms[histogramName] = histogramVec
+		if err := prometheus.Register(histogramVec); err != nil {
+			return nil, fmt.Errorf("failed to register histogram '%s': %w", histogramName, err)
+		}
 	}
 	start := time.Now()
 	return func() {
 		duration := time.Since(start)
-		p.histograms[functionDuration].WithLabelValues([]string{name}...).Observe(duration.Seconds())
+		p.histograms[histogramName].WithLabelValues(name).Observe(duration.Seconds())
 	}, nil
 }
 
@@ -243,56 +251,4 @@ func FromContext(ctx context.Context, name string) MetricCollector {
 		return met
 	}
 	return NewPrometheus(name)
-}
-
-// statusRecorder to record the status code from the ResponseWriter.
-type statusRecorder struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-func (rec *statusRecorder) WriteHeader(statusCode int) {
-	rec.statusCode = statusCode
-	rec.ResponseWriter.WriteHeader(statusCode)
-}
-
-// MeasureGraphQLResponseDuration creates a middleware that records the response time and status code.
-func (p *prometheusCollector) MeasureGraphQLResponseDuration(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		// Create a copy of the request body
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-			// Replace the request body with a copy
-		}
-		r.Body = io.NopCloser(bytes.NewBuffer(body))
-
-		// Create another copy for JSON unmarshalling
-		bodyCopy := make([]byte, len(body))
-		copy(bodyCopy, body)
-
-		// Parse the operation name from the request body copy
-		var graphqlRequest struct {
-			OperationName string `json:"operationName"`
-		}
-		if err := json.Unmarshal(bodyCopy, &graphqlRequest); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		rec := statusRecorder{w, http.StatusOK}
-
-		next.ServeHTTP(&rec, r)
-
-		duration := time.Since(start)
-		statusCode := strconv.Itoa(rec.statusCode)
-
-		// Use the pre-registered histogram
-		if histogram, ok := p.histograms["http_server_request_duration_seconds"]; ok {
-			histogram.WithLabelValues(graphqlRequest.OperationName, r.Method, statusCode).Observe(duration.Seconds())
-		}
-	})
 }

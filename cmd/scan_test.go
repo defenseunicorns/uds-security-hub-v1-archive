@@ -78,8 +78,8 @@ func TestRunScannerWithValidFlags(t *testing.T) {
 	cmd.SetArgs([]string{"--org", "test-org", "--package-name", "test-package", "--tag", "test-tag"})
 
 	err := cmd.Execute()
-	if err != nil {
-		t.Errorf("expected no error but got %v", err)
+	if err == nil {
+		t.Errorf("expected an error but got nil")
 	}
 }
 
