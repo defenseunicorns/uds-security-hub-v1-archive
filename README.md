@@ -4,19 +4,22 @@
 [![E2E Tests](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/test.yaml/badge.svg)](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/test.yaml)
 [![golangci-lint](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/lint.yaml/badge.svg)](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/lint.yaml)
 
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/defenseunicorns/uds-security-hub)](https://goreportcard.com/report/github.com/defenseunicorns/uds-security-hub)
 [![codecov](https://codecov.io/gh/defenseunicorns/uds-security-hub/graph/badge.svg?token=WEEJUGX5VA)](https://codecov.io/gh/defenseunicorns/uds-security-hub)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/defenseunicorns/uds-security-hub/badge)](https://scorecard.dev/viewer/?uri=github.com/defenseunicorns/uds-security-hub)
 [![Go Reference](https://pkg.go.dev/badge/github.com/defenseunicorns/uds-security-hub.svg)](https://pkg.go.dev/github.com/defenseunicorns/uds-security-hub)
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
-_This is ALPHA and expect things to change._
+_UDS Security Hub is ALPHA and expect things to change._
 
-_This depends on [trivy](https://github.com/aquasecurity/trivy) for vulnerability scanning and trivy has to be installed on the host._
+_UDS Security Hub depends on [trivy](https://github.com/aquasecurity/trivy) for vulnerability scanning and trivy has to be installed on the host._
 
 ## Table of Contents
 - [Overview](#overview)
 - [Usage](#usage)
 - [Command Line Interface](#command-line-interface)
+- [SLSA Verification](#slsa-verification)
 - [Contributing](#contributing)
 
 ## Overview
@@ -97,9 +100,36 @@ To effectively run the scanner using the Makefile, follow these improved and det
    ```
    Replace the placeholders (e.g., `[organization]`, `[package-name]`) with actual values relevant to your scan.
 
-5. **Verify the Output**: After executing the command, check the specified output file or directory for the CSV file containing the scan results. Ensure that the file `results.csv` has been created and contains the expected data.
-
+5. **Verify the Output**: After executing the command, check the specified output file or directory for the CSV file containing the scan results. Ensure that the specified output file (e.g., `results.csv`) has been created and contains the expected data.
 These steps provide a clear and concise method to build and run the scanner using the Makefile, ensuring you are working with the most recent version of your tool.
+
+## SLSA Verification
+
+The UDS Security Hub provides SLSA (Supply Chain Levels for Software Artifacts) provenance verification for its artifacts. This verification process ensures that the artifacts have been built and signed by trusted sources, providing a level of trust and security for the users.
+
+
+### Installing `slsa-verifier`
+
+To verify the SLSA provenance of your artifacts, you need to install the `slsa-verifier`. Follow these steps to install it https://github.com/slsa-framework/slsa-verifier?tab=readme-ov-file#installation
+
+### Verifying SLSA Provenance
+
+Once you have installed the `slsa-verifier`, you can verify the SLSA provenance of your artifacts using the following steps:
+
+1. **Download the Binary and Attestation**:
+   - Go to the [release page](https://github.com/defenseunicorns/uds-security-hub/releases).
+   - Download the `uds-security-hub_linux_amd64` binary.
+   - Download the `multiple.intoto.jsonl` attestation file.
+
+2. **Run the Verification Command**:
+   Example: The release tag is `v0.0.7` and the binary is `uds-security-hub_linux_amd64`. Please replace these values with the actual release tag and binary name.
+   ```bash
+   slsa-verifier verify-artifact uds-security-hub_linux_amd64 \
+     --provenance-path multiple.intoto.jsonl \
+     --source-uri github.com/defenseunicorns/uds-security-hub \
+     --source-tag v0.0.7
+   ```
+   This command verifies the `uds-security-hub_linux_amd64` artifact using the `multiple.intoto.jsonl` provenance file, with the source URI and tag specified.
 
 ## Contributing
 If you encounter any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request on the project's repository.
