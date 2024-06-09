@@ -18,6 +18,8 @@ type Counter interface {
 
 // MetricCollector is an interface that provides methods for registering and manipulating metrics.
 type MetricCollector interface {
+	// AddHistogram adds a value to the histogram metric with the given name and labels.
+	AddHistogram(ctx context.Context, name string, value float64, labels ...string) error
 	// RegisterHistogram registers a histogram metric with the given name and labels.
 	RegisterHistogram(ctx context.Context, name string, labels ...string) (Observable, error)
 	// RegisterGauge registers a gauge metric with the given name and labels.
@@ -40,6 +42,4 @@ type MetricCollector interface {
 	UnregisterHistogram(ctx context.Context, name string, labels ...string) error
 	// UnregisterGauge unregisters the gauge metric with the given name and labels.
 	UnregisterGauge(ctx context.Context, name string, labels ...string) error
-	// MeasureGraphQLResponseDuration returns a http.Handler that measures the response duration of the given handler.
-	MeasureGraphQLResponseDuration(next http.Handler) http.Handler
 }

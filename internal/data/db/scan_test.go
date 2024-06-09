@@ -63,3 +63,71 @@ func setupSQLiteDB(t *testing.T) *gorm.DB {
 	}
 	return db
 }
+
+// TestUpdateScan tests the UpdateScan method of the GormScanManager.
+func TestUpdateScan(t *testing.T) {
+	type args struct {
+		db  *gorm.DB
+		dto external.ScanDTO
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "successful update",
+			args: args{
+				db:  setupSQLiteDB(t),
+				dto: external.ScanDTO{SchemaVersion: 1, CreatedAt: time.Now(), ArtifactName: "test-artifact-updated", ArtifactType: "container", Metadata: model.Metadata{}, Vulnerabilities: []model.Vulnerability{}},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			manager, err := NewGormScanManager(tt.args.db)
+			if err != nil {
+				t.Fatalf("failed to create scan manager: %v", err)
+			}
+			dt := tt.args.dto
+			if err := manager.UpdateScan(context.Background(), &dt); (err != nil) != tt.wantErr {
+				t.Errorf("UpdateScan() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestGetScan tests the GetScan method of the GormScanManager.
+func TestGetScan(t *testing.T) {
+	type args struct {
+		db *gorm.DB
+		id uint
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "successful retrieval",
+			args: args{
+				db: setupSQLiteDB(t),
+				id: 1,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			manager, err := NewGormScanManager(tt.args.db)
+			if err != nil {
+				t.Fatalf("failed to create scan manager: %v", err)
+			}
+			_, err = manager.GetScan(context.Background(), tt.args.db, tt.args.id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetScan() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -20,6 +21,7 @@ func TestRegisterCounter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer collector.UnregisterCounter(ctx, "test_counter", "label1") //nolint:errcheck
 
 	err = collector.AddCounter(ctx, "test_counter", 1, "label1")
 	if err != nil {
@@ -50,6 +52,7 @@ func TestRegisterHistogram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer collector.UnregisterHistogram(ctx, "test_histogram", "label1") //nolint:errcheck
 
 	err = collector.ObserveHistogram(ctx, "test_histogram", 2.5, "label1")
 	if err != nil {
@@ -66,6 +69,7 @@ func TestRegisterGauge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer collector.UnregisterGauge(ctx, "test_gauge", "label1") //nolint:errcheck
 
 	a, ok := gaugeVec.(prometheus.Collector)
 	if !ok {
@@ -113,386 +117,160 @@ func TestNonExistingCounter(t *testing.T) {
 	}
 }
 
-func Test_prometheusCollector_MeasureFunctionExecutionTime(t *testing.T) {
-	type fields struct {
-		histograms map[string]*prometheus.HistogramVec
-		gauges     map[string]*prometheus.GaugeVec
-		counters   map[string]*prometheus.CounterVec
-		registry   *prometheus.Registerer
-		name       string
+// TestMeasureFunctionExecutionTime tests the MeasureFunctionExecutionTime method of the Collector.
+func TestMeasureFunctionExecutionTime(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	// Start measuring function execution time
+	stopFunc, err := collector.MeasureFunctionExecutionTime(ctx, "test_function")
+	if err != nil {
+		t.Fatal(err)
 	}
-	type args struct {
-		in0  context.Context
-		name string
+
+	// Simulate function execution
+	time.Sleep(100 * time.Millisecond)
+	stopFunc()
+
+	// Validate the histogram
+	histogramVec, ok := collector.(*prometheusCollector).histograms["uds_security_hub_function_duration_seconds"]
+	if !ok {
+		t.Fatal("histogram 'uds_security_hub_function_duration_seconds' not found")
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &prometheusCollector{
-				histograms: tt.fields.histograms,
-				gauges:     tt.fields.gauges,
-				counters:   tt.fields.counters,
-				registry:   tt.fields.registry,
-				name:       tt.fields.name,
-			}
-			got, err := p.MeasureFunctionExecutionTime(tt.args.in0, tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("MeasureFunctionExecutionTime() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			// Since got is a function, we cannot use reflect.DeepEqual to compare it.
-			// Instead, we can check if got is not nil.
-			if got == nil {
-				t.Errorf("MeasureFunctionExecutionTime() got = nil, want non-nil function")
-			}
-		})
+
+	err = testutil.CollectAndCompare(histogramVec, strings.NewReader(`
+		# HELP uds_security_hub_function_duration_seconds Time spent executing functions.
+		# TYPE uds_security_hub_function_duration_seconds histogram
+		uds_security_hub_function_duration_seconds_bucket{function="test_function",le="0.25"} 1
+		uds_security_hub_function_duration_seconds_bucket{function="test_function",le="0.5"} 1
+		uds_security_hub_function_duration_seconds_bucket{function="test_function",le="1"} 1
+		uds_security_hub_function_duration_seconds_sum{function="test_function"} 0.101081208
+		uds_security_hub_function_duration_seconds_count{function="test_function"} 1
+	`), "uds_security_hub_function_duration_seconds_bucket", "uds_security_hub_function_duration_seconds_sum", "uds_security_hub_function_duration_seconds_count")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
-func Test_prometheusCollector_UnregisterCounter(t *testing.T) {
-	type fields struct { //nolint:govet
-		name       string
-		registry   *prometheus.Registerer
-		histograms map[string]*prometheus.HistogramVec
-		gauges     map[string]*prometheus.GaugeVec
-		counters   map[string]*prometheus.CounterVec
+// TestUnregisterCounter tests the UnregisterCounter method of the Collector.
+func TestUnregisterCounter(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterCounter(ctx, "test_counter", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	type args struct {
-		in0  context.Context
-		name string
-		in2  []string
+
+	err = collector.UnregisterCounter(ctx, "test_counter", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Success - Unregister existing counter",
-			fields: fields{
-				counters: map[string]*prometheus.CounterVec{
-					"uds_security_hub_test_counter": prometheus.NewCounterVec(prometheus.CounterOpts{
-						Name: "uds_security_hub_test_counter",
-						Help: "Test counter",
-					}, []string{"label1"}),
-				},
-				name: "uds_security_hub",
-			},
-			args: args{
-				in0:  context.Background(),
-				name: "test_counter",
-				in2:  []string{"label1"},
-			},
-			wantErr: false,
-		},
-		{
-			name: "Success - Unregister non-existent counter",
-			fields: fields{
-				counters: map[string]*prometheus.CounterVec{},
-				name:     "uds_security_hub",
-			},
-			args: args{
-				in0:  context.Background(),
-				name: "non_existent_counter",
-				in2:  []string{"label1"},
-			},
-			wantErr: false,
-		},
+}
+
+// TestUnregisterGauge tests the UnregisterGauge method of the Collector.
+func TestUnregisterGauge(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterGauge(ctx, "test_gauge", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &prometheusCollector{
-				histograms: tt.fields.histograms,
-				gauges:     tt.fields.gauges,
-				counters:   tt.fields.counters,
-				registry:   tt.fields.registry,
-				name:       tt.fields.name,
-			}
-			if err := p.UnregisterCounter(tt.args.in0, tt.args.name, tt.args.in2...); (err != nil) != tt.wantErr {
-				t.Errorf("UnregisterCounter() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+
+	err = collector.UnregisterGauge(ctx, "test_gauge", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestUnregisterHistogram tests the UnregisterHistogram method of the Collector.
+func TestUnregisterHistogram(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = collector.UnregisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
 func Test_prometheusCollector_UnregisterGauge(t *testing.T) {
-	type fields struct { //nolint:govet
-		name       string
-		registry   *prometheus.Registerer
-		histograms map[string]*prometheus.HistogramVec
-		gauges     map[string]*prometheus.GaugeVec
-		counters   map[string]*prometheus.CounterVec
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterGauge(ctx, "test_gauge", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	type args struct {
-		in0  context.Context
-		name string
-		in2  []string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Success - Unregister existing gauge",
-			fields: fields{
-				gauges: map[string]*prometheus.GaugeVec{
-					"uds_security_hub_test_gauge": prometheus.NewGaugeVec(prometheus.GaugeOpts{
-						Name: "uds_security_hub_test_gauge",
-						Help: "Test gauge",
-					}, []string{"label1"}),
-				},
-				name: "uds_security_hub",
-			},
-			args: args{
-				in0:  context.Background(),
-				name: "test_gauge",
-				in2:  []string{"label1"},
-			},
-			wantErr: false,
-		},
-		{
-			name: "Success - Unregister non-existent gauge",
-			fields: fields{
-				gauges: map[string]*prometheus.GaugeVec{},
-				name:   "uds_security_hub",
-			},
-			args: args{
-				in0:  context.Background(),
-				name: "non_existent_gauge",
-				in2:  []string{"label1"},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &prometheusCollector{
-				histograms: tt.fields.histograms,
-				gauges:     tt.fields.gauges,
-				counters:   tt.fields.counters,
-				registry:   tt.fields.registry,
-				name:       tt.fields.name,
-			}
-			if err := p.UnregisterGauge(tt.args.in0, tt.args.name, tt.args.in2...); (err != nil) != tt.wantErr {
-				t.Errorf("UnregisterGauge() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+
+	err = collector.UnregisterGauge(ctx, "test_gauge", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
 func Test_prometheusCollector_UnregisterHistogram(t *testing.T) {
-	type fields struct { //nolint:govet
-		name       string
-		registry   *prometheus.Registerer
-		histograms map[string]*prometheus.HistogramVec
-		gauges     map[string]*prometheus.GaugeVec
-		counters   map[string]*prometheus.CounterVec
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	type args struct {
-		in0  context.Context
-		name string
-		in2  []string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Success - Unregister existing histogram",
-			fields: fields{
-				histograms: map[string]*prometheus.HistogramVec{
-					"uds_security_hub_test_histogram": prometheus.NewHistogramVec(prometheus.HistogramOpts{
-						Name: "uds_security_hub_test_histogram",
-						Help: "Test histogram",
-					}, []string{"label1"}),
-				},
-				name: "uds_security_hub",
-			},
-			args: args{
-				in0:  context.Background(),
-				name: "test_histogram",
-				in2:  []string{"label1"},
-			},
-			wantErr: false,
-		},
-		{
-			name: "Success - Unregister non-existent histogram",
-			fields: fields{
-				histograms: map[string]*prometheus.HistogramVec{},
-				name:       "uds_security_hub",
-			},
-			args: args{
-				in0:  context.Background(),
-				name: "non_existent_histogram",
-				in2:  []string{"label1"},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &prometheusCollector{
-				histograms: tt.fields.histograms,
-				gauges:     tt.fields.gauges,
-				counters:   tt.fields.counters,
-				registry:   tt.fields.registry,
-				name:       tt.fields.name,
-			}
-			if err := p.UnregisterHistogram(tt.args.in0, tt.args.name, tt.args.in2...); (err != nil) != tt.wantErr {
-				t.Errorf("UnregisterHistogram() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+
+	err = collector.UnregisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
-func Test_prometheusCollector_AddHistogram(t *testing.T) {
-	type fields struct { //nolint:govet
-		name       string
-		registry   *prometheus.Registerer
-		histograms map[string]*prometheus.HistogramVec
-		gauges     map[string]*prometheus.GaugeVec
-		counters   map[string]*prometheus.CounterVec
+func Test_prometheusCollector_UnregisterCounter(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterCounter(ctx, "test_counter", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	type args struct { //nolint:govet
-		in0    context.Context
-		name   string
-		value  float64
-		labels []string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Success - Add value to existing histogram",
-			fields: fields{
-				histograms: map[string]*prometheus.HistogramVec{
-					"uds_security_hub_test_histogram": prometheus.NewHistogramVec(prometheus.HistogramOpts{
-						Name: "uds_security_hub_test_histogram",
-						Help: "Test histogram",
-					}, []string{"label1"}),
-				},
-				name: "uds_security_hub",
-			},
-			args: args{
-				in0:    context.Background(),
-				name:   "test_histogram",
-				value:  2.5,
-				labels: []string{"label1"},
-			},
-			wantErr: false,
-		},
-		{
-			name: "Error - Add value to non-existent histogram",
-			fields: fields{
-				histograms: map[string]*prometheus.HistogramVec{},
-				name:       "uds_security_hub",
-			},
-			args: args{
-				in0:    context.Background(),
-				name:   "non_existent_histogram",
-				value:  2.5,
-				labels: []string{"label1"},
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &prometheusCollector{
-				histograms: tt.fields.histograms,
-				gauges:     tt.fields.gauges,
-				counters:   tt.fields.counters,
-				registry:   tt.fields.registry,
-				name:       tt.fields.name,
-			}
-			if err := p.AddHistogram(tt.args.in0, tt.args.name, tt.args.value, tt.args.labels...); (err != nil) != tt.wantErr {
-				t.Errorf("AddHistogram() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+
+	err = collector.UnregisterCounter(ctx, "test_counter", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
-func Test_prometheusCollector_SetGauge(t *testing.T) {
-	type fields struct { //nolint:govet
-		name       string
-		registry   *prometheus.Registerer
-		histograms map[string]*prometheus.HistogramVec
-		gauges     map[string]*prometheus.GaugeVec
-		counters   map[string]*prometheus.CounterVec
+func Test_AddHistogram(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	type args struct { //nolint:govet
-		in0    context.Context
-		name   string
-		value  float64
-		labels []string
+
+	err = collector.AddHistogram(ctx, "test_histogram", 2.5, "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Success - Set value of existing gauge",
-			fields: fields{
-				gauges: map[string]*prometheus.GaugeVec{
-					"uds_security_hub_test_gauge": prometheus.NewGaugeVec(prometheus.GaugeOpts{
-						Name: "uds_security_hub_test_gauge",
-						Help: "Test gauge",
-					}, []string{"label1"}),
-				},
-				name: "uds_security_hub",
-			},
-			args: args{
-				in0:    context.Background(),
-				name:   "test_gauge",
-				value:  2.5,
-				labels: []string{"label1"},
-			},
-			wantErr: false,
-		},
-		{
-			name: "Error - Set value of non-existent gauge",
-			fields: fields{
-				gauges: map[string]*prometheus.GaugeVec{},
-				name:   "uds_security_hub",
-			},
-			args: args{
-				in0:    context.Background(),
-				name:   "non_existent_gauge",
-				value:  2.5,
-				labels: []string{"label1"},
-			},
-			wantErr: true,
-		},
+}
+
+func Test_SetGauge(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterGauge(ctx, "test_gauge", "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := &prometheusCollector{
-				histograms: tt.fields.histograms,
-				gauges:     tt.fields.gauges,
-				counters:   tt.fields.counters,
-				registry:   tt.fields.registry,
-				name:       tt.fields.name,
-			}
-			if err := p.SetGauge(tt.args.in0, tt.args.name, tt.args.value, tt.args.labels...); (err != nil) != tt.wantErr {
-				t.Errorf("SetGauge() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+
+	err = collector.SetGauge(ctx, "test_gauge", 1, "label1")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
