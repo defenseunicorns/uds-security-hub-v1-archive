@@ -7,7 +7,7 @@ build:
 
 # Run tests
 test:
-	go test ./... -v -coverprofile=coverage.out
+	go test -timeout 30s ./... -v -coverprofile=coverage.out
 
 # Lint the code
 lint:
