@@ -1,6 +1,6 @@
 module github.com/defenseunicorns/uds-security-hub
 
-go 1.22.1
+go 1.22.4
 
 require (
 	github.com/google/go-cmp v0.6.0
