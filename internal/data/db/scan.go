@@ -15,9 +15,9 @@ import (
 // ScanManager defines the interface for managing scans in the database.
 type ScanManager interface {
 	// InsertScan inserts a new Scan and its associated Vulnerabilities into the database.
-	InsertScan(ctx context.Context, dto external.ScanDTO) error
+	InsertScan(ctx context.Context, dto *external.ScanDTO) error
 	// UpdateScan updates an existing Scan and its associated Vulnerabilities in the database.
-	UpdateScan(ctx context.Context, dto external.ScanDTO) error
+	UpdateScan(ctx context.Context, dto *external.ScanDTO) error
 	// GetScan retrieves a Scan and its associated Vulnerabilities from the database.
 	GetScan(ctx context.Context, id uint) (*model.Scan, error)
 }
@@ -61,23 +61,70 @@ func (manager *GormScanManager) InsertScan(ctx context.Context, dto *external.Sc
 }
 
 // UpdateScan updates an existing Scan and its associated Vulnerabilities in the database.
-func (manager *GormScanManager) UpdateScan(ctx context.Context, _ *external.ScanDTO) error {
+func (manager *GormScanManager) UpdateScan(ctx context.Context, dto *external.ScanDTO) error {
 	if ctx == nil {
 		return fmt.Errorf("ctx cannot be nil")
 	}
 	if manager.db == nil {
 		return fmt.Errorf("db cannot be nil")
 	}
+	if dto == nil {
+		return fmt.Errorf("dto cannot be nil")
+	}
+
+	logger := log.NewLogger(ctx)
+	logger.Debug("UpdateScan", zap.Any("dto", dto))
+
+	var scan model.Scan
+	if err := manager.db.First(&scan, dto.ID).Error; err != nil {
+		return fmt.Errorf("error finding scan: %w", err)
+	}
+
+	// Update scan fields
+	scan.SchemaVersion = dto.SchemaVersion
+	scan.ArtifactName = dto.ArtifactName
+	scan.ArtifactType = dto.ArtifactType
+	scan.Metadata = dto.Metadata
+
+	// Use a transaction to ensure atomicity
+	err := manager.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Delete existing vulnerabilities
+		if err := tx.Where("scan_id = ?", scan.ID).Delete(&model.Vulnerability{}).Error; err != nil {
+			return fmt.Errorf("error deleting existing vulnerabilities: %w", err)
+		}
+
+		// Update the scan
+		scan.Vulnerabilities = dto.Vulnerabilities
+		if err := tx.Save(&scan).Error; err != nil {
+			return fmt.Errorf("error updating scan: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("transaction failed: %w", err)
+	}
+
 	return nil
 }
 
 // GetScan retrieves a Scan and its associated Vulnerabilities from the database.
-func (manager *GormScanManager) GetScan(ctx context.Context, _ *gorm.DB, _ uint) (*model.Scan, error) {
+func (manager *GormScanManager) GetScan(ctx context.Context, id uint) (*model.Scan, error) {
 	if ctx == nil {
 		return nil, fmt.Errorf("ctx cannot be nil")
 	}
 	if manager.db == nil {
 		return nil, fmt.Errorf("db cannot be nil")
 	}
-	return nil, nil
+
+	logger := log.NewLogger(ctx)
+	logger.Debug("GetScan", zap.Uint("id", id))
+
+	var scan model.Scan
+	if err := manager.db.Preload("Vulnerabilities").First(&scan, id).Error; err != nil {
+		return nil, fmt.Errorf("error retrieving scan: %w", err)
+	}
+
+	return &scan, nil
 }
