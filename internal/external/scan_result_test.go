@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+
+	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 )
 
 // TestScanResultDeserialization tests the ScanResultDeserialization function.
@@ -55,4 +61,61 @@ func TestScanResultDeserialization(t *testing.T) {
 	if vuln.LastModifiedDate.IsZero() {
 		t.Errorf("Expected LastModifiedDate to be a valid time")
 	}
+}
+func TestMapScanResultToDTO(t *testing.T) {
+	// Prepare test data
+	metadata := model.Metadata{
+		RepoTags:    []string{"test-repo-tag"},
+		RepoDigests: []string{"test-repo-digest"},
+		ImageConfig: model.ImageConfig{
+			Architecture: "test-architecture",
+			OS:           "test-os",
+		},
+		DiffIDs: []string{"test-diff-id"},
+	}
+	vulnerabilities := []model.Vulnerability{
+		{
+			PkgName: "test-pkg-name",
+		},
+	}
+	createdAt := time.Now()
+
+	scanResult := &ScanResult{
+		Metadata:     metadata,
+		CreatedAt:    createdAt,
+		ArtifactName: "test-artifact",
+		ArtifactType: "test-type",
+		Results: []struct {
+			Target          string                `json:"Target"`
+			Class           string                `json:"Class"`
+			Type            string                `json:"Type"`
+			Vulnerabilities []model.Vulnerability `json:"Vulnerabilities"`
+		}{
+			{
+				Target:          "test-target",
+				Class:           "test-class",
+				Type:            "test-type",
+				Vulnerabilities: vulnerabilities,
+			},
+		},
+		SchemaVersion: 1,
+		ID:            123,
+	}
+
+	expectedDTOs := []ScanDTO{
+		{
+			ID:              123,
+			SchemaVersion:   1,
+			CreatedAt:       createdAt,
+			ArtifactName:    "test-artifact",
+			ArtifactType:    "test-type",
+			Metadata:        metadata,
+			Vulnerabilities: vulnerabilities,
+		},
+	}
+
+	// Call the function
+	actualDTOs := MapScanResultToDTO(scanResult)
+
+	cmp.Diff(expectedDTOs, actualDTOs, cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt"))
 }
