@@ -18,16 +18,18 @@ type ScanResult struct {
 		Type            string                `json:"Type"`
 		Vulnerabilities []model.Vulnerability `json:"Vulnerabilities"`
 	} `json:"Results"`
-	SchemaVersion int `json:"SchemaVersion"`
+	SchemaVersion int  `json:"SchemaVersion"`
+	ID            uint `json:"ID"`
 }
 
 // ScanDTO is a struct that represents the scan data transfer object.
 type ScanDTO struct {
-	Metadata        model.Metadata
 	CreatedAt       time.Time
 	ArtifactName    string
 	ArtifactType    string
+	Metadata        model.Metadata
 	Vulnerabilities []model.Vulnerability
+	ID              uint
 	SchemaVersion   int
 }
 
@@ -36,6 +38,7 @@ func MapScanResultToDTO(result *ScanResult) []ScanDTO {
 	var dtos []ScanDTO
 	for _, res := range result.Results {
 		dto := ScanDTO{
+			ID:              result.ID,
 			SchemaVersion:   result.SchemaVersion,
 			CreatedAt:       result.CreatedAt,
 			ArtifactName:    result.ArtifactName,
