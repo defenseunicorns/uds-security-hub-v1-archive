@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package external
 
 import (
@@ -62,6 +65,7 @@ func TestScanResultDeserialization(t *testing.T) {
 		t.Errorf("Expected LastModifiedDate to be a valid time")
 	}
 }
+
 func TestMapScanResultToDTO(t *testing.T) {
 	// Prepare test data
 	metadata := model.Metadata{
@@ -72,6 +76,10 @@ func TestMapScanResultToDTO(t *testing.T) {
 			OS:           "test-os",
 		},
 		DiffIDs: []string{"test-diff-id"},
+	}
+	metadataJSON, err := json.Marshal(metadata)
+	if err != nil {
+		t.Fatalf("Failed to marshal metadata: %s", err)
 	}
 	vulnerabilities := []model.Vulnerability{
 		{
@@ -109,7 +117,7 @@ func TestMapScanResultToDTO(t *testing.T) {
 			CreatedAt:       createdAt,
 			ArtifactName:    "test-artifact",
 			ArtifactType:    "test-type",
-			Metadata:        metadata,
+			Metadata:        json.RawMessage(metadataJSON),
 			Vulnerabilities: vulnerabilities,
 		},
 	}
@@ -118,4 +126,62 @@ func TestMapScanResultToDTO(t *testing.T) {
 	actualDTOs := MapScanResultToDTO(scanResult)
 
 	cmp.Diff(expectedDTOs, actualDTOs, cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt"))
+}
+
+func TestMapPackageToDTO(t *testing.T) {
+	// Prepare test data
+
+	vulnerabilities := []model.Vulnerability{
+		{
+			PkgName: "test-pkg-name",
+		},
+	}
+	createdAt := time.Now()
+	updatedAt := time.Now()
+
+	scan := model.Scan{
+		ID:              123,
+		SchemaVersion:   1,
+		CreatedAt:       createdAt,
+		ArtifactName:    "test-artifact",
+		ArtifactType:    "test-type",
+		Vulnerabilities: vulnerabilities,
+	}
+
+	pkg := &model.Package{
+		ID:         456,
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
+		Name:       "test-package",
+		Repository: "test-repo",
+		Tag:        "test-tag",
+		Scans:      []model.Scan{scan},
+	}
+
+	expectedDTO := PackageDTO{
+		ID:         456,
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
+		Name:       "test-package",
+		Repository: "test-repo",
+		Tag:        "test-tag",
+		Scans: []ScanDTO{
+			{
+				ID:              123,
+				SchemaVersion:   1,
+				CreatedAt:       createdAt,
+				ArtifactName:    "test-artifact",
+				ArtifactType:    "test-type",
+				Vulnerabilities: vulnerabilities,
+			},
+		},
+	}
+
+	// Call the function
+	actualDTO := MapPackageToDTO(pkg)
+
+	// Compare the expected and actual DTOs
+	if diff := cmp.Diff(expectedDTO, actualDTO, cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt")); diff != "" {
+		t.Errorf("MapPackageToDTO() mismatch (-want +got):\n%s", diff)
+	}
 }

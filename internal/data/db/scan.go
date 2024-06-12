@@ -50,8 +50,8 @@ func (manager *GormScanManager) InsertScan(ctx context.Context, dto *external.Sc
 		CreatedAt:       dto.CreatedAt,
 		ArtifactName:    dto.ArtifactName,
 		ArtifactType:    dto.ArtifactType,
-		Metadata:        dto.Metadata,
 		Vulnerabilities: dto.Vulnerabilities,
+		PackageID:       dto.PackageID,
 	}
 
 	if err := manager.db.Create(&scan).Error; err != nil {
@@ -84,7 +84,6 @@ func (manager *GormScanManager) UpdateScan(ctx context.Context, dto *external.Sc
 	scan.SchemaVersion = dto.SchemaVersion
 	scan.ArtifactName = dto.ArtifactName
 	scan.ArtifactType = dto.ArtifactType
-	scan.Metadata = dto.Metadata
 
 	// Use a transaction to ensure atomicity
 	err := manager.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -127,4 +126,58 @@ func (manager *GormScanManager) GetScan(ctx context.Context, id uint) (*model.Sc
 	}
 
 	return &scan, nil
+}
+
+// InsertPackageScans inserts a new Package and its associated Scans into the database.
+func (manager *GormScanManager) InsertPackageScans(ctx context.Context, dto *external.PackageDTO) error {
+	if ctx == nil {
+		return fmt.Errorf("ctx cannot be nil")
+	}
+	if manager.db == nil {
+		return fmt.Errorf("db cannot be nil")
+	}
+
+	logger := log.NewLogger(ctx)
+	logger.Debug("InsertPackageScans", zap.String("package", dto.Name))
+
+	// Use a transaction to ensure atomicity
+	err := manager.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Insert the package
+		pkg := model.Package{
+			Name:       dto.Name,
+			Repository: dto.Repository,
+			Tag:        dto.Tag,
+		}
+		if err := tx.Create(&pkg).Error; err != nil {
+			return fmt.Errorf("error inserting package: %w", err)
+		}
+		logger.Debug("InsertPackageScans", zap.Uint("package_id", pkg.ID))
+		if pkg.ID == 0 {
+			return fmt.Errorf("error inserting package the ID is 0")
+		}
+		// Insert the scans
+		for i := range dto.Scans {
+			scanDTO := &dto.Scans[i]
+			scan := model.Scan{
+				SchemaVersion: scanDTO.SchemaVersion,
+				CreatedAt:     scanDTO.CreatedAt,
+				ArtifactName:  scanDTO.ArtifactName,
+				ArtifactType:  scanDTO.ArtifactType,
+				//Metadata:        scanDTO.Metadata,
+				Vulnerabilities: scanDTO.Vulnerabilities,
+				PackageID:       pkg.ID,
+			}
+			if err := tx.Create(&scan).Error; err != nil {
+				return fmt.Errorf("error inserting scan: %w", err)
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("transaction failed: %w", err)
+	}
+
+	return nil
 }

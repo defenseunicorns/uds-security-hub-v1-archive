@@ -7,16 +7,29 @@ import (
 	"time"
 )
 
+// Package represents a collection of scans.
+type Package struct {
+	CreatedAt  time.Time `json:"CreatedAt" gorm:"autoCreateTime"`
+	UpdatedAt  time.Time `json:"UpdatedAt" gorm:"autoUpdateTime"`
+	Name       string    `json:"Name"`
+	Repository string    `json:"Repository"`
+	Tag        string    `json:"Tag"`
+	Scans      []Scan    `json:"Scans" gorm:"foreignKey:PackageID"`
+	ID         uint      `json:"ID" gorm:"primaryKey;autoIncrement"`
+}
+
 // Scan represents the result of a vulnerability scan.
 type Scan struct {
-	Metadata        Metadata        `json:"Metadata" gorm:"embedded"`
 	CreatedAt       time.Time       `json:"CreatedAt" gorm:"autoCreateTime"`
 	UpdatedAt       time.Time       `json:"UpdatedAt" gorm:"autoUpdateTime"`
 	ArtifactName    string          `json:"ArtifactName"`
 	ArtifactType    string          `json:"ArtifactType"`
+	Metadata        json.RawMessage `json:"Metadata" gorm:"type:jsonb"`
 	Vulnerabilities []Vulnerability `json:"Vulnerabilities" gorm:"foreignKey:ScanID"`
+	Entrypoint      json.RawMessage `json:"Entrypoint" gorm:"type:jsonb"`
 	ID              uint            `json:"ID" gorm:"primaryKey;autoIncrement"`
 	SchemaVersion   int             `json:"SchemaVersion"`
+	PackageID       uint            `json:"PackageID"` // Foreign key to Package
 }
 
 // Metadata contains additional information about the scanned artifact.
@@ -68,13 +81,13 @@ type OS struct {
 
 // ImageConfig contains the configuration details of the container image.
 type ImageConfig struct {
-	Config       Config    `json:"config" gorm:"embedded"`
-	Architecture string    `json:"architecture"`
-	Author       string    `json:"author"`
-	Created      string    `json:"created"`
-	OS           string    `json:"os"`
-	RootFS       RootFS    `json:"rootfs" gorm:"embedded"`
-	History      []History `json:"history" gorm:"type:text[]"`
+	Config       Config       `json:"config" gorm:"embedded"`
+	Architecture string       `json:"architecture"`
+	Author       string       `json:"author"`
+	Created      string       `json:"created"`
+	OS           string       `json:"os"`
+	RootFS       RootFS       `json:"rootfs" gorm:"embedded"`
+	History      HistoryArray `json:"history" gorm:"type:jsonb"`
 }
 
 // RootFS represents the root filesystem of the image.
@@ -95,12 +108,13 @@ type Config struct {
 // ExposedPorts represents the exposed ports of the container.
 type ExposedPorts map[string]interface{}
 
+// Value implements the driver.Valuer interface for database serialization.
 func (e ExposedPorts) Value() (driver.Value, error) {
 	val, err := json.Marshal(e)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal ExposedPorts: %w", err)
 	}
-	return val, nil
+	return string(val), nil
 }
 
 // Scan implements the sql.Scanner interface for database deserialization.
@@ -141,6 +155,37 @@ func (h *History) Scan(value interface{}) error {
 	}
 	if err := json.Unmarshal([]byte(b), h); err != nil {
 		return fmt.Errorf("failed to unmarshal History: %w", err)
+	}
+	return nil
+}
+
+// HistoryArray is a custom type for handling JSON serialization of History arrays.
+type HistoryArray []History
+
+// Value implements the driver.Valuer interface for database serialization.
+func (h HistoryArray) Value() (driver.Value, error) {
+	if len(h) == 0 {
+		return nil, nil // Return nil if the array is empty
+	}
+	val, err := json.Marshal(h)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal HistoryArray: %w", err)
+	}
+	return val, nil
+}
+
+// Scan implements the sql.Scanner interface for database deserialization.
+func (h *HistoryArray) Scan(value interface{}) error {
+	if value == nil {
+		*h = nil
+		return nil
+	}
+	b, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("HistoryArray Scan error: expected []byte, got %T", value)
+	}
+	if err := json.Unmarshal(b, h); err != nil {
+		return fmt.Errorf("failed to unmarshal HistoryArray: %w", err)
 	}
 	return nil
 }
