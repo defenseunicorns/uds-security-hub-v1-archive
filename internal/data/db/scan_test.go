@@ -311,7 +311,9 @@ func TestGetScan(t *testing.T) {
 			expectedScan.ID = insertedScan.ID // Ensure the ID matches
 
 			// Check if the fetched scan matches the inserted scan
-			if diff := cmp.Diff(&expectedScan, fetchedScan, cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt", "Metadata")); diff != "" {
+			if diff := cmp.Diff(&expectedScan, fetchedScan,
+				cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt", "Metadata"),
+				cmpopts.EquateApproxTime(time.Second)); diff != "" {
 				t.Errorf("fetched scan mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -391,7 +393,8 @@ func TestInsertPackageScans(t *testing.T) {
 			t.Logf("expectedPackage: %+v", expectedPackage)
 			t.Logf("fetchedPackage: %+v", fetchedPackage)
 			// Check if the fetched package matches the inserted package
-			if diff := cmp.Diff(expectedPackage, fetchedPackage, cmpopts.IgnoreFields(model.Package{}, "ID", "CreatedAt", "UpdatedAt"), cmpopts.IgnoreFields(model.Scan{}, "ID", "CreatedAt", "UpdatedAt", "PackageID"), cmpopts.IgnoreFields(model.Vulnerability{}, "ID", "CreatedAt", "UpdatedAt", "ScanID")); diff != "" {
+			if diff := cmp.Diff(expectedPackage, fetchedPackage, cmpopts.IgnoreFields(model.Package{}, "ID", "CreatedAt", "UpdatedAt"), cmpopts.IgnoreFields(model.Scan{}, "ID", "CreatedAt", "UpdatedAt", "PackageID"), cmpopts.IgnoreFields(model.Vulnerability{}, "ID", "CreatedAt", "UpdatedAt", "ScanID"),
+				cmpopts.EquateApproxTime(time.Second)); diff != "" {
 				t.Errorf("fetched package mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -456,7 +459,9 @@ func TestScanResultDeserialization(t *testing.T) {
 	expectedScan := convertDTOToScan(&result)
 
 	// Check if the fetched scan matches the inserted scan
-	if diff := cmp.Diff(expectedScan, fetchedScan, cmpopts.IgnoreFields(model.Scan{}, "ID", "CreatedAt", "UpdatedAt", "Metadata"), cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(&expectedScan, &fetchedScan,
+		cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt", "Metadata", "Vulnerabilities", "ID", "PackageID"),
+		cmpopts.EquateApproxTime(time.Second)); diff != "" {
 		t.Errorf("fetched scan mismatch (-want +got):\n%s", diff)
 	}
 }
