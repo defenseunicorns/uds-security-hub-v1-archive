@@ -1,9 +1,7 @@
 package model
 
 import (
-	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -45,34 +43,6 @@ type Metadata struct {
 // JSONStringArray custom type for handling JSON serialization of string arrays.
 type JSONStringArray []string
 
-// Value implements the driver.Valuer interface for database serialization.
-func (j JSONStringArray) Value() (driver.Value, error) {
-	if len(j) == 0 {
-		return nil, nil // Return nil if the array is empty
-	}
-	val, err := json.Marshal(j)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal JSONStringArray: %w", err)
-	}
-	return val, nil
-}
-
-// Scan implements the sql.Scanner interface for database deserialization.
-func (j *JSONStringArray) Scan(value interface{}) error {
-	if value == nil {
-		*j = nil
-		return nil
-	}
-	b, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("JSONStringArray Scan error: expected []byte, got %T", value)
-	}
-	if err := json.Unmarshal(b, j); err != nil {
-		return fmt.Errorf("failed to unmarshal JSONStringArray: %w", err)
-	}
-	return nil
-}
-
 // OS represents the operating system information.
 type OS struct {
 	Family string `json:"Family"`
@@ -108,27 +78,6 @@ type Config struct {
 // ExposedPorts represents the exposed ports of the container.
 type ExposedPorts map[string]interface{}
 
-// Value implements the driver.Valuer interface for database serialization.
-func (e ExposedPorts) Value() (driver.Value, error) {
-	val, err := json.Marshal(e)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal ExposedPorts: %w", err)
-	}
-	return string(val), nil
-}
-
-// Scan implements the sql.Scanner interface for database deserialization.
-func (e *ExposedPorts) Scan(value interface{}) error {
-	bytes, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("ExposedPorts Scan error: expected []byte, got %T", value)
-	}
-	if err := json.Unmarshal(bytes, e); err != nil {
-		return fmt.Errorf("failed to unmarshal ExposedPorts: %w", err)
-	}
-	return nil
-}
-
 // History represents the history of the image.
 type History struct {
 	Author     string `json:"author,omitempty"`
@@ -138,54 +87,5 @@ type History struct {
 	EmptyLayer bool   `json:"empty_layer,omitempty"`
 }
 
-// Value implements the driver.Valuer interface for database serialization.
-func (h History) Value() (driver.Value, error) {
-	b, err := json.Marshal(h)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal History: %w", err)
-	}
-	return string(b), nil
-}
-
-// Scan implements the sql.Scanner interface for database deserialization.
-func (h *History) Scan(value interface{}) error {
-	b, ok := value.(string)
-	if !ok {
-		return fmt.Errorf("History Scan error: expected string, got %T", value)
-	}
-	if err := json.Unmarshal([]byte(b), h); err != nil {
-		return fmt.Errorf("failed to unmarshal History: %w", err)
-	}
-	return nil
-}
-
 // HistoryArray is a custom type for handling JSON serialization of History arrays.
 type HistoryArray []History
-
-// Value implements the driver.Valuer interface for database serialization.
-func (h HistoryArray) Value() (driver.Value, error) {
-	if len(h) == 0 {
-		return nil, nil // Return nil if the array is empty
-	}
-	val, err := json.Marshal(h)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal HistoryArray: %w", err)
-	}
-	return val, nil
-}
-
-// Scan implements the sql.Scanner interface for database deserialization.
-func (h *HistoryArray) Scan(value interface{}) error {
-	if value == nil {
-		*h = nil
-		return nil
-	}
-	b, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("HistoryArray Scan error: expected []byte, got %T", value)
-	}
-	if err := json.Unmarshal(b, h); err != nil {
-		return fmt.Errorf("failed to unmarshal HistoryArray: %w", err)
-	}
-	return nil
-}
