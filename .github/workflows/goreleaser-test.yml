@@ -25,6 +25,13 @@ jobs:
         go-version: '1.22.4'
         check-latest: true
 
+    - name: Create temporary Git tag
+      run: |
+        git tag temp-tag
+
+    - name: Check Goreleaser configuration
+      run: goreleaser check
+
     - name: Run GoReleaser
       id: run-goreleaser
       uses: goreleaser/goreleaser-action@5742e2a039330cbb23ebf35f046f814d4c6ff811 # v5.1.0
@@ -34,5 +41,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Check Goreleaser configuration
-      run: goreleaser check
+    - name: Delete temporary Git tag
+      run: |
+        git tag -d temp-tag
