@@ -5,10 +5,6 @@ all: build
 build:
 	go build -o bin/uds-security-hub main.go
 
-# Run tests
-test:
-	go test -timeout 30s ./... -v -coverprofile=coverage.out
-
 # Lint the code
 lint:
 	 golangci-lint run ./...

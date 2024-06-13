@@ -27,6 +27,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/pgx/v5 v5.4.3 // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
@@ -54,3 +55,6 @@ require (
 replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.18.0
 
 replace github.com/prometheus/common => github.com/prometheus/common v0.45.0
+
+//https://github.com/jackc/pgx/security/advisories/GHSA-mrww-27vc-gghv
+replace github.com/jackc/pgx/v5 => github.com/jackc/pgx/v5 v5.5.4
