@@ -27,10 +27,7 @@ jobs:
 
     - name: Create temporary Git tag
       run: |
-        git tag temp-tag
-
-    - name: Check Goreleaser configuration
-      run: goreleaser check
+        git tag v0.0.0-temp-tag
 
     - name: Run GoReleaser
       id: run-goreleaser
@@ -43,4 +40,4 @@ jobs:
 
     - name: Delete temporary Git tag
       run: |
-        git tag -d temp-tag
+        git tag -d v0.0.0-temp-tag
