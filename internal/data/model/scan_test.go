@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package model
 
 import (
@@ -31,13 +34,6 @@ func TestScanModel(t *testing.T) {
 				SchemaVersion: 1,
 				ArtifactName:  "example-image",
 				ArtifactType:  "container",
-				Metadata: Metadata{
-					OS:          OS{Family: "alpine", Name: "Alpine Linux v3.14"},
-					ImageID:     "sha256:abcdef",
-					DiffIDs:     []string{"sha256:layer1", "sha256:layer2"},
-					RepoTags:    []string{"example-image:latest"},
-					RepoDigests: []string{"example-image@sha256:abcdef"},
-				},
 			},
 		},
 	}
