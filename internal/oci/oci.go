@@ -1,27 +1,33 @@
 package oci
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/docker/docker/client"
 )
 
 // ImageBuildTime retrieves the build time of an OCI image.
 func ImageBuildTime(imageRef string) (*time.Time, error) {
-	ref, err := name.ParseReference(imageRef)
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return nil, fmt.Errorf("parsing reference %q: %w", imageRef, err)
+		return nil, fmt.Errorf("failed to create Docker client: %w", err)
 	}
-	img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+
+	imageInspect, _, err := cli.ImageInspectWithRaw(context.Background(), imageRef)
 	if err != nil {
-		return nil, fmt.Errorf("remote.Image() %q: %w", imageRef, err)
+		return nil, fmt.Errorf("failed to inspect image: %w", err)
 	}
-	config, err := img.ConfigFile()
+
+	if imageInspect.Created == "" {
+		return nil, fmt.Errorf("image creation time is zero")
+	}
+
+	createdTime, err := time.Parse(time.RFC3339, imageInspect.Created)
 	if err != nil {
-		return nil, fmt.Errorf("img.ConfigFile() %q: %w", imageRef, err)
+		return nil, fmt.Errorf("failed to parse image creation time: %w", err)
 	}
-	return &config.Created.Time, nil
+
+	return &createdTime, nil
 }
