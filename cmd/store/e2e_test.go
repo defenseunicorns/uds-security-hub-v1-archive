@@ -10,12 +10,15 @@ import (
 
 // TestStore is a test for the store command e2e.
 func TestStore(t *testing.T) {
-	// Simulate command line arguments
+	userName := os.Getenv("REGISTRY1_USERNAME")
+	password := os.Getenv("REGISTRY1_PASSWORD")
 	os.Args = []string{
 		"program", // the program name, typically the executable name
 		"-o", "defenseunicorns",
 		"-n", "packages/uds/gitlab-runner",
 		"-g", "16.10.0-uds.0-upstream",
+		"-u", userName,
+		"-p", password,
 	}
 
 	main()
