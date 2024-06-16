@@ -4,67 +4,63 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/zeebo/assert"
 )
 
 // TestGenerateConfigText tests the GenerateConfigText function.
 func TestGenerateConfigText(t *testing.T) {
-	type args struct {
-		credentialsMap map[string]RegistryCredentials
-	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name           string
+		credentialsMap map[string]RegistryCredentials
+		expected       string
+		expectError    bool
 	}{
 		{
-			name: "single credential",
-			args: args{
-				credentialsMap: map[string]RegistryCredentials{
-					"example.com": {
-						Username: "user",
-						Password: "pass",
-					},
+			name: "single registry",
+			credentialsMap: map[string]RegistryCredentials{
+				"ghcr.io": {
+					Username: "user1",
+					Password: "pass1",
 				},
 			},
-			want:    `{"auths":{"example.com":{"username":"user","password":"pass"}}}`,
-			wantErr: false,
+			expected:    `{"auths":{"ghcr.io":{"auth":"dXNlcjE6cGFzczE="}}}`,
+			expectError: false,
 		},
 		{
-			name: "multiple credentials",
-			args: args{
-				credentialsMap: map[string]RegistryCredentials{
-					"example.com": {
-						Username: "user1",
-						Password: "pass1",
-					},
-					"example.org": {
-						Username: "user2",
-						Password: "pass2",
-					},
+			name: "multiple registries",
+			credentialsMap: map[string]RegistryCredentials{
+				"ghcr.io": {
+					Username: "user1",
+					Password: "pass1",
+				},
+				"registry1.dso.mil": {
+					Username: "user2",
+					Password: "pass2",
 				},
 			},
-			want:    `{"auths":{"example.com":{"username":"user1","password":"pass1"},"example.org":{"username":"user2","password":"pass2"}}}`,
-			wantErr: false,
+			expected:    `{"auths":{"ghcr.io":{"auth":"dXNlcjE6cGFzczE="},"registry1.dso.mil":{"auth":"dXNlcjI6cGFzczI="}}}`,
+			expectError: false,
 		},
 		{
-			name: "empty credentials map",
-			args: args{
-				credentialsMap: map[string]RegistryCredentials{},
-			},
-			want:    `{"auths":{}}`,
-			wantErr: false,
+			name:           "empty credentials",
+			credentialsMap: map[string]RegistryCredentials{},
+			expected:       `{"auths":{}}`,
+			expectError:    false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateConfigText(tt.args.credentialsMap)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GenerateConfigText() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("GenerateConfigText() got = %v, want %v", got, tt.want)
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := GenerateConfigText(tc.credentialsMap)
+			if tc.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				if diff := cmp.Diff(tc.expected, result); diff != "" {
+					t.Errorf("GenerateConfigText() mismatch (-want +got):\n%s", diff)
+				}
 			}
 		})
 	}

@@ -18,8 +18,10 @@ issues:
         - funlen
         - goconst
         - gocyclo
+        - gocognit
         - lll
         - wrapcheck
+        - govet
 linters:
   enable:
     - asciicheck

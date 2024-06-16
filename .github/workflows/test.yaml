@@ -38,6 +38,9 @@ jobs:
           sudo apt-get install trivy -y
 
     - name: E2E Tests
+      env:
+        REGISTRY1_USERNAME: ${{ secrets.IRON_BANK_ROBOT_USERNAME }}
+        REGISTRY1_PASSWORD: ${{ secrets.IRON_BANK_ROBOT_PASSWORD }}
       run: make test-integration
 
     - name: Upload coverage reports to Codecov

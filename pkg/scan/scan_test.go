@@ -229,7 +229,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 		dockerPassword  string
 		ghrcToken       string
 	}
-	type args struct { //nolint:govet
+	type args struct {
 		imageRef        string
 		userName        string
 		password        string
