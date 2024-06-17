@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +18,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
+	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -51,7 +53,7 @@ func newStoreCmd() *cobra.Command {
 				return fmt.Errorf("trivy is not installed: %w", err)
 			}
 
-			requiredFlags := []string{"org", "package-name", "tag", "db-host", "db-user", "db-password", "db-name", "db-port"}
+			requiredFlags := []string{"org", "package-name", "db-host", "db-user", "db-password", "db-name", "db-port"}
 			for _, flag := range requiredFlags {
 				value, err := cmd.Flags().GetString(flag)
 				if err != nil {
@@ -78,6 +80,8 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().StringP("db-name", "", "test_db", "Database name")
 	storeCmd.PersistentFlags().StringP("db-port", "", "5432", "Database port")
 	storeCmd.PersistentFlags().StringP("db-ssl-mode", "", "disable", "Database SSL mode")
+	storeCmd.PersistentFlags().StringP("github-token", "t", "", "GitHub token")
+	storeCmd.PersistentFlags().IntP("number-of-versions-to-scan", "v", 2, "Number of versions to scan")
 
 	return storeCmd
 }
@@ -102,7 +106,7 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
-	return runStoreScannerWithDeps(ctx, cmd, logger, scanner, manager)
+	return runStoreScannerWithDeps(ctx, cmd, logger, scanner, manager, config)
 }
 
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.
@@ -112,6 +116,7 @@ func runStoreScannerWithDeps(
 	_ types.Logger,
 	scanner Scanner,
 	manager ScanManager,
+	config *Config,
 ) error {
 	if scanner == nil {
 		return fmt.Errorf("scanner cannot be nil")
@@ -121,10 +126,6 @@ func runStoreScannerWithDeps(
 	}
 	if cmd == nil {
 		return fmt.Errorf("command cannot be nil")
-	}
-	config, err := getConfigFromFlags(cmd)
-	if err != nil {
-		return fmt.Errorf("error getting config from flags: %w", err)
 	}
 
 	dbConn, err := setupDBConnection(config.ConnStr)
@@ -136,33 +137,49 @@ func runStoreScannerWithDeps(
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
+	versionTagDate, err := getVersionTagDate(ctx, types.NewRealHTTPClient(),
+		config.GitHubToken, config.Org, "container", url.PathEscape(config.PackageName))
+	if err != nil {
+		return fmt.Errorf("error getting package versions: %w", err)
+	}
 
-	return storeScanResults(ctx, scanner, manager, config)
+	var combinedErrors error
+	for _, version := range versionTagDate[:min(len(versionTagDate), config.NumberOfVersionsToScan)] {
+		config.Tag = version.Tags[0]
+		if err := storeScanResults(ctx, scanner, manager, config); err != nil {
+			combinedErrors = errors.Join(combinedErrors, err)
+		}
+	}
+	return combinedErrors
 }
 
 // Config is the configuration for the store command.
 type Config struct {
-	ConnStr        string
-	DockerUsername string
-	DockerPassword string
-	Org            string
-	PackageName    string
-	Tag            string
+	GitHubToken            string
+	ConnStr                string
+	DockerUsername         string
+	DockerPassword         string
+	Org                    string
+	PackageName            string
+	Tag                    string
+	NumberOfVersionsToScan int
 }
 
 // getConfigFromFlags gets the configuration from the command line flags.
 func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
-	dockerUsername, _ := cmd.Flags().GetString("docker-username") //nolint:errcheck
-	dockerPassword, _ := cmd.Flags().GetString("docker-password") //nolint:errcheck
-	org, _ := cmd.Flags().GetString("org")                        //nolint:errcheck
-	packageName, _ := cmd.Flags().GetString("package-name")       //nolint:errcheck
-	tag, _ := cmd.Flags().GetString("tag")                        //nolint:errcheck
-	dbHost, _ := cmd.Flags().GetString("db-host")                 //nolint:errcheck
-	dbUser, _ := cmd.Flags().GetString("db-user")                 //nolint:errcheck
-	dbPassword, _ := cmd.Flags().GetString("db-password")         //nolint:errcheck
-	dbName, _ := cmd.Flags().GetString("db-name")                 //nolint:errcheck
-	dbPort, _ := cmd.Flags().GetString("db-port")                 //nolint:errcheck
-	dbSSLMode, _ := cmd.Flags().GetString("db-ssl-mode")          //nolint:errcheck
+	dockerUsername, _ := cmd.Flags().GetString("docker-username")                 //nolint:errcheck
+	dockerPassword, _ := cmd.Flags().GetString("docker-password")                 //nolint:errcheck
+	org, _ := cmd.Flags().GetString("org")                                        //nolint:errcheck
+	packageName, _ := cmd.Flags().GetString("package-name")                       //nolint:errcheck
+	tag, _ := cmd.Flags().GetString("tag")                                        //nolint:errcheck
+	dbHost, _ := cmd.Flags().GetString("db-host")                                 //nolint:errcheck
+	dbUser, _ := cmd.Flags().GetString("db-user")                                 //nolint:errcheck
+	dbPassword, _ := cmd.Flags().GetString("db-password")                         //nolint:errcheck
+	dbName, _ := cmd.Flags().GetString("db-name")                                 //nolint:errcheck
+	dbPort, _ := cmd.Flags().GetString("db-port")                                 //nolint:errcheck
+	dbSSLMode, _ := cmd.Flags().GetString("db-ssl-mode")                          //nolint:errcheck
+	githubToken, _ := cmd.Flags().GetString("github-token")                       //nolint:errcheck
+	numberOfVersionsToScan, _ := cmd.Flags().GetInt("number-of-versions-to-scan") //nolint:errcheck
 
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
@@ -170,12 +187,14 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	)
 
 	return &Config{
-		DockerUsername: dockerUsername,
-		DockerPassword: dockerPassword,
-		Org:            org,
-		PackageName:    packageName,
-		Tag:            tag,
-		ConnStr:        connStr,
+		DockerUsername:         dockerUsername,
+		DockerPassword:         dockerPassword,
+		Org:                    org,
+		PackageName:            packageName,
+		Tag:                    tag,
+		ConnStr:                connStr,
+		GitHubToken:            githubToken,
+		NumberOfVersionsToScan: numberOfVersionsToScan,
 	}, nil
 }
 
@@ -281,3 +300,30 @@ func generateAndWriteDockerConfig(_ context.Context) (string, error) {
 
 	return filepath.Dir(dockerConfigPath), nil
 }
+func GetPackageVersions(ctx context.Context, org, packageName, gitHubToken string) (*github.VersionTagDate, error) {
+	const packageType = "container"
+	if org == "" || packageName == "" || gitHubToken == "" {
+		return nil, fmt.Errorf("invalid parameters: org, packageName, and gitHubToken must be provided")
+	}
+
+	client := types.NewRealHTTPClient()
+	versions, err := github.GetPackageVersions(ctx, client, gitHubToken, org, packageType, packageName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get version tags and dates: %w", err)
+	}
+	if len(versions) == 0 {
+		return nil, fmt.Errorf("no versions found for package %s in organization %s", packageName, org)
+	}
+
+	// Assuming we want the latest version
+	latestVersion := versions[0]
+	for _, version := range versions {
+		if version.Date.After(latestVersion.Date) {
+			latestVersion = version
+		}
+	}
+
+	return &latestVersion, nil
+}
+
+var getVersionTagDate = github.GetPackageVersions

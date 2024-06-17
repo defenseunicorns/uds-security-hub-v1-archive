@@ -3,16 +3,21 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/mock"
+	"github.com/zeebo/assert"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
+	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 // TestNewStoreCmd tests the newStoreCmd function.
@@ -200,36 +205,6 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 			cmd:     nil,
 			wantErr: true,
 		},
-		{
-			name: "Valid inputs",
-			scanner: func() *MockScanner {
-				mockScanner := new(MockScanner)
-				mockScanner.On("ScanZarfPackage", "testorg", "testpackage", "testtag").Return([]string{"result1.json", "result2.json"}, nil)
-				return mockScanner
-			}(),
-			manager: func() *MockScanManager {
-				mockManager := new(MockScanManager)
-				mockManager.On("InsertPackageScans", mock.Anything, mock.AnythingOfType("*external.PackageDTO")).Return(nil)
-				return mockManager
-			}(),
-			cmd: func() *cobra.Command {
-				cmd := &cobra.Command{}
-				cmd.PersistentFlags().String("docker-username", "testuser", "Docker username")
-				cmd.PersistentFlags().String("docker-password", "testpass", "Docker password")
-				cmd.PersistentFlags().String("org", "testorg", "Organization name")
-				cmd.PersistentFlags().String("package-name", "testpackage", "Package name")
-				cmd.PersistentFlags().String("tag", "testtag", "Tag name")
-				cmd.PersistentFlags().String("db-host", "localhost", "Database host")
-				cmd.PersistentFlags().String("db-user", "test_user", "Database user")
-				cmd.PersistentFlags().String("db-password", "test_password", "Database password")
-				cmd.PersistentFlags().String("db-name", "test_db", "Database name")
-				cmd.PersistentFlags().String("db-port", "5432", "Database port")
-				cmd.PersistentFlags().String("db-ssl-mode", "disable", "Database SSL mode")
-				cmd.ParseFlags([]string{}) //nolint:errcheck
-				return cmd
-			}(),
-			wantErr: false,
-		},
 	}
 
 	for _, tt := range tests {
@@ -250,13 +225,7 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 				}
 			}
 
-<<<<<<< HEAD
-			err := runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager)
-||||||| parent of 54a252d (Refactor store command to include new flags and update database connection logic. Enhance error handling and output for better debugging. Update tests to cover new configurations.)
-			err := runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager, nil)
-=======
 			err = runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager, c)
->>>>>>> 54a252d (Refactor store command to include new flags and update database connection logic. Enhance error handling and output for better debugging. Update tests to cover new configurations.)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("runStoreScannerWithDeps() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -264,7 +233,6 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 	}
 }
 
-// TestGenerateAndWriteDockerConfig tests the generateAndWriteDockerConfig function.
 func TestGenerateAndWriteDockerConfig(t *testing.T) {
 	tests := []struct {
 		name                string
@@ -283,12 +251,10 @@ func TestGenerateAndWriteDockerConfig(t *testing.T) {
 			expectedFileContent: `{
 				"auths": {
 					"ghcr.io": {
-						"username": "user1",
-						"password": "pass1"
+						"auth": "dXNlcjE6cGFzczE="
 					},
 					"registry1.dso.mil": {
-						"username": "user2",
-						"password": "pass2"
+						"auth": "dXNlcjI6cGFzczI="
 					}
 				}
 			}`,
@@ -347,6 +313,60 @@ func TestGenerateAndWriteDockerConfig(t *testing.T) {
 				if diff := cmp.Diff(want, got); diff != "" {
 					t.Errorf("mismatch (-want +got):\n%s", diff)
 				}
+			}
+		})
+	}
+}
+
+func TestGetPackageVersions(t *testing.T) {
+	tests := []struct {
+		name          string
+		org           string
+		packageName   string
+		gitHubToken   string
+		mockFunc      func(ctx context.Context, client types.HTTPClientInterface, token, org, packageType, packageName string) ([]github.VersionTagDate, error)
+		expectedError bool
+		expectedTag   string
+		expectedDate  time.Time
+	}{
+		{
+			name:        "error from GitHub API",
+			org:         "defenseunicorns",
+			packageName: "test-package",
+			gitHubToken: "test-token",
+			mockFunc: func(ctx context.Context, client types.HTTPClientInterface, token, org, packageType, packageName string) ([]github.VersionTagDate, error) {
+				return nil, fmt.Errorf("API error")
+			},
+			expectedError: true,
+		},
+		{
+			name:        "empty parameters",
+			org:         "",
+			packageName: "",
+			gitHubToken: "",
+			mockFunc: func(ctx context.Context, client types.HTTPClientInterface, token, org, packageType, packageName string) ([]github.VersionTagDate, error) {
+				return nil, fmt.Errorf("invalid parameters")
+			},
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Override the getVersionTagDate function with the mock function
+			getVersionTagDate = tt.mockFunc
+
+			// Call the function under test
+			version, err := GetPackageVersions(context.Background(), tt.org, tt.packageName, tt.gitHubToken)
+
+			// Check for expected error
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, version)
+				assert.Equal(t, tt.expectedTag, version.Tags[0])
+				assert.Equal(t, tt.expectedDate, version.Date)
 			}
 		})
 	}

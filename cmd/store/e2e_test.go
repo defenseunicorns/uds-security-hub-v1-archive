@@ -9,9 +9,13 @@ import (
 
 // TestStore is a test for the store command e2e.
 func TestStore(t *testing.T) {
+
 	userName := os.Getenv("REGISTRY1_USERNAME")
 	password := os.Getenv("REGISTRY1_PASSWORD")
 	github := os.Getenv("GITHUB_TOKEN")
+	if github == "" {
+		t.Fatalf("GITHUB_TOKEN is required")
+	}
 	os.Args = []string{
 		"program", // the program name, typically the executable name
 		"-o", "defenseunicorns",
