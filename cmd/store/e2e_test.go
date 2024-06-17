@@ -11,12 +11,14 @@ import (
 func TestStore(t *testing.T) {
 	userName := os.Getenv("REGISTRY1_USERNAME")
 	password := os.Getenv("REGISTRY1_PASSWORD")
+	github := os.Getenv("GITHUB_TOKEN")
 	os.Args = []string{
 		"program", // the program name, typically the executable name
 		"-o", "defenseunicorns",
 		"-n", "packages/uds/gitlab-runner",
 		"-u", userName,
 		"-p", password,
+		"-t", github,
 	}
 
 	main()

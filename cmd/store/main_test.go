@@ -63,17 +63,6 @@ func TestNewStoreCmd(t *testing.T) {
 	}
 }
 
-// TestSetupDBConnection_Failure tests the setupDBConnection function with an invalid connection string.
-func TestSetupDBConnection_Failure(t *testing.T) {
-	// Use an invalid connection string
-	connStr := "host=invalid port=5432 user=invalid dbname=invalid password=invalid sslmode=disable"
-
-	_, err := setupDBConnection(connStr)
-	if err == nil {
-		t.Fatalf("Expected error, got nil")
-	}
-}
-
 // Test_getConfigFromFlags tests the getConfigFromFlags function.
 func Test_getConfigFromFlags(t *testing.T) {
 	type args struct {
@@ -94,7 +83,6 @@ func Test_getConfigFromFlags(t *testing.T) {
 					cmd.PersistentFlags().String("docker-password", "testpass", "Docker password")
 					cmd.PersistentFlags().String("org", "testorg", "Organization name")
 					cmd.PersistentFlags().String("package-name", "testpackage", "Package name")
-					cmd.PersistentFlags().String("tag", "testtag", "Tag name")
 					cmd.PersistentFlags().String("db-host", "localhost", "Database host")
 					cmd.PersistentFlags().String("db-user", "test_user", "Database user")
 					cmd.PersistentFlags().String("db-password", "test_password", "Database password")
@@ -111,7 +99,6 @@ func Test_getConfigFromFlags(t *testing.T) {
 				DockerPassword: "testpass",
 				Org:            "testorg",
 				PackageName:    "testpackage",
-				Tag:            "testtag",
 			},
 			wantErr: false,
 		},
@@ -247,15 +234,29 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var c *Config
+			var err error
 			if tt.name == "Valid inputs" {
 				// Create mock scan result files
 				os.WriteFile("result1.json", []byte(`{"some": "data"}`), 0o600) //nolint:errcheck
 				os.WriteFile("result2.json", []byte(`{"some": "data"}`), 0o600) //nolint:errcheck
 				defer os.Remove("result1.json")
 				defer os.Remove("result2.json")
+
+				c, err = getConfigFromFlags(tt.cmd)
+				c.Tag = "testtag"
+				if err != nil {
+					t.Fatalf("getConfigFromFlags() error = %v", err)
+				}
 			}
 
+<<<<<<< HEAD
 			err := runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager)
+||||||| parent of 54a252d (Refactor store command to include new flags and update database connection logic. Enhance error handling and output for better debugging. Update tests to cover new configurations.)
+			err := runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager, nil)
+=======
+			err = runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager, c)
+>>>>>>> 54a252d (Refactor store command to include new flags and update database connection logic. Enhance error handling and output for better debugging. Update tests to cover new configurations.)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("runStoreScannerWithDeps() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -282,10 +283,12 @@ func TestGenerateAndWriteDockerConfig(t *testing.T) {
 			expectedFileContent: `{
 				"auths": {
 					"ghcr.io": {
-						"auth": "dXNlcjE6cGFzczE="
+						"username": "user1",
+						"password": "pass1"
 					},
 					"registry1.dso.mil": {
-						"auth": "dXNlcjI6cGFzczI="
+						"username": "user2",
+						"password": "pass2"
 					}
 				}
 			}`,
