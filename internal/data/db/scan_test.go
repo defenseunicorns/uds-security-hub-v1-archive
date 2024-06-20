@@ -32,7 +32,6 @@ func convertDTOToScan(dto *external.ScanDTO) model.Scan {
 
 // TestInsertScan tests the InsertScan method of the GormScanManager.
 func TestInsertScan(t *testing.T) {
-	t.Skipf("TestInsertScan")
 	type args struct {
 		db  *gorm.DB
 		dto external.ScanDTO
@@ -120,7 +119,6 @@ func TestInsertScan(t *testing.T) {
 
 // TestUpdateScan tests the UpdateScan method of the GormScanManager.
 func TestUpdateScan(t *testing.T) {
-	t.Skipf("not implemented")
 	type args struct {
 		db  *gorm.DB
 		dto external.ScanDTO
@@ -233,7 +231,6 @@ func TestUpdateScan(t *testing.T) {
 
 // TestGetScan tests the GetScan method of the GormScanManager.
 func TestGetScan(t *testing.T) {
-	t.Skipf("not implemented")
 	type args struct {
 		db *gorm.DB
 		id uint
@@ -324,7 +321,6 @@ func TestGetScan(t *testing.T) {
 }
 
 func TestInsertPackageScans(t *testing.T) {
-	t.Skipf("not implemented")
 	type args struct {
 		db  *gorm.DB
 		dto external.PackageDTO

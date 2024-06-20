@@ -9,19 +9,25 @@ import (
 
 // TestStore is a test for the store command e2e.
 func TestStore(t *testing.T) {
-
-	userName := os.Getenv("REGISTRY1_USERNAME")
-	password := os.Getenv("REGISTRY1_PASSWORD")
 	github := os.Getenv("GITHUB_TOKEN")
-	if github == "" {
-		t.Fatalf("GITHUB_TOKEN is required")
+	ghcrCreds := os.Getenv("GHCR_CREDS")
+	registry1Creds := os.Getenv("REGISTRY1_CREDS")
+	dockerCreds := os.Getenv("DOCKER_IO_CREDS")
+	if github == "" || ghcrCreds == "" || registry1Creds == "" {
+		t.Fatalf("GITHUB_TOKEN, GHCR_CREDS, and REGISTRY1_CREDS are required")
 	}
+
 	os.Args = []string{
-		"program", // the program name, typically the executable name
-		"-o", "defenseunicorns",
+		"program",
+		"--registry-creds", ghcrCreds,
+		"--registry-creds", registry1Creds,
+		"--registry-creds", dockerCreds,
 		"-n", "packages/uds/gitlab-runner",
-		"-u", userName,
-		"-p", password,
+		"--db-host", "localhost",
+		"--db-password", "test_password",
+		"--db-user", "test_user",
+		"--db-ssl-mode", "disable",
+		"-v", "2",
 		"-t", github,
 	}
 
