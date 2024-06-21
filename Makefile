@@ -1,3 +1,6 @@
+# Set the shell to bash
+SHELL := /bin/bash
+
 # Default target
 all: build
 
@@ -19,14 +22,13 @@ docker-up: docker-down
 	sleep 5
 
 table-init: docker-up
-	@echo "Initializing tables..."
 	@go run ./cmd/table-init/main.go || { echo "Failed to initialize tables"; exit 1; }
 
 docker-down:
 	docker compose -f docker-compose.yml down || true
 
 test-integration: table-init
-	@if [ -z "$(GITHUB_TOKEN)" ] || [ -z "$(GHCR_CREDS)" ] || [ -z "$(REGISTRY1_CREDS)" ]; then \
+	@if [ -z "$${GITHUB_TOKEN}" ] || [ -z "$${GHCR_CREDS}" ] || [ -z "$${REGISTRY1_CREDS}" ]; then \
 		echo "Error: GITHUB_TOKEN, GHCR_CREDS, or REGISTRY1_CREDS is not set"; \
 		exit 1; \
 	fi

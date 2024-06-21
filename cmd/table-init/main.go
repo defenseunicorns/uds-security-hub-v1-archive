@@ -7,15 +7,12 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 )
 
 func setupDBConnection(connStr string) (*gorm.DB, error) {
-	database, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info), // Change to logger.Info for more verbosity
-	})
+	database, err := gorm.Open(postgres.Open(connStr), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
