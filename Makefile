@@ -1,3 +1,6 @@
+# Set the shell to bash
+SHELL := /bin/bash
+
 # Default target
 all: build
 
@@ -18,14 +21,17 @@ docker-up: docker-down
 	docker compose -f docker-compose.yml up -d
 	sleep 5
 
+table-init: docker-up
+	@go run ./cmd/table-init/main.go || { echo "Failed to initialize tables"; exit 1; }
+
 docker-down:
 	docker compose -f docker-compose.yml down || true
 
-test-integration: docker-up
-	@if [ -z "$(REGISTRY1_USERNAME)" ] || [ -z "$(REGISTRY1_PASSWORD)" ]; then \
-		echo "Error: REGISTRY1_USERNAME or REGISTRY1_PASSWORD is not set"; \
+test-integration: table-init
+	@if [ -z "$${GITHUB_TOKEN}" ] || [ -z "$${GHCR_CREDS}" ] || [ -z "$${REGISTRY1_CREDS}" ]; then \
+		echo "Error: GITHUB_TOKEN, GHCR_CREDS, or REGISTRY1_CREDS is not set"; \
 		exit 1; \
 	fi
-	go test -tags=integration -timeout 90s ./... -v -coverprofile=coverage.out
+	go test -tags=integration -timeout 160s ./... -v -coverprofile=coverage.out
 
-.PHONY: all build test lint run clean e2e
+.PHONY: all build test lint run clean e2e table-init

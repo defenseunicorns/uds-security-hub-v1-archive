@@ -5,18 +5,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/db"
-	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
+	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -51,7 +53,7 @@ func newStoreCmd() *cobra.Command {
 				return fmt.Errorf("trivy is not installed: %w", err)
 			}
 
-			requiredFlags := []string{"org", "package-name", "tag", "db-host", "db-user", "db-password", "db-name", "db-port"}
+			requiredFlags := []string{"org", "package-name", "db-host", "db-user", "db-password", "db-name", "db-port"}
 			for _, flag := range requiredFlags {
 				value, err := cmd.Flags().GetString(flag)
 				if err != nil {
@@ -65,10 +67,6 @@ func newStoreCmd() *cobra.Command {
 		},
 	}
 
-	storeCmd.PersistentFlags().StringP("docker-username", "u", "",
-		"Optional: Docker username for registry access, accepts CSV values")
-	storeCmd.PersistentFlags().StringP("docker-password", "p", "",
-		"Optional: Docker password for registry access, accepts CSV values")
 	storeCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
 	storeCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	storeCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
@@ -78,19 +76,53 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().StringP("db-name", "", "test_db", "Database name")
 	storeCmd.PersistentFlags().StringP("db-port", "", "5432", "Database port")
 	storeCmd.PersistentFlags().StringP("db-ssl-mode", "", "disable", "Database SSL mode")
+	storeCmd.PersistentFlags().StringP("github-token", "t", "", "GitHub token")
+	storeCmd.PersistentFlags().IntP("number-of-versions-to-scan", "v", 1, "Number of versions to scan")
+	storeCmd.PersistentFlags().StringSlice("registry-creds", []string{},
+		"List of registry credentials in the format 'registryURL,username,password'")
 
 	return storeCmd
+}
+
+func parseCredentials(creds []string) []types.RegistryCredentials {
+	const (
+		registryURLIndex = 0
+		usernameIndex    = 1
+		passwordIndex    = 2
+		splitChar        = ":"
+	)
+	var result []types.RegistryCredentials
+	for _, c := range creds {
+		parts := strings.SplitN(c, splitChar, 3)
+		if len(parts) == 3 {
+			result = append(result, types.RegistryCredentials{
+				RegistryURL: parts[registryURLIndex],
+				Username:    parts[usernameIndex],
+				Password:    parts[passwordIndex],
+			})
+		}
+	}
+	return result
 }
 
 // runStoreScanner runs the store scanner.
 func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	ctx := context.Background()
-	logger := log.NewLogger(ctx)
+	logInstance := log.NewLogger(ctx)
 	config, err := getConfigFromFlags(cmd)
 	if err != nil {
 		return fmt.Errorf("error getting config from flags: %w", err)
 	}
-	scanner, err := scan.New(ctx, logger, config.DockerUsername, config.DockerPassword)
+	registryCreds, err := cmd.Flags().GetStringSlice("registry-creds")
+	if err != nil {
+		return fmt.Errorf("error getting registry credentials: %w", err)
+	}
+	parsedCreds := docker.ParseCredentials(registryCreds)
+	dockerConfigPath, err := docker.GenerateAndWriteDockerConfig(ctx, parsedCreds)
+	if err != nil {
+		return fmt.Errorf("error generating and writing Docker config: %w", err)
+	}
+	scanner, err := scan.New(ctx, logInstance, dockerConfigPath)
 	if err != nil {
 		return fmt.Errorf("error creating scanner: %w", err)
 	}
@@ -102,7 +134,7 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
-	return runStoreScannerWithDeps(ctx, cmd, logger, scanner, manager)
+	return runStoreScannerWithDeps(ctx, cmd, logInstance, scanner, manager, config)
 }
 
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.
@@ -112,6 +144,7 @@ func runStoreScannerWithDeps(
 	_ types.Logger,
 	scanner Scanner,
 	manager ScanManager,
+	config *Config,
 ) error {
 	if scanner == nil {
 		return fmt.Errorf("scanner cannot be nil")
@@ -121,10 +154,6 @@ func runStoreScannerWithDeps(
 	}
 	if cmd == nil {
 		return fmt.Errorf("command cannot be nil")
-	}
-	config, err := getConfigFromFlags(cmd)
-	if err != nil {
-		return fmt.Errorf("error getting config from flags: %w", err)
 	}
 
 	dbConn, err := setupDBConnection(config.ConnStr)
@@ -136,33 +165,48 @@ func runStoreScannerWithDeps(
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
+	versionTagDate, err := getVersionTagDate(ctx, types.NewRealHTTPClient(),
+		config.GitHubToken, config.Org, "container", url.PathEscape(config.PackageName))
+	if err != nil {
+		return fmt.Errorf("error getting package versions: %w", err)
+	}
 
-	return storeScanResults(ctx, scanner, manager, config)
+	var combinedErrors error
+	for _, version := range versionTagDate[:min(len(versionTagDate), config.NumberOfVersionsToScan)] {
+		config.Tag = version.Tags[0]
+		if err := storeScanResults(ctx, scanner, manager, config); err != nil {
+			combinedErrors = errors.Join(combinedErrors, err)
+		}
+	}
+	return combinedErrors
 }
 
 // Config is the configuration for the store command.
 type Config struct {
-	ConnStr        string
-	DockerUsername string
-	DockerPassword string
-	Org            string
-	PackageName    string
-	Tag            string
+	ConnStr                string
+	GitHubToken            string
+	Org                    string
+	PackageName            string
+	Tag                    string
+	RegistryCreds          []types.RegistryCredentials
+	NumberOfVersionsToScan int
 }
 
 // getConfigFromFlags gets the configuration from the command line flags.
 func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
-	dockerUsername, _ := cmd.Flags().GetString("docker-username") //nolint:errcheck
-	dockerPassword, _ := cmd.Flags().GetString("docker-password") //nolint:errcheck
-	org, _ := cmd.Flags().GetString("org")                        //nolint:errcheck
-	packageName, _ := cmd.Flags().GetString("package-name")       //nolint:errcheck
-	tag, _ := cmd.Flags().GetString("tag")                        //nolint:errcheck
-	dbHost, _ := cmd.Flags().GetString("db-host")                 //nolint:errcheck
-	dbUser, _ := cmd.Flags().GetString("db-user")                 //nolint:errcheck
-	dbPassword, _ := cmd.Flags().GetString("db-password")         //nolint:errcheck
-	dbName, _ := cmd.Flags().GetString("db-name")                 //nolint:errcheck
-	dbPort, _ := cmd.Flags().GetString("db-port")                 //nolint:errcheck
-	dbSSLMode, _ := cmd.Flags().GetString("db-ssl-mode")          //nolint:errcheck
+	org, _ := cmd.Flags().GetString("org")                                        //nolint:errcheck
+	packageName, _ := cmd.Flags().GetString("package-name")                       //nolint:errcheck
+	tag, _ := cmd.Flags().GetString("tag")                                        //nolint:errcheck
+	dbHost, _ := cmd.Flags().GetString("db-host")                                 //nolint:errcheck
+	dbUser, _ := cmd.Flags().GetString("db-user")                                 //nolint:errcheck
+	dbPassword, _ := cmd.Flags().GetString("db-password")                         //nolint:errcheck
+	dbName, _ := cmd.Flags().GetString("db-name")                                 //nolint:errcheck
+	dbPort, _ := cmd.Flags().GetString("db-port")                                 //nolint:errcheck
+	dbSSLMode, _ := cmd.Flags().GetString("db-ssl-mode")                          //nolint:errcheck
+	githubToken, _ := cmd.Flags().GetString("github-token")                       //nolint:errcheck
+	numberOfVersionsToScan, _ := cmd.Flags().GetInt("number-of-versions-to-scan") //nolint:errcheck
+	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds")              //nolint:errcheck
+	parsedCreds := parseCredentials(registryCreds)
 
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
@@ -170,12 +214,13 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	)
 
 	return &Config{
-		DockerUsername: dockerUsername,
-		DockerPassword: dockerPassword,
-		Org:            org,
-		PackageName:    packageName,
-		Tag:            tag,
-		ConnStr:        connStr,
+		Org:                    org,
+		PackageName:            packageName,
+		Tag:                    tag,
+		ConnStr:                connStr,
+		GitHubToken:            githubToken,
+		NumberOfVersionsToScan: numberOfVersionsToScan,
+		RegistryCreds:          parsedCreds,
 	}, nil
 }
 
@@ -224,10 +269,7 @@ func setupDBConnection(connStr string) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	err = database.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to auto-migrate models: %w", err)
-	}
+
 	return database, nil
 }
 
@@ -246,34 +288,23 @@ func Execute(args []string) {
 	}
 }
 
-// generateAndWriteDockerConfig generates a Docker config and writes it to a temporary directory.
-func generateAndWriteDockerConfig(_ context.Context) (string, error) {
-	// Assuming there's a map or method to collect credentials
-	credentialsMap := map[string]docker.RegistryCredentials{
-		"ghcr.io": {
-			Username: os.Getenv("GHCR_USERNAME"),
-			Password: os.Getenv("GHCR_PASSWORD"),
-		},
-		"registry1.dso.mil": {
-			Username: os.Getenv("REGISTRY1_USERNAME"),
-			Password: os.Getenv("REGISTRY1_PASSWORD"),
-		},
-	}
+func generateAndWriteDockerConfig(_ context.Context, credentials []types.RegistryCredentials) (string, error) {
+	credentialsMap := make(map[string]docker.RegistryCredentials)
 
-	// Filter out entries with empty username or password
-	for key, creds := range credentialsMap {
-		if creds.Username == "" || creds.Password == "" {
-			delete(credentialsMap, key)
+	for _, cred := range credentials {
+		if cred.Username != "" && cred.Password != "" {
+			credentialsMap[cred.RegistryURL] = docker.RegistryCredentials{
+				Username: cred.Username,
+				Password: cred.Password,
+			}
 		}
 	}
 
-	// Generate Docker config text
 	configText, err := docker.GenerateConfigText(credentialsMap)
 	if err != nil {
 		return "", fmt.Errorf("error generating Docker config: %w", err)
 	}
 
-	// Write Docker config to a temporary directory
 	dockerConfigPath, err := docker.WriteConfigToTempDir(configText)
 	if err != nil {
 		return "", fmt.Errorf("error writing Docker config to temp dir: %w", err)
@@ -281,3 +312,31 @@ func generateAndWriteDockerConfig(_ context.Context) (string, error) {
 
 	return filepath.Dir(dockerConfigPath), nil
 }
+
+func GetPackageVersions(ctx context.Context, org, packageName, gitHubToken string) (*github.VersionTagDate, error) {
+	const packageType = "container"
+	if org == "" || packageName == "" || gitHubToken == "" {
+		return nil, fmt.Errorf("invalid parameters: org, packageName, and gitHubToken must be provided")
+	}
+
+	client := types.NewRealHTTPClient()
+	versions, err := github.GetPackageVersions(ctx, client, gitHubToken, org, packageType, packageName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get version tags and dates: %w", err)
+	}
+	if len(versions) == 0 {
+		return nil, fmt.Errorf("no versions found for package %s in organization %s", packageName, org)
+	}
+
+	// Assuming we want the latest version
+	latestVersion := versions[0]
+	for _, version := range versions {
+		if version.Date.After(latestVersion.Date) {
+			latestVersion = version
+		}
+	}
+
+	return &latestVersion, nil
+}
+
+var getVersionTagDate = github.GetPackageVersions
