@@ -31,7 +31,7 @@ func TestNewScanResultReader(t *testing.T) {
 			wantErr:      false,
 		},
 	}
-	s, err := New(context.Background(), nil, "trivyUsername", "trivyPassword")
+	s, err := New(context.Background(), nil, "")
 	if err != nil {
 		t.Fatalf("Failed to create scanner: %v", err)
 	}
@@ -186,7 +186,7 @@ func Test_extractSBOMPackages(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	s, err := New(context.Background(), nil, "trivyUsername", "trivyPassword")
+	s, err := New(context.Background(), nil, "")
 	if err != nil {
 		t.Fatalf("Failed to create scanner: %v", err)
 	}
@@ -287,10 +287,8 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 				ctx:             tt.fields.ctx,
 				commandExecutor: tt.fields.commandExecutor,
 				logger:          tt.fields.logger,
-				dockerUsername:  tt.fields.dockerUsername,
-				dockerPassword:  tt.fields.dockerPassword,
 			}
-			got, err := s.scanWithTrivy(tt.args.imageRef, tt.args.userName, tt.args.password, tt.args.commandExecutor)
+			got, err := s.scanWithTrivy(tt.args.imageRef, "", tt.args.commandExecutor)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scanWithTrivy() error = %v, wantErr %v", err, tt.wantErr)
 				return

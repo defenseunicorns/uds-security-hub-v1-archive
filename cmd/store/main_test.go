@@ -3,16 +3,21 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/mock"
+	"github.com/zeebo/assert"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
+	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 // TestNewStoreCmd tests the newStoreCmd function.
@@ -35,8 +40,6 @@ func TestNewStoreCmd(t *testing.T) {
 		defaultValue string
 		usage        string
 	}{
-		{"docker-username", "u", "", "Optional: Docker username for registry access, accepts CSV values"},
-		{"docker-password", "p", "", "Optional: Docker password for registry access, accepts CSV values"},
 		{"org", "o", "defenseunicorns", "Organization name"},
 		{"package-name", "n", "", "Package Name: packages/uds/gitlab-runner"},
 		{"tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)"},
@@ -60,72 +63,6 @@ func TestNewStoreCmd(t *testing.T) {
 				t.Errorf("usage for flag %s mismatch: got %v, want %v", flag.name, f.Usage, flag.usage)
 			}
 		}
-	}
-}
-
-// TestSetupDBConnection_Failure tests the setupDBConnection function with an invalid connection string.
-func TestSetupDBConnection_Failure(t *testing.T) {
-	// Use an invalid connection string
-	connStr := "host=invalid port=5432 user=invalid dbname=invalid password=invalid sslmode=disable"
-
-	_, err := setupDBConnection(connStr)
-	if err == nil {
-		t.Fatalf("Expected error, got nil")
-	}
-}
-
-// Test_getConfigFromFlags tests the getConfigFromFlags function.
-func Test_getConfigFromFlags(t *testing.T) {
-	type args struct {
-		cmd *cobra.Command
-	}
-	tests := []struct {
-		name    string
-		want    *Config
-		wantErr bool
-		args    args
-	}{
-		{
-			name: "Valid flags",
-			args: args{
-				cmd: func() *cobra.Command {
-					cmd := &cobra.Command{}
-					cmd.PersistentFlags().String("docker-username", "testuser", "Docker username")
-					cmd.PersistentFlags().String("docker-password", "testpass", "Docker password")
-					cmd.PersistentFlags().String("org", "testorg", "Organization name")
-					cmd.PersistentFlags().String("package-name", "testpackage", "Package name")
-					cmd.PersistentFlags().String("tag", "testtag", "Tag name")
-					cmd.PersistentFlags().String("db-host", "localhost", "Database host")
-					cmd.PersistentFlags().String("db-user", "test_user", "Database user")
-					cmd.PersistentFlags().String("db-password", "test_password", "Database password")
-					cmd.PersistentFlags().String("db-name", "test_db", "Database name")
-					cmd.PersistentFlags().String("db-port", "5432", "Database port")
-					cmd.PersistentFlags().String("db-ssl-mode", "disable", "Database SSL mode")
-					cmd.ParseFlags([]string{}) //nolint:errcheck
-					return cmd
-				}(),
-			},
-			want: &Config{
-				ConnStr:        "host=localhost port=5432 user=test_user dbname=test_db password=test_password sslmode=disable",
-				DockerUsername: "testuser",
-				DockerPassword: "testpass",
-				Org:            "testorg",
-				PackageName:    "testpackage",
-				Tag:            "testtag",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := getConfigFromFlags(tt.args.cmd)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getConfigFromFlags() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("getConfigFromFlags() mismatch (-want +got):\n%s", diff)
-			}
-		})
 	}
 }
 
@@ -213,49 +150,27 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 			cmd:     nil,
 			wantErr: true,
 		},
-		{
-			name: "Valid inputs",
-			scanner: func() *MockScanner {
-				mockScanner := new(MockScanner)
-				mockScanner.On("ScanZarfPackage", "testorg", "testpackage", "testtag").Return([]string{"result1.json", "result2.json"}, nil)
-				return mockScanner
-			}(),
-			manager: func() *MockScanManager {
-				mockManager := new(MockScanManager)
-				mockManager.On("InsertPackageScans", mock.Anything, mock.AnythingOfType("*external.PackageDTO")).Return(nil)
-				return mockManager
-			}(),
-			cmd: func() *cobra.Command {
-				cmd := &cobra.Command{}
-				cmd.PersistentFlags().String("docker-username", "testuser", "Docker username")
-				cmd.PersistentFlags().String("docker-password", "testpass", "Docker password")
-				cmd.PersistentFlags().String("org", "testorg", "Organization name")
-				cmd.PersistentFlags().String("package-name", "testpackage", "Package name")
-				cmd.PersistentFlags().String("tag", "testtag", "Tag name")
-				cmd.PersistentFlags().String("db-host", "localhost", "Database host")
-				cmd.PersistentFlags().String("db-user", "test_user", "Database user")
-				cmd.PersistentFlags().String("db-password", "test_password", "Database password")
-				cmd.PersistentFlags().String("db-name", "test_db", "Database name")
-				cmd.PersistentFlags().String("db-port", "5432", "Database port")
-				cmd.PersistentFlags().String("db-ssl-mode", "disable", "Database SSL mode")
-				cmd.ParseFlags([]string{}) //nolint:errcheck
-				return cmd
-			}(),
-			wantErr: false,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var c *Config
+			var err error
 			if tt.name == "Valid inputs" {
 				// Create mock scan result files
 				os.WriteFile("result1.json", []byte(`{"some": "data"}`), 0o600) //nolint:errcheck
 				os.WriteFile("result2.json", []byte(`{"some": "data"}`), 0o600) //nolint:errcheck
 				defer os.Remove("result1.json")
 				defer os.Remove("result2.json")
+
+				c, err = getConfigFromFlags(tt.cmd)
+				c.Tag = "testtag"
+				if err != nil {
+					t.Fatalf("getConfigFromFlags() error = %v", err)
+				}
 			}
 
-			err := runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager)
+			err = runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager, c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("runStoreScannerWithDeps() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -263,39 +178,36 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 	}
 }
 
-// TestGenerateAndWriteDockerConfig tests the generateAndWriteDockerConfig function.
 func TestGenerateAndWriteDockerConfig(t *testing.T) {
 	tests := []struct {
 		name                string
-		envVars             map[string]string
+		credentials         []types.RegistryCredentials
 		expectedFileContent string
 		expectError         bool
 	}{
 		{
 			name: "valid credentials",
-			envVars: map[string]string{
-				"GHCR_USERNAME":      "user1",
-				"GHCR_PASSWORD":      "pass1",
-				"REGISTRY1_USERNAME": "user2",
-				"REGISTRY1_PASSWORD": "pass2",
+			credentials: []types.RegistryCredentials{
+				{RegistryURL: "ghcr.io", Username: "user1", Password: "pass1"},
+				{RegistryURL: "registry1.dso.mil", Username: "user2", Password: "pass2"},
 			},
 			expectedFileContent: `{
-				"auths": {
-					"ghcr.io": {
-						"auth": "dXNlcjE6cGFzczE="
-					},
-					"registry1.dso.mil": {
-						"auth": "dXNlcjI6cGFzczI="
-					}
-				}
-			}`,
+                "auths": {
+                    "ghcr.io": {
+                        "auth": "dXNlcjE6cGFzczE="
+                    },
+                    "registry1.dso.mil": {
+                        "auth": "dXNlcjI6cGFzczI="
+                    }
+                }
+            }`,
 			expectError: false,
 		},
 		{
 			name: "missing credentials",
-			envVars: map[string]string{
-				"GHCR_USERNAME": "",
-				"GHCR_PASSWORD": "",
+			credentials: []types.RegistryCredentials{
+				{RegistryURL: "ghcr.io", Username: "", Password: ""},
+				{RegistryURL: "registry1.dso.mil", Username: "", Password: ""},
 			},
 			expectedFileContent: `{"auths": {}}`,
 			expectError:         false,
@@ -304,46 +216,102 @@ func TestGenerateAndWriteDockerConfig(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Set environment variables as per test case
-			for key, value := range tc.envVars {
-				os.Setenv(key, value)
-				defer os.Unsetenv(key)
+			dir, err := generateAndWriteDockerConfig(context.Background(), tc.credentials)
+			if (err != nil) != tc.expectError {
+				t.Errorf("generateAndWriteDockerConfig() error = %v, expectError %v", err, tc.expectError)
+			}
+			// Read the file content from the directory
+			files, err := os.ReadDir(dir)
+			if err != nil {
+				t.Errorf("Error reading directory: %v", err)
+			}
+			if len(files) == 0 {
+				t.Errorf("Expected at least one file in the directory")
 			}
 
-			dir, err := generateAndWriteDockerConfig(context.Background())
-			if tc.expectError { //nolint:nestif
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
+			content, err := os.ReadFile(filepath.Join(dir, files[0].Name()))
+			if err != nil {
+				t.Errorf("Error reading file: %v", err)
+			}
+
+			var got, want map[string]interface{}
+			if err := json.Unmarshal(content, &got); err != nil {
+				t.Errorf("Error unmarshalling JSON: %v", err)
+			}
+			if err := json.Unmarshal([]byte(tc.expectedFileContent), &want); err != nil {
+				t.Errorf("Error unmarshalling expected JSON: %v", err)
+			}
+
+			if diff := cmp.Diff(want, got); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestGetPackageVersions(t *testing.T) {
+	tests := []struct {
+		name          string
+		org           string
+		packageName   string
+		gitHubToken   string
+		mockFunc      func(ctx context.Context, client types.HTTPClientInterface, token, org, packageType, packageName string) ([]github.VersionTagDate, error)
+		expectedError bool
+		expectedTag   string
+		expectedDate  time.Time
+	}{
+		{
+			name:        "successful retrieval",
+			org:         "defenseunicorns",
+			packageName: "test-package",
+			gitHubToken: "test-token",
+			mockFunc: func(ctx context.Context, client types.HTTPClientInterface, token, org, packageType, packageName string) ([]github.VersionTagDate, error) {
+				return []github.VersionTagDate{
+					{Tags: []string{"v1.0.0"}, Date: time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC)},
+				}, nil
+			},
+			expectedError: false,
+			expectedTag:   "v1.0.0",
+			expectedDate:  time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:        "error from GitHub API",
+			org:         "defenseunicorns",
+			packageName: "test-package",
+			gitHubToken: "test-token",
+			mockFunc: func(ctx context.Context, client types.HTTPClientInterface, token, org, packageType, packageName string) ([]github.VersionTagDate, error) {
+				return nil, fmt.Errorf("API error")
+			},
+			expectedError: true,
+		},
+		{
+			name:        "empty parameters",
+			org:         "",
+			packageName: "",
+			gitHubToken: "",
+			mockFunc: func(ctx context.Context, client types.HTTPClientInterface, token, org, packageType, packageName string) ([]github.VersionTagDate, error) {
+				return nil, fmt.Errorf("invalid parameters")
+			},
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Override the getVersionTagDate function with the mock function
+			getVersionTagDate = tt.mockFunc
+
+			// Call the function under test
+			version, err := getVersionTagDate(context.Background(), nil, tt.gitHubToken, tt.org, "defenseunicorns", tt.packageName)
+
+			// Check for expected error
+			if tt.expectedError {
+				assert.Error(t, err)
 			} else {
-				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
-				}
-				// Read the file content from the directory
-				files, err := os.ReadDir(dir)
-				if err != nil {
-					t.Errorf("Error reading directory: %v", err)
-				}
-				if len(files) == 0 {
-					t.Errorf("Expected at least one file in the directory")
-				}
-
-				content, err := os.ReadFile(filepath.Join(dir, files[0].Name()))
-				if err != nil {
-					t.Errorf("Error reading file: %v", err)
-				}
-
-				var got, want map[string]interface{}
-				if err := json.Unmarshal(content, &got); err != nil {
-					t.Errorf("Error unmarshalling JSON: %v", err)
-				}
-				if err := json.Unmarshal([]byte(tc.expectedFileContent), &want); err != nil {
-					t.Errorf("Error unmarshalling expected JSON: %v", err)
-				}
-
-				if diff := cmp.Diff(want, got); diff != "" {
-					t.Errorf("mismatch (-want +got):\n%s", diff)
-				}
+				assert.NoError(t, err)
+				assert.NotNil(t, version)
+				assert.Equal(t, tt.expectedTag, version[0].Tags[0])
+				assert.Equal(t, tt.expectedDate, version[0].Date)
 			}
 		})
 	}

@@ -70,14 +70,12 @@ func newRootCmd() *cobra.Command {
 // runScanner is the main entry point for the scanner.
 func runScanner(cmd *cobra.Command, _ []string) error {
 	logger := log.NewLogger(context.Background())
-	dockerUsername, _ := cmd.Flags().GetString("docker-username") //nolint:errcheck
-	dockerPassword, _ := cmd.Flags().GetString("docker-password") //nolint:errcheck
-	org, _ := cmd.Flags().GetString("org")                        //nolint:errcheck
-	packageName, _ := cmd.Flags().GetString("package-name")       //nolint:errcheck
-	tag, _ := cmd.Flags().GetString("tag")                        //nolint:errcheck
-	outputFile, _ := cmd.Flags().GetString("output-file")         //nolint:errcheck
+	org, _ := cmd.Flags().GetString("org")                  //nolint:errcheck
+	packageName, _ := cmd.Flags().GetString("package-name") //nolint:errcheck
+	tag, _ := cmd.Flags().GetString("tag")                  //nolint:errcheck
+	outputFile, _ := cmd.Flags().GetString("output-file")   //nolint:errcheck
 
-	scanner, err := scan.New(context.Background(), logger, dockerUsername, dockerPassword)
+	scanner, err := scan.New(context.Background(), logger, "")
 	if err != nil {
 		return fmt.Errorf("error creating scanner: %w", err)
 	}

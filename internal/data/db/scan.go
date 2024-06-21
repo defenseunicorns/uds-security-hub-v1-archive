@@ -159,11 +159,10 @@ func (manager *GormScanManager) InsertPackageScans(ctx context.Context, dto *ext
 		for i := range dto.Scans {
 			scanDTO := &dto.Scans[i]
 			scan := model.Scan{
-				SchemaVersion: scanDTO.SchemaVersion,
-				CreatedAt:     scanDTO.CreatedAt,
-				ArtifactName:  scanDTO.ArtifactName,
-				ArtifactType:  scanDTO.ArtifactType,
-				//Metadata:        scanDTO.Metadata,
+				SchemaVersion:   scanDTO.SchemaVersion,
+				CreatedAt:       scanDTO.CreatedAt,
+				ArtifactName:    scanDTO.ArtifactName,
+				ArtifactType:    scanDTO.ArtifactType,
 				Vulnerabilities: scanDTO.Vulnerabilities,
 				PackageID:       pkg.ID,
 			}

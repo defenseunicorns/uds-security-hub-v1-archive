@@ -29,11 +29,10 @@ func (s *localScanResult) GetArtifactName() string {
 }
 
 type Scanner struct {
-	logger          types.Logger
-	ctx             context.Context
-	commandExecutor types.CommandExecutor
-	dockerUsername  string
-	dockerPassword  string
+	logger           types.Logger
+	ctx              context.Context
+	commandExecutor  types.CommandExecutor
+	dockerConfigPath string
 }
 
 // GetVulnerabilities returns the vulnerabilities in the scan result.
@@ -69,12 +68,11 @@ func (s *localScanResult) GetResultsAsCSV() string {
 }
 
 // New creates a new Scanner.
-func New(ctx context.Context, logger types.Logger, dockerUsername, dockerPassword string) (*Scanner, error) {
+func New(ctx context.Context, logger types.Logger, dockerConfigPath string) (*Scanner, error) {
 	return &Scanner{
-		logger:          logger,
-		commandExecutor: executor.NewCommandExecutor(ctx),
-		dockerUsername:  dockerUsername,
-		dockerPassword:  dockerPassword,
+		logger:           logger,
+		commandExecutor:  executor.NewCommandExecutor(ctx),
+		dockerConfigPath: dockerConfigPath,
 	}, nil
 }
 
@@ -131,7 +129,7 @@ func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]string, error
 	commandExecutor := executor.NewCommandExecutor(s.ctx)
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", org, packageName, tag)
 
-	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerUsername, s.dockerPassword, commandExecutor)
+	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
 	}
@@ -143,14 +141,13 @@ func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]string, error
 // Parameters:
 //   - ctx: The context for the scan operation.
 //   - imageRef: The reference to the image to scan.
-//   - trivyUsername: The username for Trivy authentication.
-//   - trivyPassword: The password for Trivy authentication.
+//   - dockerConfigPath: The path to the Docker config file.
 //   - executor: The command executor to use for running commands.
 //
 // Returns:
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the scan operation fails.
-func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef string, trivyUsername, trivyPassword string,
+func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dockerConfigPath string,
 	commandExecutor types.CommandExecutor) ([]string, error) {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
@@ -162,7 +159,7 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef strin
 		return nil, fmt.Errorf("failed to fetch image index: %w", err)
 	}
 
-	results, err := s.processImageIndex(ctx, idx, trivyUsername, trivyPassword, commandExecutor)
+	results, err := s.processImageIndex(ctx, idx, dockerConfigPath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process image index: %w", err)
 	}
@@ -192,14 +189,13 @@ func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.Ima
 // Parameters:
 //   - ctx: The context for the processing operation.
 //   - idx: The image index to process.
-//   - trivyUsername: The username for Trivy authentication.
-//   - trivyPassword: The password for Trivy authentication.
+//   - dockerConfigPath: The path to the Docker config file.
 //   - executor: The command executor to use for running commands.
 //
 // Returns:
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the processing operation fails.
-func (s *Scanner) processImageIndex(ctx context.Context, idx v1.ImageIndex, trivyUsername, trivyPassword string,
+func (s *Scanner) processImageIndex(ctx context.Context, idx v1.ImageIndex, dockerConfigPath string,
 	commandExecutor types.CommandExecutor) ([]string, error) {
 	indexManifest, err := idx.IndexManifest()
 	if err != nil {
@@ -214,7 +210,7 @@ func (s *Scanner) processImageIndex(ctx context.Context, idx v1.ImageIndex, triv
 			return nil, fmt.Errorf("error fetching image: %w", err)
 		}
 
-		manifestResults, err := s.processImageManifest(ctx, image, trivyUsername, trivyPassword, commandExecutor)
+		manifestResults, err := s.processImageManifest(ctx, image, dockerConfigPath, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("error processing image manifest: %w", err)
 		}
@@ -230,14 +226,13 @@ func (s *Scanner) processImageIndex(ctx context.Context, idx v1.ImageIndex, triv
 // Parameters:
 //   - ctx: The context for the processing operation.
 //   - image: The image manifest to process.
-//   - trivyUsername: The username for Trivy authentication.
-//   - trivyPassword: The password for Trivy authentication.
+//   - dockerConfigPath: The path to the Docker config file.
 //   - executor: The command executor to use for running commands.
 //
 // Returns:
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the processing operation fails.
-func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, trivyUsername, trivyPassword string,
+func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dockerConfigPath string,
 	commandExecutor types.CommandExecutor) ([]string, error) {
 	const sbomsTarLayer = "sboms.tar"
 	manifest, err := image.Manifest()
@@ -269,7 +264,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, triv
 		}
 
 		for _, tag := range tags {
-			result, err := s.scanWithTrivy(tag, trivyUsername, trivyPassword, commandExecutor)
+			result, err := s.scanWithTrivy(tag, dockerConfigPath, commandExecutor)
 			if err != nil {
 				errs = errors.Join(errs, fmt.Errorf("error scanning image with Trivy: %w", err))
 				continue
@@ -288,18 +283,17 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, triv
 // Parameters:
 //   - ctx: The context for the operation.
 //   - imageRef: The reference to the image layer to be scanned.
-//   - trivyUsername: The username for Trivy authentication.
-//   - trivyPassword: The password for Trivy authentication.
+//   - dockerConfigPath: The path to the Docker config file.
 //   - executor: The command executor to use for running Trivy.
 //
 // Returns:
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
-func (s *Scanner) scanWithTrivy(imageRef, userName, password string,
+func (s *Scanner) scanWithTrivy(imageRef, dockerConfigPath string,
 	commandExecutor types.CommandExecutor) (string, error) {
-	err := os.Setenv("TRIVY_PASSWORD", password)
+	err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
 	if err != nil {
-		return "", fmt.Errorf("error setting Trivy password environment variable: %w", err)
+		return "", fmt.Errorf("error setting Docker config environment variable: %w", err)
 	}
 
 	// Create a temporary file for the Trivy scan results.
@@ -318,7 +312,7 @@ func (s *Scanner) scanWithTrivy(imageRef, userName, password string,
 
 	// Run Trivy vulnerability scan on the image layer
 	stdout, stderr, err := commandExecutor.ExecuteCommand("trivy", []string{"image", imageRef, "--scanners", "vuln",
-		"--username", userName, "-f", "json", "-o", trivyFile.Name(), "-q"}, os.Environ())
+		"-f", "json", "-o", trivyFile.Name(), "-q"}, os.Environ())
 	if err != nil {
 		return "", fmt.Errorf("error running Trivy on image %s: %w\nstdout: %s\nstderr: %s", imageRef, err, stdout, stderr)
 	}
