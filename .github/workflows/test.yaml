@@ -32,15 +32,17 @@ jobs:
     - name: Install Trivy
       run: |
         sudo apt-get install wget apt-transport-https gnupg -y
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install trivy -y
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update
+        sudo apt-get install trivy -y
 
     - name: E2E Tests
       env:
-        REGISTRY1_USERNAME: ${{ secrets.IRON_BANK_ROBOT_USERNAME }}
-        REGISTRY1_PASSWORD: ${{ secrets.IRON_BANK_ROBOT_PASSWORD }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
+        REGISTRY1_CREDS: ${{ secrets.REGISTRY1_CREDS }}
+        DOCKER_IO_CREDS: ${{ secrets.DOCKER_IO_CREDS }}
       run: make test-integration
 
     - name: Upload coverage reports to Codecov
