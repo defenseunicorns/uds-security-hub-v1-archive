@@ -1,12 +1,14 @@
 package docker
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/zeebo/assert"
+
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 // TestGenerateConfigText tests the GenerateConfigText function.
@@ -55,9 +57,13 @@ func TestGenerateConfigText(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result, err := GenerateConfigText(tc.credentialsMap)
 			if tc.expectError {
-				assert.Error(t, err)
+				if err == nil {
+					t.Errorf("expected an error but got none")
+				}
 			} else {
-				assert.NoError(t, err)
+				if err != nil {
+					t.Errorf("did not expect an error but got: %v", err)
+				}
 				if diff := cmp.Diff(tc.expected, result); diff != "" {
 					t.Errorf("GenerateConfigText() mismatch (-want +got):\n%s", diff)
 				}
@@ -104,5 +110,49 @@ func TestWriteConfigToTempDir(t *testing.T) {
 			// Clean up
 			defer os.RemoveAll(filepath.Dir(got))
 		})
+	}
+}
+
+func TestGenerateAndWriteDockerConfig(t *testing.T) {
+	ctx := context.Background()
+	credentials := []types.RegistryCredentials{
+		{RegistryURL: "https://example.com", Username: "user", Password: "pass"},
+	}
+
+	// Test successful execution
+	dir, err := GenerateAndWriteDockerConfig(ctx, credentials)
+	if err != nil {
+		t.Errorf("GenerateAndWriteDockerConfig() error = %v", err)
+	}
+	if dir == "" {
+		t.Errorf("Expected non-empty directory path, got empty string")
+	}
+
+	// Test with empty credentials
+	emptyCreds := []types.RegistryCredentials{}
+	dir, err = GenerateAndWriteDockerConfig(ctx, emptyCreds)
+	if err != nil {
+		t.Errorf("GenerateAndWriteDockerConfig() with empty credentials error = %v", err)
+	}
+	if dir == "" {
+		t.Errorf("Expected non-empty directory path with empty credentials, got empty string")
+	}
+}
+
+func TestParseCredentials(t *testing.T) {
+	creds := []string{"example.com:user:pass"}
+
+	// Test successful parsing
+	expected := []types.RegistryCredentials{{RegistryURL: "example.com", Username: "user", Password: "pass"}}
+	parsedCreds := ParseCredentials(creds)
+	if diff := cmp.Diff(expected, parsedCreds); diff != "" {
+		t.Errorf("ParseCredentials() mismatch (-want +got):\n%s", diff)
+	}
+
+	// Test with incorrect format
+	invalidCreds := []string{"example.com:userpass"}
+	parsedCreds = ParseCredentials(invalidCreds)
+	if len(parsedCreds) != 0 {
+		t.Errorf("Expected no credentials parsed from invalid format, got %v", parsedCreds)
 	}
 }
