@@ -7,6 +7,8 @@ all: build
 # Build the project
 build:
 	go build -o bin/uds-security-hub main.go
+	go build -o bin/table-init ./cmd/table-init/main.go
+	go build -o bin/store ./cmd/store/main.go
 
 # Lint the code
 lint:

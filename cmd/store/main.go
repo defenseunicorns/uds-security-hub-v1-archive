@@ -20,6 +20,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
+	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -80,6 +81,7 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().IntP("number-of-versions-to-scan", "v", 1, "Number of versions to scan")
 	storeCmd.PersistentFlags().StringSlice("registry-creds", []string{},
 		"List of registry credentials in the format 'registryURL,username,password'")
+	storeCmd.PersistentFlags().String("instance-connection-name", "", "Cloud SQL instance connection name")
 
 	return storeCmd
 }
@@ -126,11 +128,7 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating scanner: %w", err)
 	}
-	dbConn, err := setupDBConnection(config.ConnStr)
-	if err != nil {
-		return fmt.Errorf("error setting up database connection: %w", err)
-	}
-	manager, err := db.NewGormScanManager(dbConn)
+	manager, err := db.NewGormScanManager(config.DBConn)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
@@ -156,12 +154,7 @@ func runStoreScannerWithDeps(
 		return fmt.Errorf("command cannot be nil")
 	}
 
-	dbConn, err := setupDBConnection(config.ConnStr)
-	if err != nil {
-		return fmt.Errorf("error setting up database connection: %w", err)
-	}
-
-	manager, err = db.NewGormScanManager(dbConn)
+	manager, err := db.NewGormScanManager(config.DBConn)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
@@ -183,7 +176,7 @@ func runStoreScannerWithDeps(
 
 // Config is the configuration for the store command.
 type Config struct {
-	ConnStr                string
+	DBConn                 *gorm.DB
 	GitHubToken            string
 	Org                    string
 	PackageName            string
@@ -194,30 +187,31 @@ type Config struct {
 
 // getConfigFromFlags gets the configuration from the command line flags.
 func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
-	org, _ := cmd.Flags().GetString("org")                                        //nolint:errcheck
-	packageName, _ := cmd.Flags().GetString("package-name")                       //nolint:errcheck
-	tag, _ := cmd.Flags().GetString("tag")                                        //nolint:errcheck
-	dbHost, _ := cmd.Flags().GetString("db-host")                                 //nolint:errcheck
-	dbUser, _ := cmd.Flags().GetString("db-user")                                 //nolint:errcheck
-	dbPassword, _ := cmd.Flags().GetString("db-password")                         //nolint:errcheck
-	dbName, _ := cmd.Flags().GetString("db-name")                                 //nolint:errcheck
-	dbPort, _ := cmd.Flags().GetString("db-port")                                 //nolint:errcheck
-	dbSSLMode, _ := cmd.Flags().GetString("db-ssl-mode")                          //nolint:errcheck
-	githubToken, _ := cmd.Flags().GetString("github-token")                       //nolint:errcheck
-	numberOfVersionsToScan, _ := cmd.Flags().GetInt("number-of-versions-to-scan") //nolint:errcheck
-	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds")              //nolint:errcheck
+	org, _ := cmd.Flags().GetString("org")                                         //nolint:errcheck
+	packageName, _ := cmd.Flags().GetString("package-name")                        //nolint:errcheck
+	tag, _ := cmd.Flags().GetString("tag")                                         //nolint:errcheck
+	dbHost, _ := cmd.Flags().GetString("db-host")                                  //nolint:errcheck
+	dbUser, _ := cmd.Flags().GetString("db-user")                                  //nolint:errcheck
+	dbPassword, _ := cmd.Flags().GetString("db-password")                          //nolint:errcheck
+	dbName, _ := cmd.Flags().GetString("db-name")                                  //nolint:errcheck
+	dbPort, _ := cmd.Flags().GetString("db-port")                                  //nolint:errcheck
+	githubToken, _ := cmd.Flags().GetString("github-token")                        //nolint:errcheck
+	numberOfVersionsToScan, _ := cmd.Flags().GetInt("number-of-versions-to-scan")  //nolint:errcheck
+	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds")               //nolint:errcheck
+	instanceConnectionName, _ := cmd.Flags().GetString("instance-connection-name") //nolint:errcheck
 	parsedCreds := parseCredentials(registryCreds)
 
-	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
-		dbHost, dbPort, dbUser, dbName, dbPassword, dbSSLMode,
-	)
+	connector := sql.CreateDBConnector(dbHost, dbPort, dbUser, dbPassword, dbName, instanceConnectionName)
+	dbConn, err := connector.Connect(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
 
 	return &Config{
 		Org:                    org,
 		PackageName:            packageName,
 		Tag:                    tag,
-		ConnStr:                connStr,
+		DBConn:                 dbConn,
 		GitHubToken:            githubToken,
 		NumberOfVersionsToScan: numberOfVersionsToScan,
 		RegistryCreds:          parsedCreds,
