@@ -311,8 +311,14 @@ func (s *Scanner) scanWithTrivy(imageRef, dockerConfigPath string,
 	}
 
 	// Run Trivy vulnerability scan on the image layer
-	stdout, stderr, err := commandExecutor.ExecuteCommand("trivy", []string{"image", imageRef, "--scanners", "vuln",
-		"-f", "json", "-o", trivyFile.Name(), "-q"}, os.Environ())
+	stdout, stderr, err := commandExecutor.ExecuteCommand(
+		"trivy",
+		[]string{
+			"image", "--image-src=remote", imageRef, "--scanners", "vuln",
+			"-f", "json", "-o", trivyFile.Name(), "-q",
+		},
+		os.Environ(),
+	)
 	if err != nil {
 		return "", fmt.Errorf("error running Trivy on image %s: %w\nstdout: %s\nstderr: %s", imageRef, err, stdout, stderr)
 	}
