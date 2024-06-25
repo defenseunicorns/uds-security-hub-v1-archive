@@ -34,4 +34,4 @@ jobs:
           INSTANCE_CONNECTION_NAME: ${{ secrets.INSTANCE_CONNECTION_NAME }}
         run: |
           chmod +x scripts/scan.sh
-          ./scripts/scan.sh -f scripts/leapfrog_names.txt -v 1
+          ./scripts/scan.sh -f leapfrog_names.txt -v 1
