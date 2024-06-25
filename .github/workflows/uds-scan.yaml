@@ -1,0 +1,36 @@
+name: UDS Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   
+  workflow_dispatch:      
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.22.4'  
+
+      - name: Run UDS Scan
+        env:
+          GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
+          REGISTRY1_CREDS: ${{ secrets.REGISTRY1_CREDS }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          DOCKER_IO_CREDS: ${{ secrets.DOCKER_IO_CREDS }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          INSTANCE_CONNECTION_NAME: ${{ secrets.INSTANCE_CONNECTION_NAME }}
+        run: |
+          chmod +x scripts/scan.sh
+          ./scripts/scan.sh -f scripts/names.txt -v 2 
