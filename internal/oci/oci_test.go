@@ -81,3 +81,24 @@ func TestImageBuildTime(t *testing.T) {
 		})
 	}
 }
+
+// TestImageInspectWithRaw tests the ImageInspectWithRaw function.
+func TestNewRealClient(t *testing.T) {
+	// Call the function to test
+	rc, err := NewRealClient()
+
+	// Check for errors
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// Check if the returned client is not nil
+	if rc == nil {
+		t.Fatalf("expected non-nil client, got nil")
+	}
+
+	// Check if the internal Docker client is not nil
+	if rc.cli == nil {
+		t.Fatalf("expected non-nil internal Docker client, got nil")
+	}
+}
