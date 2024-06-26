@@ -31,36 +31,55 @@ func getEnv(key, defaultValue string) string {
 
 func main() {
 	ctx := context.Background()
+	config := getConfig()
 
-	// These default values are for local development with docker-compose.
-	host := getEnv("DB_HOST", "localhost")
-	port := getEnv("DB_PORT", "5432")
-	user := getEnv("DB_USER", "test_user")
-	password := getEnv("DB_PASSWORD", "test_password")
-	dbname := getEnv("DB_NAME", "test_db")
-	// This is the connection name for Cloud SQL. This will not be used for local development.
-	instanceConnectionName := os.Getenv("INSTANCE_CONNECTION_NAME")
+	if err := run(ctx, &config, sql.CreateDBConnector, migrateDatabase); err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+}
 
-	connector := sql.CreateDBConnector(host, port, user, password, dbname, instanceConnectionName)
+func run(
+	ctx context.Context,
+	config *Config,
+	connectorFactory func(string, string, string, string, string, string) sql.DBConnector,
+	migrator func(*gorm.DB) error,
+) error {
+	connector := connectorFactory(
+		config.Host,
+		config.Port,
+		config.User,
+		config.Password,
+		config.DBName,
+		config.InstanceConnectionName,
+	)
 	db, err := connector.Connect(ctx)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Perform database migration
-	if err := migrateDatabase(db); err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
+	if err := migrator(db); err != nil {
+		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
-	// Close the database connection when the main function exits
-	defer func() {
-		sqlDB, err := db.DB()
-		if err != nil {
-			log.Fatalf("failed to get database connection: %v", err)
-		}
-		if err := sqlDB.Close(); err != nil {
-			log.Fatalf("failed to close database connection: %v", err)
-		}
-		log.Println("Database connection closed")
-	}()
+	return nil
+}
+
+type Config struct {
+	Host                   string
+	Port                   string
+	User                   string
+	Password               string
+	DBName                 string
+	InstanceConnectionName string
+}
+
+func getConfig() Config {
+	return Config{
+		Host:                   getEnv("DB_HOST", "localhost"),
+		Port:                   getEnv("DB_PORT", "5432"),
+		User:                   getEnv("DB_USER", "test_user"),
+		Password:               getEnv("DB_PASSWORD", "test_password"),
+		DBName:                 getEnv("DB_NAME", "test_db"),
+		InstanceConnectionName: os.Getenv("INSTANCE_CONNECTION_NAME"),
+	}
 }
