@@ -1,6 +1,6 @@
 module github.com/defenseunicorns/uds-security-hub
 
-go 1.22.4
+go 1.22.5
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.11.0
@@ -105,4 +105,4 @@ replace github.com/prometheus/client_golang => github.com/prometheus/client_gola
 replace github.com/prometheus/common => github.com/prometheus/common v0.45.0
 
 //https://github.com/jackc/pgx/security/advisories/GHSA-mrww-27vc-gghv
-replace github.com/jackc/pgx/v5 => github.com/jackc/pgx/v5 v5.5.4
+replace github.com/jackc/pgx/v5 => github.com/jackc/pgx/v5 v5.6.0
