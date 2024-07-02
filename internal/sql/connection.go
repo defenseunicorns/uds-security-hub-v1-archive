@@ -6,8 +6,8 @@ import (
 	"net"
 
 	"cloud.google.com/go/cloudsqlconn"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
