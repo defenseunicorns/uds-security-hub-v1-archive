@@ -1,5 +1,1 @@
-packages/uds/gitlab
-packages/uds/sonarqube
-packages/uds/mattermost
-packages/uds/gitlab-runner
 packages/uds/core

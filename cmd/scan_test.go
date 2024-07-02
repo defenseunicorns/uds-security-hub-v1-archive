@@ -24,7 +24,7 @@ func TestNewRootCmd(t *testing.T) {
 		t.Errorf("cmd.Short mismatch (-want +got):\n%s", diff)
 	}
 
-	flags := []string{"docker-username", "docker-password", "org", "package-name", "tag", "output-file"}
+	flags := []string{"org", "package-name", "tag", "output-file"}
 	for _, flag := range flags {
 		f := cmd.PersistentFlags().Lookup(flag)
 		if f == nil {
