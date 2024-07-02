@@ -19,3 +19,12 @@
 # build output
 bin/
 dist/
+
+# apko and melange
+melange.rsa
+melange.rsa.pub
+*.tar
+packages/
+sbom-index.*.json
+sbom-*.json
+.cache/
