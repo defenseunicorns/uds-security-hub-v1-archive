@@ -52,12 +52,12 @@ jobs:
           docker run -v $(pwd):/workspace ghcr.io/oras-project/oras:v1.2.0 \
             attach ghcr.io/defenseunicorns/uds-security-hub:latest \
             --artifact-type sbom/example \
-            /workspace/sbom-x86_64.spdx.json:application/json
+            sbom-x86_64.spdx.json:application/json
           if [[ "${TAG_MODE:-}" == "git" ]]; then
             docker run -v $(pwd):/workspace ghcr.io/oras-project/oras:v1.2.0 \
               attach ghcr.io/defenseunicorns/uds-security-hub:${GIT_TAG} \
               --artifact-type sbom/example \
-              /workspace/sbom-x86_64.spdx.json:application/json
+              sbom-x86_64.spdx.json:application/json
           fi
         env:
           GIT_TAG: ${{ github.ref_name }}
