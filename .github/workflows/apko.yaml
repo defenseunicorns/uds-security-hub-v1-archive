@@ -1,0 +1,47 @@
+name: Build and Push Melange and Apko
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55 # v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@734d9cb93d6f7610c2400b0f789eaa6f9813e271 # v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Log in to GHCR
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run build script
+        run: ./scripts/build.sh
+
+      - name: Push Docker images
+        run: |
+          docker push ghcr.io/defenseunicorns/uds-security-hub:latest
+          if [[ "${TAG_MODE:-}" == "git" ]]; then
+            docker push ghcr.io/defenseunicorns/uds-security-hub:${GIT_TAG}
+          fi
+        env:
+          GIT_TAG: ${{ github.ref_name }}
