@@ -33,7 +33,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }} # Use PAT with write:packages permissiont
+          password: ${{ secrets.GHCR_PAT }} # Use PAT with write:packages permission
 
       - name: Run build script
         run: ./scripts/build.sh
@@ -43,6 +43,21 @@ jobs:
           docker push ghcr.io/defenseunicorns/uds-security-hub:latest
           if [[ "${TAG_MODE:-}" == "git" ]]; then
             docker push ghcr.io/defenseunicorns/uds-security-hub:${GIT_TAG}
+          fi
+        env:
+          GIT_TAG: ${{ github.ref_name }}
+
+      - name: Attach SBOM using ORAS
+        run: |
+          docker run -it --rm -v $(pwd):/workspace ghcr.io/oras-project/oras:v1.2.0 \
+            attach ghcr.io/defenseunicorns/uds-security-hub:latest \
+            --artifact-type sbom/example \
+            /workspace/sbom-x86_64.spdx.json:application/json
+          if [[ "${TAG_MODE:-}" == "git" ]]; then
+            docker run -it --rm -v $(pwd):/workspace ghcr.io/oras-project/oras:v1.2.0 \
+              attach ghcr.io/defenseunicorns/uds-security-hub:${GIT_TAG} \
+              --artifact-type sbom/example \
+              /workspace/sbom-x86_64.spdx.json:application/json
           fi
         env:
           GIT_TAG: ${{ github.ref_name }}
