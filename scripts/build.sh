@@ -3,11 +3,13 @@
 set -euo pipefail
 
 readonly DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$DIR/../"
+cd "$DIR/../" || exit
 
 readonly ARCHS=("amd64")
-readonly REF="${REF:-"uds-security-hub:dev"}"
-readonly ORG="defenseunicorns"
+readonly IMAGE_NAME="${IMAGE_NAME:-"uds-security-hub"}"
+readonly IMAGE_TAG="${IMAGE_TAG:-"latest"}"
+readonly REF="${IMAGE_NAME}:${IMAGE_TAG}"
+readonly ORG="ghcr.io/defenseunicorns"
 
 readonly MELANGE_IMAGE_REPO="cgr.dev/chainguard/melange"
 readonly MELANGE_IMAGE_IDENTIFIER=":latest"
@@ -51,12 +53,12 @@ for ARCH in "${ARCHS[@]}"; do
     echo "Loaded image for architecture: ${ARCH}"
     
     # Tag the image with the correct architecture
-    docker tag "${REF}-${ARCH}-${ARCH}" "${ORG}/uds-security-hub:dev-${ARCH}"
+    docker tag "${REF}-${ARCH}-${ARCH}" "${ORG}/${IMAGE_NAME}:${IMAGE_TAG}"
     
     if [[ "${TAG_MODE:-}" == "git" ]]; then
-        docker tag "${REF}-${ARCH}" "${ORG}/uds-security-hub:${GIT_TAG}-${ARCH}"
-        echo "Tagged image: ${ORG}/uds-security-hub:${GIT_TAG}-${ARCH}"
+        docker tag "${REF}-${ARCH}" "${ORG}/${IMAGE_NAME}:${GIT_TAG}"
+        echo "Tagged image: ${ORG}/${IMAGE_NAME}:${GIT_TAG}"
     else
-        echo "Tagged image: ${ORG}/uds-security-hub:dev-${ARCH}"
+        echo "Tagged image: ${ORG}/${IMAGE_NAME}:${IMAGE_TAG}"
     fi
 done
