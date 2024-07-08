@@ -75,13 +75,10 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 	tag, _ := cmd.Flags().GetString("tag")                  //nolint:errcheck
 	outputFile, _ := cmd.Flags().GetString("output-file")   //nolint:errcheck
 
-	scanner, err := scan.New(context.Background(), logger, "")
+	scanner := scan.NewRemotePackageScanner(context.Background(), logger, "", org, packageName, tag)
+	results, err := scanner.Scan(context.Background())
 	if err != nil {
 		return fmt.Errorf("error creating scanner: %w", err)
-	}
-	results, err := scanner.ScanZarfPackage(org, packageName, tag)
-	if err != nil {
-		return fmt.Errorf("error scanning package: %w", err)
 	}
 	var combinedCSV string
 	for _, v := range results {

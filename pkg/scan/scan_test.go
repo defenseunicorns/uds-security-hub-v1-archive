@@ -31,10 +31,7 @@ func TestNewScanResultReader(t *testing.T) {
 			wantErr:      false,
 		},
 	}
-	s, err := New(context.Background(), nil, "")
-	if err != nil {
-		t.Fatalf("Failed to create scanner: %v", err)
-	}
+	s := NewRemotePackageScanner(context.Background(), nil, "", "test", "test", "test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.ScanResultReader(tt.jsonFilePath)
@@ -186,10 +183,7 @@ func Test_extractSBOMPackages(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	s, err := New(context.Background(), nil, "")
-	if err != nil {
-		t.Fatalf("Failed to create scanner: %v", err)
-	}
+	s := NewRemotePackageScanner(context.Background(), nil, "", "test", "test", "test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.extractSBOMPackages(tt.args.ctx, tt.args.layer)

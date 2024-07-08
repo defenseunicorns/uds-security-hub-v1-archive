@@ -28,11 +28,34 @@ func (s *localScanResult) GetArtifactName() string {
 	return s.ArtifactName
 }
 
+// Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
 	logger           types.Logger
 	ctx              context.Context
 	commandExecutor  types.CommandExecutor
 	dockerConfigPath string
+	org              string
+	packageName      string
+	tag              string
+}
+
+// NewRemotePackageScanner creates a new Scanner for remote packages.
+func NewRemotePackageScanner(
+	ctx context.Context,
+	logger types.Logger,
+	dockerConfigPath,
+	org,
+	packageName,
+	tag string,
+) *Scanner {
+	return &Scanner{
+		logger:           logger,
+		commandExecutor:  executor.NewCommandExecutor(ctx),
+		dockerConfigPath: dockerConfigPath,
+		org:              org,
+		packageName:      packageName,
+		tag:              tag,
+	}
 }
 
 // GetVulnerabilities returns the vulnerabilities in the scan result.
@@ -65,15 +88,6 @@ func (s *localScanResult) GetResultsAsCSV() string {
 			vuln.Description))
 	}
 	return sb.String()
-}
-
-// New creates a new Scanner.
-func New(ctx context.Context, logger types.Logger, dockerConfigPath string) (*Scanner, error) {
-	return &Scanner{
-		logger:           logger,
-		commandExecutor:  executor.NewCommandExecutor(ctx),
-		dockerConfigPath: dockerConfigPath,
-	}, nil
 }
 
 // ScanResultReader creates a new ScanResultReader from a JSON file.
@@ -116,19 +130,28 @@ func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader,
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the scan operation fails.
 func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]string, error) {
-	if org == "" {
+	s.org = org
+	s.packageName = packageName
+	s.tag = tag
+	return s.Scan(s.ctx)
+}
+
+// Scan scans the remote package and returns the scan results.
+func (s *Scanner) Scan(ctx context.Context) ([]string, error) {
+	if s.org == "" {
 		return nil, fmt.Errorf("org cannot be empty")
 	}
-	if packageName == "" {
+	if s.packageName == "" {
 		return nil, fmt.Errorf("packageName cannot be empty")
 	}
-	if tag == "" {
+	if s.tag == "" {
 		return nil, fmt.Errorf("tag cannot be empty")
 	}
-
+	//nolint:contextcheck
 	commandExecutor := executor.NewCommandExecutor(s.ctx)
-	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", org, packageName, tag)
+	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
+	//nolint:contextcheck
 	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
