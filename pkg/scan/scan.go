@@ -28,11 +28,34 @@ func (s *localScanResult) GetArtifactName() string {
 	return s.ArtifactName
 }
 
+// Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
 	logger           types.Logger
 	ctx              context.Context
 	commandExecutor  types.CommandExecutor
 	dockerConfigPath string
+	org              string
+	packageName      string
+	tag              string
+}
+
+// NewRemotePackageScanner creates a new Scanner for remote packages.
+func NewRemotePackageScanner(
+	ctx context.Context,
+	logger types.Logger,
+	dockerConfigPath,
+	org,
+	packageName,
+	tag string,
+) *Scanner {
+	return &Scanner{
+		logger:           logger,
+		commandExecutor:  executor.NewCommandExecutor(ctx),
+		dockerConfigPath: dockerConfigPath,
+		org:              org,
+		packageName:      packageName,
+		tag:              tag,
+	}
 }
 
 // GetVulnerabilities returns the vulnerabilities in the scan result.
@@ -65,15 +88,6 @@ func (s *localScanResult) GetResultsAsCSV() string {
 			vuln.Description))
 	}
 	return sb.String()
-}
-
-// New creates a new Scanner.
-func New(ctx context.Context, logger types.Logger, dockerConfigPath string) (*Scanner, error) {
-	return &Scanner{
-		logger:           logger,
-		commandExecutor:  executor.NewCommandExecutor(ctx),
-		dockerConfigPath: dockerConfigPath,
-	}, nil
 }
 
 // ScanResultReader creates a new ScanResultReader from a JSON file.
@@ -116,19 +130,28 @@ func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader,
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the scan operation fails.
 func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]string, error) {
-	if org == "" {
+	s.org = org
+	s.packageName = packageName
+	s.tag = tag
+	return s.Scan(s.ctx)
+}
+
+// Scan scans the remote package and returns the scan results.
+func (s *Scanner) Scan(ctx context.Context) ([]string, error) {
+	if s.org == "" {
 		return nil, fmt.Errorf("org cannot be empty")
 	}
-	if packageName == "" {
+	if s.packageName == "" {
 		return nil, fmt.Errorf("packageName cannot be empty")
 	}
-	if tag == "" {
+	if s.tag == "" {
 		return nil, fmt.Errorf("tag cannot be empty")
 	}
-
+	//nolint:contextcheck
 	commandExecutor := executor.NewCommandExecutor(s.ctx)
-	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", org, packageName, tag)
+	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
+	//nolint:contextcheck
 	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
@@ -184,7 +207,7 @@ func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.Ima
 	return idx, nil
 }
 
-// processImageIndex processes an image index, extracting SBOMs and running Syft and Grype on them.
+// processImageIndex processes an image index, extracting SBOMs and running trivy on the SBOM.
 //
 // Parameters:
 //   - ctx: The context for the processing operation.
@@ -257,14 +280,14 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 		}
 
 		// Extract tags from the SBOM JSON files
-		tags, err := s.extractSBOMPackages(ctx, layer)
+		tags, err := extractSBOMPackages(ctx, layer)
 		if err != nil {
 			errs = errors.Join(errs, fmt.Errorf("error extracting tags from sboms.tar: %w", err))
 			continue
 		}
 
 		for _, tag := range tags {
-			result, err := s.scanWithTrivy(tag, dockerConfigPath, commandExecutor)
+			result, err := scanWithTrivy(tag, dockerConfigPath, commandExecutor)
 			if err != nil {
 				errs = errors.Join(errs, fmt.Errorf("error scanning image with Trivy: %w", err))
 				continue
@@ -289,7 +312,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 // Returns:
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
-func (s *Scanner) scanWithTrivy(imageRef, dockerConfigPath string,
+func scanWithTrivy(imageRef string, dockerConfigPath string,
 	commandExecutor types.CommandExecutor) (string, error) {
 	err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
 	if err != nil {
@@ -335,7 +358,7 @@ func (s *Scanner) scanWithTrivy(imageRef, dockerConfigPath string,
 // Returns:
 //   - []string: A slice of tags extracted from the layer.
 //   - error: An error if the operation fails.
-func (s *Scanner) extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]string, error) {
+func extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]string, error) {
 	if layer == nil {
 		return nil, fmt.Errorf("layer cannot be nil")
 	}
