@@ -183,10 +183,9 @@ func Test_extractSBOMPackages(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	s := NewRemotePackageScanner(context.Background(), nil, "", "test", "test", "test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.extractSBOMPackages(tt.args.ctx, tt.args.layer)
+			got, err := extractSBOMPackages(tt.args.ctx, tt.args.layer)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("extractSBOMPackages() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -277,12 +276,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Scanner{
-				ctx:             tt.fields.ctx,
-				commandExecutor: tt.fields.commandExecutor,
-				logger:          tt.fields.logger,
-			}
-			got, err := s.scanWithTrivy(tt.args.imageRef, "", tt.args.commandExecutor)
+			got, err := scanWithTrivy(tt.args.imageRef, "", tt.args.commandExecutor)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scanWithTrivy() error = %v, wantErr %v", err, tt.wantErr)
 				return

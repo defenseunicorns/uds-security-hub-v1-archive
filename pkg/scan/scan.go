@@ -207,7 +207,7 @@ func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.Ima
 	return idx, nil
 }
 
-// processImageIndex processes an image index, extracting SBOMs and running Syft and Grype on them.
+// processImageIndex processes an image index, extracting SBOMs and running trivy on the SBOM.
 //
 // Parameters:
 //   - ctx: The context for the processing operation.
@@ -280,14 +280,14 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 		}
 
 		// Extract tags from the SBOM JSON files
-		tags, err := s.extractSBOMPackages(ctx, layer)
+		tags, err := extractSBOMPackages(ctx, layer)
 		if err != nil {
 			errs = errors.Join(errs, fmt.Errorf("error extracting tags from sboms.tar: %w", err))
 			continue
 		}
 
 		for _, tag := range tags {
-			result, err := s.scanWithTrivy(tag, dockerConfigPath, commandExecutor)
+			result, err := scanWithTrivy(tag, dockerConfigPath, commandExecutor)
 			if err != nil {
 				errs = errors.Join(errs, fmt.Errorf("error scanning image with Trivy: %w", err))
 				continue
@@ -312,7 +312,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 // Returns:
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
-func (s *Scanner) scanWithTrivy(imageRef, dockerConfigPath string,
+func scanWithTrivy(imageRef string, dockerConfigPath string,
 	commandExecutor types.CommandExecutor) (string, error) {
 	err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
 	if err != nil {
@@ -358,7 +358,7 @@ func (s *Scanner) scanWithTrivy(imageRef, dockerConfigPath string,
 // Returns:
 //   - []string: A slice of tags extracted from the layer.
 //   - error: An error if the operation fails.
-func (s *Scanner) extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]string, error) {
+func extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]string, error) {
 	if layer == nil {
 		return nil, fmt.Errorf("layer cannot be nil")
 	}

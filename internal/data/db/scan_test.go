@@ -493,7 +493,7 @@ func setupPostgresDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to connect to PostgreSQL: %v", err)
 	}
-	err = db.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{})
+	err = db.AutoMigrate(&[]interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}})
 	if err != nil {
 		t.Fatalf("failed to auto-migrate models: %v", err)
 	}
