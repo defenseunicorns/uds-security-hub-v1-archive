@@ -47,7 +47,7 @@ func NewRemotePackageScanner(
 	org,
 	packageName,
 	tag string,
-) *Scanner {
+) types.PackageScanner {
 	return &Scanner{
 		logger:           logger,
 		commandExecutor:  executor.NewCommandExecutor(ctx),

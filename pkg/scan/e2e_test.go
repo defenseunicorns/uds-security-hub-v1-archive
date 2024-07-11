@@ -35,9 +35,12 @@ func TestE2EScanFunctionality(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating scanner: %v", err)
 	}
-
+	rps, ok := scanner.(*Scanner)
+	if !ok {
+		t.Fatalf("Error creating scanner: %v", err)
+	}
 	// Perform the scan
-	results, err := scanner.ScanZarfPackage(org, packageName, tag)
+	results, err := rps.ScanZarfPackage(org, packageName, tag)
 	if err != nil {
 		t.Fatalf("Error scanning package: %v", err)
 	}

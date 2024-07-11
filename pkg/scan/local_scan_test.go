@@ -121,11 +121,7 @@ func TestScanImageE2E(t *testing.T) {
 
 func TestFetchImageE2E(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
-	lps, err := NewLocalPackageScanner(&mockLogger{}, "", "testdata/dockerconfig.json")
-	if err != nil {
-		t.Fatalf("Failed to create local package scanner: %v", err)
-	}
-	images, err := lps.ExtractImagesFromTar(filePath)
+	images, err := ExtractImagesFromTar(filePath)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}

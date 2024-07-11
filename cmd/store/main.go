@@ -129,7 +129,11 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
-	return runStoreScannerWithDeps(ctx, cmd, logInstance, scanner, manager, config)
+	remoteScanner, ok := scanner.(*scan.Scanner)
+	if !ok {
+		return fmt.Errorf("error creating remote package scanner")
+	}
+	return runStoreScannerWithDeps(ctx, cmd, logInstance, remoteScanner, manager, config)
 }
 
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.

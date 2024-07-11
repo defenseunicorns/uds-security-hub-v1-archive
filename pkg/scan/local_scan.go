@@ -33,7 +33,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
-	images, err := lps.ExtractImagesFromTar(lps.packagePath)
+	images, err := ExtractImagesFromTar(lps.packagePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract images from tar: %w", err)
 	}
@@ -56,7 +56,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]string, error) {
 // Returns:
 // - *LocalPackageScanner: the LocalPackageScanner instance.
 // - error: an error if the instance cannot be created.
-func NewLocalPackageScanner(logger types.Logger, dockerConfigPath, packagePath string) (*LocalPackageScanner, error) {
+func NewLocalPackageScanner(logger types.Logger, dockerConfigPath, packagePath string) (types.PackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
@@ -93,7 +93,7 @@ type ImageIndex struct {
 // Returns:
 // - []string: the names of the container images.
 // - error: an error if the extraction fails.
-func (lps *LocalPackageScanner) ExtractImagesFromTar(tarFilePath string) ([]string, error) {
+func ExtractImagesFromTar(tarFilePath string) ([]string, error) {
 	const indexJSONFileName = "images/index.json"
 
 	if tarFilePath == "" {
