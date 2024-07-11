@@ -33,8 +33,8 @@ func Execute(args []string) {
 func newRootCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "scan",
-		Short: "[ALPHA] Scan will scan a zarf package for vulnerabilities and generate a report with Trivy.",
-		Long:  "[ALPHA] Scan is a tool for scanning zarf packages for vulnerabilities and generating a report with Trivy",
+		Short: "Scan will scan a zarf package for vulnerabilities and generate a report with Trivy.",
+		Long:  "Scan is a tool for scanning zarf packages for vulnerabilities and generating a report with Trivy",
 		RunE:  runScanner, // Use RunE instead of Run to handle errors
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Check if Trivy is installed
@@ -60,13 +60,15 @@ func newRootCmd() *cobra.Command {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringSlice("registry-creds", []string{},
-		"List of registry credentials in the format 'registryURL,username,password'")
+	rootCmd.PersistentFlags().StringSliceP("registry-creds", "r", []string{},
+		`List of registry credentials in the format 'registry:username:password'. 
+Example: 'registry1.dso.mil:myuser:mypassword'`)
 	rootCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
 	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for CSV results")
-	rootCmd.PersistentFlags().StringP("package-path", "p", "", "Path to the local zarf package")
+	rootCmd.PersistentFlags().StringP("package-path", "p", "", `Path to the local zarf package. 
+This is for local scanning and not fetching from a remote registry.`)
 
 	return rootCmd
 }
