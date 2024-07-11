@@ -61,6 +61,13 @@ type ScannerFactory interface {
 	// Returns:
 	//   - PackageScanner: The created PackageScanner.
 	//   - error: An error if the scanner cannot be created.
-	CreateScanner(ctx context.Context, logger Logger, dockerConfigPath, org, packageName, tag, packagePath string) (PackageScanner, error)
+	CreateScanner(
+		ctx context.Context,
+		logger Logger,
+		dockerConfigPath,
+		org,
+		packageName,
+		tag,
+		packagePath string,
+	) (PackageScanner, error)
 }
-

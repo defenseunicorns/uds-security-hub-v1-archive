@@ -43,7 +43,7 @@ func newRootCmd() *cobra.Command {
 			}
 
 			// Check if either remote or local scan options are provided
-			packagePath, _ := cmd.Flags().GetString("package-path")
+			packagePath, _ := cmd.Flags().GetString("package-path") //nolint:errcheck
 			if packagePath == "" {
 				requiredFlags := []string{"org", "package-name", "tag"}
 				for _, flag := range requiredFlags {

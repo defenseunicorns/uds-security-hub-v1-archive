@@ -11,7 +11,8 @@ import (
 type ScannerFactoryImpl struct{}
 
 // CreateScanner creates a new PackageScanner based on the provided options.
-func (sf *ScannerFactoryImpl) CreateScanner(ctx context.Context, logger types.Logger, dockerConfigPath, org, packageName, tag, packagePath string) (types.PackageScanner, error) {
+func (sf *ScannerFactoryImpl) CreateScanner(ctx context.Context, logger types.Logger,
+	dockerConfigPath, org, packageName, tag, packagePath string) (types.PackageScanner, error) {
 	if packagePath != "" {
 		return NewLocalPackageScanner(logger, dockerConfigPath, packagePath)
 	}
