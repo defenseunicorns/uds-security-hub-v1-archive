@@ -231,6 +231,9 @@ func TestUpdateScan(t *testing.T) {
 
 // TestGetScan tests the GetScan method of the GormScanManager.
 func TestGetScan(t *testing.T) {
+	if os.Getenv("integration") != "true" {
+		t.Skip("Skipping integration test")
+	}
 	type args struct {
 		db *gorm.DB
 		id uint

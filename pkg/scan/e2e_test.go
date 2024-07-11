@@ -11,6 +11,9 @@ import (
 )
 
 func TestE2EScanFunctionality(t *testing.T) {
+	if os.Getenv("integration") != "true" {
+		t.Skip("Skipping integration test")
+	}
 	// Set up the context and logger
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)

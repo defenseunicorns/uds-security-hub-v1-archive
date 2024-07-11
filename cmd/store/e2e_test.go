@@ -9,6 +9,9 @@ import (
 
 // TestStore is a test for the store command e2e.
 func TestStore(t *testing.T) {
+	if os.Getenv("integration") != "true" {
+		t.Skip("Skipping integration test")
+	}
 	github := os.Getenv("GITHUB_TOKEN")
 	ghcrCreds := os.Getenv("GHCR_CREDS")
 	registry1Creds := os.Getenv("REGISTRY1_CREDS")
@@ -75,6 +78,9 @@ func TestStore(t *testing.T) {
 }
 
 func TestSetupDBConnection_Success(t *testing.T) {
+	if os.Getenv("integration") != "true" {
+		t.Skip("Skipping integration test")
+	}
 	// Use a connection string for a test database
 	connStr := "host=localhost port=5432 user=test_user dbname=test_db password=test_password sslmode=disable"
 
