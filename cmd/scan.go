@@ -42,14 +42,18 @@ func newRootCmd() *cobra.Command {
 				return fmt.Errorf("trivy is not installed: %w", err)
 			}
 
-			requiredFlags := []string{"org", "package-name", "tag"}
-			for _, flag := range requiredFlags {
-				value, err := cmd.Flags().GetString(flag)
-				if err != nil {
-					return fmt.Errorf("%w: %s: %w", errFlagRetrieval, flag, err)
-				}
-				if value == "" {
-					return fmt.Errorf("%s %w", flag, errRequiredFlagEmpty)
+			// Check if either remote or local scan options are provided
+			packagePath, _ := cmd.Flags().GetString("package-path")
+			if packagePath == "" {
+				requiredFlags := []string{"org", "package-name", "tag"}
+				for _, flag := range requiredFlags {
+					value, err := cmd.Flags().GetString(flag)
+					if err != nil {
+						return fmt.Errorf("%w: %s: %w", errFlagRetrieval, flag, err)
+					}
+					if value == "" {
+						return fmt.Errorf("%s %w", flag, errRequiredFlagEmpty)
+					}
 				}
 			}
 			return nil
@@ -62,6 +66,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
 	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for CSV results")
+	rootCmd.PersistentFlags().StringP("package-path", "p", "", "Path to the local zarf package")
 
 	return rootCmd
 }
@@ -75,6 +80,7 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 	tag, _ := cmd.Flags().GetString("tag")                           //nolint:errcheck
 	outputFile, _ := cmd.Flags().GetString("output-file")            //nolint:errcheck
 	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds") //nolint:errcheck
+	packagePath, _ := cmd.Flags().GetString("package-path")          //nolint:errcheck
 
 	parsedCreds := docker.ParseCredentials(registryCreds)
 	dockerConfigPath, err := docker.GenerateAndWriteDockerConfig(ctx, parsedCreds)
@@ -82,16 +88,22 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error generating and writing Docker config: %w", err)
 	}
 
-	scanner := scan.NewRemotePackageScanner(context.Background(), logger, dockerConfigPath, org, packageName, tag)
-	results, err := scanner.Scan(context.Background())
+	factory := &scan.ScannerFactoryImpl{}
+	scanner, err := factory.CreateScanner(ctx, logger, dockerConfigPath, org, packageName, tag, packagePath)
 	if err != nil {
 		return fmt.Errorf("error creating scanner: %w", err)
 	}
+
+	results, err := scanner.Scan(ctx)
+	if err != nil {
+		return fmt.Errorf("error scanning: %w", err)
+	}
+
 	var combinedCSV string
 	for _, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
-			return fmt.Errorf("error scanning: %w", err)
+			return fmt.Errorf("error reading scan result: %w", err)
 		}
 
 		csv := r.GetResultsAsCSV()

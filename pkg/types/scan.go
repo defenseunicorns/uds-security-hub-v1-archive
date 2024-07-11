@@ -46,3 +46,21 @@ type PackageScanner interface {
 	//   - error: An error if the file cannot be opened or the JSON cannot be decoded.
 	ScanResultReader(jsonFilePath string) (ScanResultReader, error)
 }
+
+// ScannerFactory defines the method to create a PackageScanner.
+type ScannerFactory interface {
+	// CreateScanner creates a new PackageScanner based on the provided options.
+	// Parameters:
+	//   - ctx: The context for the scanner.
+	//   logger: The logger to use for logging.
+	//   dockerConfigPath: The path to the Docker config file.
+	//   org: The organization name (for remote scanner).
+	//   packageName: The package name (for remote scanner).
+	//   tag: The tag name (for remote scanner).
+	//   packagePath: The path to the local package (for local scanner).
+	// Returns:
+	//   - PackageScanner: The created PackageScanner.
+	//   - error: An error if the scanner cannot be created.
+	CreateScanner(ctx context.Context, logger Logger, dockerConfigPath, org, packageName, tag, packagePath string) (PackageScanner, error)
+}
+
