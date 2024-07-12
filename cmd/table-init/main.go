@@ -14,9 +14,12 @@ import (
 
 // migrateDatabase performs the database migrations.
 func migrateDatabase(db *gorm.DB) error {
-	err := db.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{})
-	if err != nil {
-		return fmt.Errorf("failed to auto-migrate models: %w", err)
+	models := []interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}}
+	for _, model := range models {
+		err := db.AutoMigrate(model)
+		if err != nil {
+			log.Printf("failed to auto-migrate model: %v", err)
+		}
 	}
 	return nil
 }

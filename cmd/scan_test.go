@@ -15,7 +15,6 @@ func TestNewRootCmd(t *testing.T) {
 		t.Errorf("cmd.Use mismatch (-want +got):\n%s", diff)
 	}
 	expectedShort := strings.Join([]string{
-		"[ALPHA] ",
 		"Scan ",
 		"will scan a zarf package for vulnerabilities and generate a report",
 		" with Trivy.",

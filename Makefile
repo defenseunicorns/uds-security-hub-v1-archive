@@ -34,6 +34,6 @@ test-integration: table-init
 		echo "Error: GITHUB_TOKEN, GHCR_CREDS, or REGISTRY1_CREDS is not set"; \
 		exit 1; \
 	fi
-	go test -tags=integration -timeout 160s ./... -v -coverprofile=coverage.out
+	integration=true go test -timeout 160s ./... -v -coverprofile=coverage.out
 
 .PHONY: all build test lint run clean e2e table-init

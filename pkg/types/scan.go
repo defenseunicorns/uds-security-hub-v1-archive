@@ -1,5 +1,7 @@
 package types
 
+import "context"
+
 // VulnerabilityInfo represents information about a vulnerability found in a scanned artifact.
 type VulnerabilityInfo struct {
 	VulnerabilityID  string `json:"VulnerabilityID"`
@@ -27,4 +29,45 @@ type ScanResultReader interface {
 	GetVulnerabilities() []VulnerabilityInfo
 	// GetResultsAsCSV returns the scan results in CSV format.
 	GetResultsAsCSV() string
+}
+
+// PackageScanner defines the methods required for scanning packages.
+type PackageScanner interface {
+	// Scan scans the package and returns the scan results.
+	// Returns a slice of file paths containing the scan results in JSON format and an error if the scan operation fails.
+	Scan(ctx context.Context) ([]string, error)
+
+	// ScanResultReader creates a new ScanResultReader from a JSON file.
+	// Takes a trivy scan result file and returns a ScanResultReader.
+	// Parameters:
+	//   - jsonFilePath: The path to the JSON file containing the scan results.
+	// Returns:
+	//   - types.ScanResultReader: An instance of ScanResultReader that can be used to access the scan results.
+	//   - error: An error if the file cannot be opened or the JSON cannot be decoded.
+	ScanResultReader(jsonFilePath string) (ScanResultReader, error)
+}
+
+// ScannerFactory defines the method to create a PackageScanner.
+type ScannerFactory interface {
+	// CreateScanner creates a new PackageScanner based on the provided options.
+	// Parameters:
+	//   - ctx: The context for the scanner.
+	//   logger: The logger to use for logging.
+	//   dockerConfigPath: The path to the Docker config file.
+	//   org: The organization name (for remote scanner).
+	//   packageName: The package name (for remote scanner).
+	//   tag: The tag name (for remote scanner).
+	//   packagePath: The path to the local package (for local scanner).
+	// Returns:
+	//   - PackageScanner: The created PackageScanner.
+	//   - error: An error if the scanner cannot be created.
+	CreateScanner(
+		ctx context.Context,
+		logger Logger,
+		dockerConfigPath,
+		org,
+		packageName,
+		tag,
+		packagePath string,
+	) (PackageScanner, error)
 }

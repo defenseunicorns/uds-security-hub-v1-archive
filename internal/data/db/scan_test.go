@@ -231,6 +231,9 @@ func TestUpdateScan(t *testing.T) {
 
 // TestGetScan tests the GetScan method of the GormScanManager.
 func TestGetScan(t *testing.T) {
+	if os.Getenv("integration") != "true" {
+		t.Skip("Skipping integration test")
+	}
 	type args struct {
 		db *gorm.DB
 		id uint
@@ -492,10 +495,6 @@ func setupPostgresDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("failed to connect to PostgreSQL: %v", err)
-	}
-	err = db.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{})
-	if err != nil {
-		t.Fatalf("failed to auto-migrate models: %v", err)
 	}
 	return db
 }

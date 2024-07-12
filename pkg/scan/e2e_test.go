@@ -11,6 +11,9 @@ import (
 )
 
 func TestE2EScanFunctionality(t *testing.T) {
+	if os.Getenv("integration") != "true" {
+		t.Skip("Skipping integration test")
+	}
 	// Set up the context and logger
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
@@ -31,13 +34,16 @@ func TestE2EScanFunctionality(t *testing.T) {
 		t.Fatalf("Error generating and writing Docker config: %v", err)
 	}
 	// Create the scanner
-	scanner, err := New(ctx, logger, dockerConfigPath)
+	scanner := NewRemotePackageScanner(ctx, logger, dockerConfigPath, org, packageName, tag)
 	if err != nil {
 		t.Fatalf("Error creating scanner: %v", err)
 	}
-
+	rps, ok := scanner.(*Scanner)
+	if !ok {
+		t.Fatalf("Error creating scanner: %v", err)
+	}
 	// Perform the scan
-	results, err := scanner.ScanZarfPackage(org, packageName, tag)
+	results, err := rps.ScanZarfPackage(org, packageName, tag)
 	if err != nil {
 		t.Fatalf("Error scanning package: %v", err)
 	}

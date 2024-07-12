@@ -27,35 +27,6 @@ The UDS Security Hub is a tool designed to manage and scan `zarf` packages for v
 
 ## Usage
 
-### Scanner Functionality
-The `pkg/scan` package provides functionality for scanning `zarf` packages and generating vulnerability reports. The main entry point is the `Scanner` struct, which offers the following methods:
-
-1. **ScanZarfPackage(org, packageName, tag string)**: Scans a Zarf package and returns the scan results as a slice of file paths containing the JSON-formatted scan results.
-2. **ScanResultReader(jsonFilePath string)**: Initializes a new `ScanResultReader` from a JSON file containing the scan results. This interface allows access to the scan results, including retrieving the artifact name, vulnerabilities, and generating a CSV report.
-
-#### Example Usage
-```go
-scanner, err := scan.New(context.Background(), logger, "dockerUsername", "dockerPassword") // Optional credentials for Docker registry access
-if err != nil {
-    // Handle error
-}
-
-results, err := scanner.ScanZarfPackage("defenseunicorns", "packages/uds/gitlab-runner", "16.10.0-uds.0-upstream")
-if err != nil {
-    // Handle error
-}
-
-for _, v := range results {
-    r, err := scanner.ScanResultReader(v)
-    if err != nil {
-        // Handle error
-        continue
-    }
-
-    csv := r.GetResultsAsCSV()
-    fmt.Println(csv)
-}
-```
 
 ### Command Line Interface
 To run the scanner via the command line and generate a CSV output, use the `scan` command with the necessary flags:
@@ -67,13 +38,17 @@ scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docke
 - `-o, --org`: Organization
 - `-n, --package-name`: Package Name
 - `-g, --tag`: Tag
-- `-u, --docker-username`: (Optional) Docker username for registry access
-- `-p, --docker-password`: (Optional) Docker password for registry access
+- `-r, --registry-creds`: (Optional) Registry credentials in the format 'registry:username:password'. Example: 'ghcr.io:user:password'
 - `-f, --output-file`: Output file for CSV results
+- `-p, --package-path`: Path to the zarf package. This is for local scanning and not fetching from a remote registry.
 
-**Example Command:**
+**Example Command for Remote Scanning:**
 ```bash
-scan -o defenseunicorns -n packages/uds/gitlab-runner -g 16.10.0-uds.0-upstream -u yourDockerUsername -p yourDockerPassword -f results.csv
+scan -o defenseunicorns -n packages/uds/gitlab-runner -g 16.10.0-uds.0-upstream -r ghcr.io:user:password -r registry1.dso.mil:user:password -r docker.io:user:password -f results.csv
+```
+**Example Command for Local Scanning**
+```bash
+scan -p ./pkg/scan/testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst -r ghcr.io:user:password -r registry1.dso.mil:user:password -r docker.io:user:password -f results.csv
 ```
 ![alt text](image.png)
 

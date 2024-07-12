@@ -33,8 +33,8 @@ func Execute(args []string) {
 func newRootCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "scan",
-		Short: "[ALPHA] Scan will scan a zarf package for vulnerabilities and generate a report with Trivy.",
-		Long:  "[ALPHA] Scan is a tool for scanning zarf packages for vulnerabilities and generating a report with Trivy",
+		Short: "Scan will scan a zarf package for vulnerabilities and generate a report with Trivy.",
+		Long:  "Scan is a tool for scanning zarf packages for vulnerabilities and generating a report with Trivy",
 		RunE:  runScanner, // Use RunE instead of Run to handle errors
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Check if Trivy is installed
@@ -42,26 +42,33 @@ func newRootCmd() *cobra.Command {
 				return fmt.Errorf("trivy is not installed: %w", err)
 			}
 
-			requiredFlags := []string{"org", "package-name", "tag"}
-			for _, flag := range requiredFlags {
-				value, err := cmd.Flags().GetString(flag)
-				if err != nil {
-					return fmt.Errorf("%w: %s: %w", errFlagRetrieval, flag, err)
-				}
-				if value == "" {
-					return fmt.Errorf("%s %w", flag, errRequiredFlagEmpty)
+			// Check if either remote or local scan options are provided
+			packagePath, _ := cmd.Flags().GetString("package-path") //nolint:errcheck
+			if packagePath == "" {
+				requiredFlags := []string{"org", "package-name", "tag"}
+				for _, flag := range requiredFlags {
+					value, err := cmd.Flags().GetString(flag)
+					if err != nil {
+						return fmt.Errorf("%w: %s: %w", errFlagRetrieval, flag, err)
+					}
+					if value == "" {
+						return fmt.Errorf("%s %w", flag, errRequiredFlagEmpty)
+					}
 				}
 			}
 			return nil
 		},
 	}
 
-	rootCmd.PersistentFlags().StringSlice("registry-creds", []string{},
-		"List of registry credentials in the format 'registryURL,username,password'")
+	rootCmd.PersistentFlags().StringSliceP("registry-creds", "r", []string{},
+		`List of registry credentials in the format 'registry:username:password'. 
+Example: 'registry1.dso.mil:myuser:mypassword'`)
 	rootCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
 	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for CSV results")
+	rootCmd.PersistentFlags().StringP("package-path", "p", "", `Path to the local zarf package. 
+This is for local scanning and not fetching from a remote registry.`)
 
 	return rootCmd
 }
@@ -75,6 +82,7 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 	tag, _ := cmd.Flags().GetString("tag")                           //nolint:errcheck
 	outputFile, _ := cmd.Flags().GetString("output-file")            //nolint:errcheck
 	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds") //nolint:errcheck
+	packagePath, _ := cmd.Flags().GetString("package-path")          //nolint:errcheck
 
 	parsedCreds := docker.ParseCredentials(registryCreds)
 	dockerConfigPath, err := docker.GenerateAndWriteDockerConfig(ctx, parsedCreds)
@@ -82,19 +90,22 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error generating and writing Docker config: %w", err)
 	}
 
-	scanner, err := scan.New(ctx, logger, dockerConfigPath)
+	factory := &scan.ScannerFactoryImpl{}
+	scanner, err := factory.CreateScanner(ctx, logger, dockerConfigPath, org, packageName, tag, packagePath)
 	if err != nil {
 		return fmt.Errorf("error creating scanner: %w", err)
 	}
-	results, err := scanner.ScanZarfPackage(org, packageName, tag)
+
+	results, err := scanner.Scan(ctx)
 	if err != nil {
-		return fmt.Errorf("error scanning package: %w", err)
+		return fmt.Errorf("error scanning: %w", err)
 	}
+
 	var combinedCSV string
 	for _, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
-			return fmt.Errorf("error scanning: %w", err)
+			return fmt.Errorf("error reading scan result: %w", err)
 		}
 
 		csv := r.GetResultsAsCSV()
