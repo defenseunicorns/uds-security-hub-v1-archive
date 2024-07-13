@@ -28,3 +28,5 @@ checksum:
   algorithm: sha256
 release:
   draft: true
+sboms:
+  - artifacts: archive
