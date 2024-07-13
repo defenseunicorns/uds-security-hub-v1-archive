@@ -20,7 +20,7 @@ _UDS Security Hub depends on [trivy](https://github.com/aquasecurity/trivy) for 
 - [Usage](#usage)
 - [Command Line Interface](#command-line-interface)
 - [SLSA Verification](#slsa-verification)
-- [Contributing](#contributing)
+- [Contributing](CONTRIBUTING.MD)
 
 ## Overview
 The UDS Security Hub is a tool designed to manage and scan `zarf` packages for vulnerabilities. It leverages the Trivy vulnerability scanner to analyze container images and extract security information, facilitating the generation of CSV reports detailing identified vulnerabilities.
