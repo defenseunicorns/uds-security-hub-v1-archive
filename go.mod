@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.0
 	github.com/jackc/pgx/v4 v4.18.3
-	github.com/klauspost/compress v1.16.7
+	github.com/klauspost/compress v1.17.9
 	github.com/prometheus/client_golang v1.18.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
