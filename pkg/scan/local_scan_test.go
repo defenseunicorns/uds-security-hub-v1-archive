@@ -64,7 +64,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner, err := NewLocalPackageScanner(tt.logger, tt.dockerConfig, tt.packagePath)
+			scanner, err := NewLocalPackageScanner(tt.logger, tt.dockerConfig, tt.packagePath, "")
 			checkError(t, err, tt.expectError)
 			if !tt.expectError {
 				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
@@ -93,7 +93,7 @@ func TestScanImageE2E(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error generating and writing Docker config: %v", err)
 	}
-	lps, err := NewLocalPackageScanner(logger, dockerConfigPath, zarfPackagePath)
+	lps, err := NewLocalPackageScanner(logger, dockerConfigPath, zarfPackagePath, "")
 	if err != nil {
 		t.Fatalf("Failed to create local package scanner: %v", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -37,6 +38,7 @@ type Scanner struct {
 	org              string
 	packageName      string
 	tag              string
+	offlineDBPath    string // New field for offline DB path
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.
@@ -46,7 +48,8 @@ func NewRemotePackageScanner(
 	dockerConfigPath,
 	org,
 	packageName,
-	tag string,
+	tag,
+	offlineDBPath string, // New parameter for offline DB path
 ) types.PackageScanner {
 	return &Scanner{
 		logger:           logger,
@@ -55,6 +58,7 @@ func NewRemotePackageScanner(
 		org:              org,
 		packageName:      packageName,
 		tag:              tag,
+		offlineDBPath:    offlineDBPath,
 	}
 }
 
@@ -287,7 +291,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 		}
 
 		for _, tag := range tags {
-			result, err := scanWithTrivy(tag, dockerConfigPath, commandExecutor)
+			result, err := scanWithTrivy(tag, dockerConfigPath, s.offlineDBPath, commandExecutor)
 			if err != nil {
 				errs = errors.Join(errs, fmt.Errorf("error scanning image with Trivy: %w", err))
 				continue
@@ -308,15 +312,33 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 //   - imageRef: The reference to the image layer to be scanned.
 //   - dockerConfigPath: The path to the Docker config file.
 //   - executor: The command executor to use for running Trivy.
+//   - offlineDBPath: The path to the offline DB to use for the scan.
 //
 // Returns:
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
-func scanWithTrivy(imageRef string, dockerConfigPath string,
+func scanWithTrivy(imageRef string, dockerConfigPath string, offlineDBPath string,
 	commandExecutor types.CommandExecutor) (string, error) {
+	const trivyDBFileName = "trivy.db"
+	const metadataFileName = "metadata.json"
+
 	err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
 	if err != nil {
 		return "", fmt.Errorf("error setting Docker config environment variable: %w", err)
+	}
+	defer os.Unsetenv("DOCKER_CONFIG")
+
+	if offlineDBPath != "" {
+		trivyDBPath := filepath.Join(offlineDBPath, trivyDBFileName)
+		metadataPath := filepath.Join(offlineDBPath, metadataFileName)
+
+		if _, err := os.Stat(trivyDBPath); os.IsNotExist(err) {
+			return "", fmt.Errorf("trivy.db does not exist in the offline DB path: %s", offlineDBPath)
+		}
+
+		if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
+			return "", fmt.Errorf("metadata.json does not exist in the offline DB path: %s", offlineDBPath)
+		}
 	}
 
 	// Create a temporary file for the Trivy scan results.
@@ -333,13 +355,17 @@ func scanWithTrivy(imageRef string, dockerConfigPath string,
 		return "", fmt.Errorf("trivy is not installed or not found in PATH: %w", err)
 	}
 
-	// Run Trivy vulnerability scan on the image layer
+	args := []string{
+		"image", "--image-src=remote", imageRef, "--scanners", "vuln",
+		"-f", "json", "-o", trivyFile.Name(), "-q",
+	}
+	if offlineDBPath != "" {
+		args = append(args, "--skip-db-update", "--skip-java-db-update", "--offline-scan", "--cache-dir", offlineDBPath)
+	}
+	fmt.Println(args)
 	stdout, stderr, err := commandExecutor.ExecuteCommand(
 		"trivy",
-		[]string{
-			"image", "--image-src=remote", imageRef, "--scanners", "vuln",
-			"-f", "json", "-o", trivyFile.Name(), "-q",
-		},
+		args,
 		os.Environ(),
 	)
 	if err != nil {
