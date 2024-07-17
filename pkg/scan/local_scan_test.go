@@ -2,9 +2,7 @@ package scan
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -66,7 +64,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner, err := NewLocalPackageScanner(tt.logger, tt.dockerConfig, tt.packagePath, "")
+			scanner, err := NewLocalPackageScanner(tt.logger, tt.dockerConfig, tt.packagePath)
 			checkError(t, err, tt.expectError)
 			if !tt.expectError {
 				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
@@ -80,29 +78,6 @@ func TestScanImageE2E(t *testing.T) {
 	if os.Getenv("integration") != "true" {
 		t.Skip("Skipping integration test")
 	}
-	// Create a temp directory to store the trivy-db which is used to store the vulnerability database
-	// this is to test the offline functionality.
-	tempDir, err := os.MkdirTemp("", "trivy-db-*")
-	if err != nil {
-		t.Fatalf("Failed to create temporary directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-	// using docker to download the trivy-db image and extract it to the temp directory and not using the oras
-	// as it brings in additional dependencies that we don't want/need.
-	//nolint:gosec
-	cmd := exec.Command("docker", "run", "--rm", "-v", fmt.Sprintf("%s:/workspace", tempDir),
-		"ghcr.io/oras-project/oras:v1.2.0", "pull", "ghcr.io/aquasecurity/trivy-db:2")
-	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("Failed to pull trivy-db: %v\nOutput: %s", err, string(output))
-	}
-
-	// Extract the tar file to the temp directory
-	tarFilePath := fmt.Sprintf("%s/db.tar.gz", tempDir)
-	cmd = exec.Command("tar", "-xvf", tarFilePath, "-C", tempDir)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("Failed to extract tar file: %v\nOutput: %s", err, string(output))
-	}
-
 	const zarfPackagePath = "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
@@ -118,7 +93,7 @@ func TestScanImageE2E(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error generating and writing Docker config: %v", err)
 	}
-	lps, err := NewLocalPackageScanner(logger, dockerConfigPath, zarfPackagePath, tempDir)
+	lps, err := NewLocalPackageScanner(logger, dockerConfigPath, zarfPackagePath, "")
 	if err != nil {
 		t.Fatalf("Failed to create local package scanner: %v", err)
 	}
