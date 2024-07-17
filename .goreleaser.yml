@@ -29,4 +29,6 @@ checksum:
 release:
   draft: true
 sboms:
-  - artifacts: archive
+  - artifacts: binary
+    documents:
+      - "{{ .Binary }}_{{ .Os }}_{{ .Arch }}.spdx.sbom.json"
