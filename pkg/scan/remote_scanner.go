@@ -360,9 +360,10 @@ func scanWithTrivy(imageRef string, dockerConfigPath string, offlineDBPath strin
 		"-f", "json", "-o", trivyFile.Name(),
 	}
 	if offlineDBPath != "" {
-		args = append(args, "--skip-db-update", "--skip-java-db-update", "--offline-scan", "--skip-check-update", "--cache-dir", offlineDBPath)
+		args = append(args,
+			"--skip-db-update", "--skip-java-db-update", "--offline-scan",
+			"--skip-check-update", "--cache-dir", offlineDBPath)
 	}
-	fmt.Println(args)
 	stdout, stderr, err := commandExecutor.ExecuteCommand(
 		"trivy",
 		args,

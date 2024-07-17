@@ -69,7 +69,9 @@ Example: 'registry1.dso.mil:myuser:mypassword'`)
 	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for CSV results")
 	rootCmd.PersistentFlags().StringP("package-path", "p", "", `Path to the local zarf package. 
 This is for local scanning and not fetching from a remote registry.`)
-	rootCmd.PersistentFlags().StringP("offline-db-path", "d", "", "Path to the offline DB to use for the scan")
+	rootCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
+This is for local scanning and not fetching from a remote registry.
+This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
 
 	return rootCmd
 }

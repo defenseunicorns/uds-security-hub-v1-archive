@@ -82,7 +82,9 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().StringSlice("registry-creds", []string{},
 		"List of registry credentials in the format 'registryURL,username,password'")
 	storeCmd.PersistentFlags().String("instance-connection-name", "", "Cloud SQL instance connection name")
-	storeCmd.PersistentFlags().String("offline-db-path", "", "Path to the offline DB to use for the scan")
+	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
+	This is for local scanning and not fetching from a remote registry.
+	This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
 
 	return storeCmd
 }
