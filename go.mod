@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.11.1
 	github.com/docker/docker v27.0.3+incompatible
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.20.0
+	github.com/google/go-containerregistry v0.20.1
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/klauspost/compress v1.17.9
 	github.com/prometheus/client_golang v1.18.0
