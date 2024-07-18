@@ -26,8 +26,7 @@ jobs:
         check-latest: true
 
     - name: Install syft
-      run: |
-        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+      uses: anchore/sbom-action/download-syft@v0
 
     - name: Create temporary Git tag
       run: |
