@@ -319,8 +319,8 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 //   - error: An error if the operation fails.
 func scanWithTrivy(imageRef string, dockerConfigPath string, offlineDBPath string,
 	commandExecutor types.CommandExecutor) (string, error) {
-	const trivyDBFileName = "trivy.db"
-	const metadataFileName = "metadata.json"
+	const trivyDBFileName = "db/trivy.db"
+	const metadataFileName = "db/metadata.json"
 
 	err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
 	if err != nil {
@@ -370,7 +370,8 @@ func scanWithTrivy(imageRef string, dockerConfigPath string, offlineDBPath strin
 		os.Environ(),
 	)
 	if err != nil {
-		return "", fmt.Errorf("error running Trivy on image %s: %w\nstdout: %s\nstderr: %s", imageRef, err, stdout, stderr)
+		return "", fmt.Errorf("error running Trivy on image %s: %w\nstdout: %s\nstderr: %s args: %s",
+			imageRef, err, stdout, stderr, args)
 	}
 
 	return trivyFile.Name(), nil
