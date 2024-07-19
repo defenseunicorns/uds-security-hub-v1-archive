@@ -19,6 +19,7 @@ jobs:
       - name: ghcr.io/defenseunicorns/uds-security-hub built
         run: |
           docker run ghcr.io/defenseunicorns/uds-security-hub:latest --help
+          exit 1
 
       - name: ghcr.io/defenseunicorns/uds-security-hub-store built
         run: |
