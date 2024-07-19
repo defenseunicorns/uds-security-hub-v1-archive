@@ -32,7 +32,7 @@ The UDS Security Hub is a tool designed to manage and scan `zarf` packages for v
 To run the scanner via the command line and generate a CSV output, use the `scan` command with the necessary flags:
 
 ```bash
-scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -f [output-file]
+scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -f [output-file] -r [registry-creds] -p [package-path] -o [offline-db-path]
 ```
 
 - `-o, --org`: Organization
@@ -41,6 +41,7 @@ scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docke
 - `-r, --registry-creds`: (Optional) Registry credentials in the format 'registry:username:password'. Example: 'ghcr.io:user:password'
 - `-f, --output-file`: Output file for CSV results
 - `-p, --package-path`: Path to the zarf package. This is for local scanning and not fetching from a remote registry.
+- `-o, --offline-db-path`: Path to the offline DB to use for the scan. This should have all the files extracted from the trivy-db image and ran once before running the scan.
 
 **Example Command for Remote Scanning:**
 ```bash
@@ -108,3 +109,17 @@ Once you have installed the `slsa-verifier`, you can verify the SLSA provenance 
 
 ## Contributing
 If you encounter any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request on the project's repository.
+
+### Offline DB Directory Structure
+
+The directory for the offline DB should be structured as follows:
+
+```plaintext
+/var/folders/pf/bq3t19j505xg4pprmb3ls7r0000gn/T/trivy-db-2535363142/db
+├── db
+│   ├── metadata.json
+│   ├── trivy.db
+│   └── fanal.db
+```
+
+For more details, refer to [Issue #123](https://github.com/defenseunicorns/uds-security-hub/issues/123) and [Trivy Issue #486](https://github.com/aquasecurity/trivy/issues/486).

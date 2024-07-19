@@ -80,7 +80,22 @@ The `store` command accepts the following flags:
 - `--number-of-versions-to-scan` (int): Number of versions to scan (default: 1)
 - `--registry-creds` (stringSlice): List of registry credentials in the format 'registryURL,username,password'
 - `--instance-connection-name` (string): Cloud SQL instance connection name
+- `--offline-db-path` (string): Path to the offline DB to use for the scan. This should have all the files extracted from the trivy-db image and ran once before running the scan.
 
+### Offline DB Directory Structure
+
+The directory for the offline DB should be structured as follows:
+
+```plaintext
+/var/folders/pf/bq3t19j505xg4pprmb35ls7r0000gn/T/trivy-db-2535363142/db
+├── db
+│   ├── metadata.json
+│   └── trivy.db
+├── fanal
+│   └── fanal.db
+```
+
+For more details, refer to [Issue #123](https://github.com/defenseunicorns/uds-security-hub/issues/123) and [Trivy Issue #486](https://github.com/aquasecurity/trivy/issues/486).
 ## Development
 
 ### Running Tests

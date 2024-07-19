@@ -20,6 +20,7 @@ type LocalPackageScanner struct {
 	logger           types.Logger
 	dockerConfigPath string
 	packagePath      string
+	offlineDBPath    string // New field for offline DB path
 }
 
 // Scan scans the package and returns the scan results which are trivy scan results in json format.
@@ -39,7 +40,8 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]string, error) {
 	}
 	var scanResults []string
 	for _, image := range images {
-		scanResult, err := scanWithTrivy(image, lps.dockerConfigPath, commandExecutor)
+		scanResult, err := scanWithTrivy(image, lps.dockerConfigPath,
+			lps.offlineDBPath, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan image %s: %w", image, err)
 		}
@@ -53,10 +55,12 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]string, error) {
 // - logger: the logger to use for logging.
 // - dockerConfigPath: the path to the docker configuration file.
 // - packagePath: the path to the zarf package to scan.
+// - offlineDBPath: the path to the offline DB for Trivy.
 // Returns:
 // - *LocalPackageScanner: the LocalPackageScanner instance.
 // - error: an error if the instance cannot be created.
-func NewLocalPackageScanner(logger types.Logger, dockerConfigPath, packagePath string) (types.PackageScanner, error) {
+func NewLocalPackageScanner(logger types.Logger, dockerConfigPath,
+	packagePath, offlineDBPath string) (types.PackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
@@ -67,6 +71,7 @@ func NewLocalPackageScanner(logger types.Logger, dockerConfigPath, packagePath s
 		logger:           logger,
 		dockerConfigPath: dockerConfigPath,
 		packagePath:      packagePath,
+		offlineDBPath:    offlineDBPath,
 	}, nil
 }
 

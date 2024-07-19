@@ -82,6 +82,9 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().StringSlice("registry-creds", []string{},
 		"List of registry credentials in the format 'registryURL,username,password'")
 	storeCmd.PersistentFlags().String("instance-connection-name", "", "Cloud SQL instance connection name")
+	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
+	This is for local scanning and not fetching from a remote registry.
+	This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
 
 	return storeCmd
 }
@@ -124,7 +127,8 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("error generating and writing Docker config: %w", err)
 	}
-	scanner := scan.NewRemotePackageScanner(ctx, logInstance, dockerConfigPath, config.Org, config.PackageName, config.Tag)
+	scanner := scan.NewRemotePackageScanner(ctx, logInstance, dockerConfigPath, config.Org, config.PackageName,
+		config.Tag, config.OfflineDBPath)
 	manager, err := db.NewGormScanManager(config.DBConn)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
@@ -182,6 +186,7 @@ type Config struct {
 	Org                    string
 	PackageName            string
 	Tag                    string
+	OfflineDBPath          string
 	RegistryCreds          []types.RegistryCredentials
 	NumberOfVersionsToScan int
 }
@@ -201,6 +206,7 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds")               //nolint:errcheck
 	instanceConnectionName, _ := cmd.Flags().GetString("instance-connection-name") //nolint:errcheck
 	parsedCreds := parseCredentials(registryCreds)
+	offlineDBPath, _ := cmd.Flags().GetString("offline-db-path") //nolint:errcheck
 
 	connector := sql.CreateDBConnector(dbHost, dbPort, dbUser, dbPassword, dbName, instanceConnectionName)
 	dbConn, err := connector.Connect(context.Background())
@@ -216,6 +222,7 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 		GitHubToken:            githubToken,
 		NumberOfVersionsToScan: numberOfVersionsToScan,
 		RegistryCreds:          parsedCreds,
+		OfflineDBPath:          offlineDBPath,
 	}, nil
 }
 
