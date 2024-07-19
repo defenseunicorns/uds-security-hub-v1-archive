@@ -16,8 +16,10 @@ jobs:
       - name: Run build script
         run: ./scripts/build-apko-images.sh
 
-      - name: Check that images were built correctly
+      - name: ghcr.io/defenseunicorns/uds-security-hub built
         run: |
-          docker run ghcr.io/defenseunicorns/uds-security-hub:latest --help
+          docker run ghcr.io/defenseunicorns/uds-security-hub-store:latest --help
 
+      - name: ghcr.io/defenseunicorns/uds-security-hub-store built
+        run: |
           docker run ghcr.io/defenseunicorns/uds-security-hub-store:latest --help
