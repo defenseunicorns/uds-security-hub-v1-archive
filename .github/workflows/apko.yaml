@@ -42,7 +42,7 @@ jobs:
         run: echo "TAG_MODE=git" >> $GITHUB_ENV
 
       - name: Run build script
-        run: ./scripts/build.sh
+        run: ./scripts/build-apko-images.sh
 
       - name: Push Docker images
         run: |

@@ -25,6 +25,7 @@ melange.rsa
 melange.rsa.pub
 *.tar
 packages/
+packages-*/
 sbom-index.*.json
 sbom-*.json
 .cache/
