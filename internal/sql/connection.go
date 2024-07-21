@@ -50,13 +50,13 @@ type CloudSQLConnector struct {
 
 // Connect connects to the database using the Cloud SQL connection.
 func (c *CloudSQLConnector) Connect(ctx context.Context) (*gorm.DB, error) {
-	dialer, err := cloudsqlconn.NewDialer(ctx)
+	dialer, err := cloudsqlconn.NewDialer(ctx, cloudsqlconn.WithIAMAuthN())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dialer: %w", err)
 	}
 
-	config, err := pgxpool.ParseConfig(fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
-		c.user, c.password, c.dbname))
+	config, err := pgxpool.ParseConfig(fmt.Sprintf("user=%s dbname=%s sslmode=disable",
+		c.user, c.dbname))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse configuration: %w", err)
 	}
