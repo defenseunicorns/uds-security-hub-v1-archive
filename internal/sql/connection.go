@@ -52,11 +52,15 @@ type CloudSQLConnector struct {
 func (c *CloudSQLConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 	dialer, err := cloudsqlconn.NewDialer(ctx, cloudsqlconn.WithIAMAuthN())
 	if err != nil {
-		return nil, fmt.Errorf("failed to create dialer: %w", err)
+		// Fallback to using password if IAMAuthN fails
+		dialer, err = cloudsqlconn.NewDialer(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create dialer: %w", err)
+		}
 	}
 
-	config, err := pgxpool.ParseConfig(fmt.Sprintf("user=%s dbname=%s sslmode=disable",
-		c.user, c.dbname))
+	config, err := pgxpool.ParseConfig(fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+		c.user, c.password, c.dbname))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse configuration: %w", err)
 	}
