@@ -77,4 +77,5 @@ while IFS= read -r NAME; do
     --db-name "${DB_NAME}" \
     --db-user "${DB_USER}" \
     --db-password "${DB_PASSWORD}"
+  echo "Finished scanning $NAME"
 done < "$NAMES_FILE"
