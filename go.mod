@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.11.1
-	github.com/docker/docker v27.0.3+incompatible
+	github.com/docker/docker v27.1.0+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.1
 	github.com/jackc/pgx/v4 v4.18.3
