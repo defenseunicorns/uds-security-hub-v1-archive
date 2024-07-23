@@ -17,9 +17,6 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: test tags
-        run: git tag
-
       - name: Run build script
         run: ./scripts/build-apko-images.sh
         env:
