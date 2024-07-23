@@ -15,9 +15,15 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
+    env:
+      TAG_MODE: git
+
     steps:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@4fd812986e6c8c2a69e18311145f9371337f27d4 # v2
@@ -37,10 +43,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }} # Use PAT with write:packages permission
 
-      - name: Set TAG_MODE
-        if: startsWith(github.ref, 'refs/tags/')
-        run: echo "TAG_MODE=git" >> $GITHUB_ENV
-
       - name: Run build script
         run: ./scripts/build-apko-images.sh
 
@@ -48,8 +50,9 @@ jobs:
         run: |
           docker push ghcr.io/defenseunicorns/uds-security-hub:latest
           docker push ghcr.io/defenseunicorns/uds-security-hub-store:latest
-          if [[ "${TAG_MODE:-}" == "git" ]]; then
+          if [[ "${TAG_MODE}" == "git" ]]; then
             docker push ghcr.io/defenseunicorns/uds-security-hub:${GIT_TAG}
+            docker push ghcr.io/defenseunicorns/uds-security-hub-store:${GIT_TAG}
           fi
         env:
           GIT_TAG: ${{ github.ref_name }}
