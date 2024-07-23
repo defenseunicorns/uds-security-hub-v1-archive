@@ -22,25 +22,13 @@ jobs:
           workload_identity_provider: "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}"
           project_id: "${{ secrets.GCP_PROJECT }}"
 
-      - name: Set up Go
-        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v2
-        with:
-          go-version: '1.22.4'  
-
-      - name: Install Trivy
-        run: |
-          sudo apt-get install wget apt-transport-https gnupg -y
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install trivy -y
-
       - name: Run UDS Scan
         env:
           GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
           REGISTRY1_CREDS: ${{ secrets.REGISTRY1_CREDS }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           DOCKER_IO_CREDS: ${{ secrets.DOCKER_IO_CREDS }}
+          CGR_CREDS: ${{ secrets.CGR_CREDS }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -48,3 +36,4 @@ jobs:
         run: |
           chmod +x scripts/scan.sh
           ./scripts/scan.sh -f names.txt -v 2 
+          ./scripts/scan.sh -f leapfrog.txt -v 2 
