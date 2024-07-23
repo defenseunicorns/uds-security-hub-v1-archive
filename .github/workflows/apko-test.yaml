@@ -15,11 +15,17 @@ jobs:
 
       - name: Run build script
         run: ./scripts/build-apko-images.sh
+        env:
+          TAG_MODE: git
 
       - name: ghcr.io/defenseunicorns/uds-security-hub built
         run: |
+          TAG=$(git describe --tag)
           docker run ghcr.io/defenseunicorns/uds-security-hub:latest --help
+          docker run ghcr.io/defenseunicorns/uds-security-hub:$TAG --help
 
       - name: ghcr.io/defenseunicorns/uds-security-hub-store built
         run: |
+          TAG=$(git describe --tag)
           docker run ghcr.io/defenseunicorns/uds-security-hub-store:latest --help
+          docker run ghcr.io/defenseunicorns/uds-security-hub-store:$TAG --help
