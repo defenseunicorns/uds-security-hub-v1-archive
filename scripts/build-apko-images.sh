@@ -84,7 +84,7 @@ build-image() {
         docker tag "${REF}-${ARCH}" "${ORG}/${IMAGE_NAME}:${IMAGE_TAG}"
         echo "Tagged image: ${ORG}/${IMAGE_NAME}:${IMAGE_TAG}"
 
-        if [[ "${TAG_MODE}" == "git" ]]; then
+        if [[ "${TAG_MODE:-}" == "git" ]]; then
             docker tag "${REF}-${ARCH}" "${ORG}/${IMAGE_NAME}:${GIT_TAG}"
             echo "Tagged image: ${ORG}/${IMAGE_NAME}:${GIT_TAG}"
         fi
