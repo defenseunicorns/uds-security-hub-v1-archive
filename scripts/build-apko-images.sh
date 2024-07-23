@@ -43,7 +43,9 @@ build-image() {
     local PACKAGES_DIR="packages-${IMAGE_NAME}"
 
     # Get the current Git tag or commit hash
-    local GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git rev-parse --short HEAD)
+    # for tags this will be the exact tag,
+    # and for all other branches this will be a ${TAG}-${numberOfCommitsSinceTag}-g${gitHash}
+    local GIT_TAG=$(git describe --tags)
 
     if [[ ! -f "${MELANGE_CONFIG}" ]]; then
         echo "Error: ${MELANGE_CONFIG} not found."
@@ -80,12 +82,11 @@ build-image() {
 
         # Tag the image with the correct architecture
         docker tag "${REF}-${ARCH}" "${ORG}/${IMAGE_NAME}:${IMAGE_TAG}"
+        echo "Tagged image: ${ORG}/${IMAGE_NAME}:${IMAGE_TAG}"
 
         if [[ "${TAG_MODE:-}" == "git" ]]; then
             docker tag "${REF}-${ARCH}" "${ORG}/${IMAGE_NAME}:${GIT_TAG}"
             echo "Tagged image: ${ORG}/${IMAGE_NAME}:${GIT_TAG}"
-        else
-            echo "Tagged image: ${ORG}/${IMAGE_NAME}:${IMAGE_TAG}"
         fi
     done
 }

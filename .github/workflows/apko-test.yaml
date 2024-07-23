@@ -12,14 +12,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v3
+        with:
+          # there is a bug with the fetch-tags that requires that we have fetch-depth: 0
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Run build script
         run: ./scripts/build-apko-images.sh
+        env:
+          TAG_MODE: git
 
       - name: ghcr.io/defenseunicorns/uds-security-hub built
         run: |
+          TAG=$(git describe --tags)
+          echo "verifying image is built"
           docker run ghcr.io/defenseunicorns/uds-security-hub:latest --help
+          echo "verifying image:$TAG is built"
+          docker run ghcr.io/defenseunicorns/uds-security-hub:$TAG --help
 
       - name: ghcr.io/defenseunicorns/uds-security-hub-store built
         run: |
+          TAG=$(git describe --tags)
+          echo "verifying image is built"
           docker run ghcr.io/defenseunicorns/uds-security-hub-store:latest --help
+          echo "verifying image:$TAG is built"
+          docker run ghcr.io/defenseunicorns/uds-security-hub-store:$TAG --help
