@@ -3,3 +3,4 @@ packages/uds/sonarqube
 packages/uds/mattermost
 packages/uds/gitlab-runner
 packages/uds/core
+packages/private/uds/core
