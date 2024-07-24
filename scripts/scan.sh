@@ -19,9 +19,10 @@
 #   DB_USER                   : Database user.
 #   DB_PASSWORD               : Database password.
 #   INSTANCE_CONNECTION_NAME  : Instance connection name.
+#   CGR_CREDS                 : Credentials for the Container Registry.
 
 # Check if necessary environment variables are set
-required_vars=(GHCR_CREDS REGISTRY1_CREDS GITHUB_TOKEN DOCKER_IO_CREDS DB_NAME DB_USER DB_PASSWORD INSTANCE_CONNECTION_NAME)
+required_vars=(GHCR_CREDS REGISTRY1_CREDS GITHUB_TOKEN DOCKER_IO_CREDS DB_NAME DB_USER DB_PASSWORD INSTANCE_CONNECTION_NAME CGR_CREDS)
 for var in "${required_vars[@]}"; do
   if [ -z "${!var}" ]; then
     echo "Environment variable $var is not set. Please set it before running the script."
@@ -73,6 +74,7 @@ while IFS= read -r NAME; do
     --registry-creds "${GHCR_CREDS}" \
     --registry-creds "${REGISTRY1_CREDS}" \
     --registry-creds "${DOCKER_IO_CREDS}" \
+    --registry-creds "${CGR_CREDS}" \
     --instance-connection-name "${INSTANCE_CONNECTION_NAME}" \
     --db-name "${DB_NAME}" \
     --db-user "${DB_USER}" \

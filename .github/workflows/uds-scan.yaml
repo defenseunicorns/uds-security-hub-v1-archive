@@ -41,6 +41,7 @@ jobs:
           REGISTRY1_CREDS: ${{ secrets.REGISTRY1_CREDS }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           DOCKER_IO_CREDS: ${{ secrets.DOCKER_IO_CREDS }}
+          CGR_CREDS: ${{ secrets.CGR_CREDS }
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -48,3 +49,4 @@ jobs:
         run: |
           chmod +x scripts/scan.sh
           ./scripts/scan.sh -f names.txt -v 2 
+          ./scripts/scan.sh -f leapfrog.txt -v 1
