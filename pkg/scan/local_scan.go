@@ -2,11 +2,15 @@ package scan
 
 import (
 	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/klauspost/compress/zstd"
@@ -14,6 +18,27 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
+
+type imageRef interface {
+	Flags() []string
+}
+
+type remoteImageRef struct {
+	ImageRef string
+}
+
+func (r *remoteImageRef) Flags() []string {
+	return []string{"image", "--remote", r.ImageRef}
+}
+
+type localImageRef struct {
+	Name      string
+	RootFSDir string
+}
+
+func (l *localImageRef) Flags() []string {
+	return []string{"rootfs", l.RootFSDir, "--offline-scan"}
+}
 
 // LocalPackageScanner is a struct that holds the logger and paths for docker configuration and package.
 type LocalPackageScanner struct {
@@ -92,13 +117,34 @@ type ImageIndex struct {
 	SchemaVersion int             `json:"schemaVersion"`
 }
 
+type blob struct {
+	Digest string
+	Data   []byte `json:"-"`
+}
+type ImageLayerManifest struct {
+	SchemaVersion int                       `json:"schemaVersion"`
+	MediaType     string                    `json:"mediaType"`
+	Config        ImageLayerManifestConfig  `json:"config"`
+	Layers        []ImageLayerManifestLayer `json:"layers"`
+}
+type ImageLayerManifestConfig struct {
+	MediaType string `json:"mediaType"`
+	Digest    string `json:"digest"`
+	Size      int    `json:"size"`
+}
+type ImageLayerManifestLayer struct {
+	MediaType string `json:"mediaType"`
+	Digest    string `json:"digest"`
+	Size      int    `json:"size"`
+}
+
 // ExtractImagesFromTar extracts images from the tar archive and returns names of the container images.
 // Parameters:
 // - tarFilePath: the path to the tar archive to extract the images from.
 // Returns:
 // - []string: the names of the container images.
 // - error: an error if the extraction fails.
-func ExtractImagesFromTar(tarFilePath string) ([]string, error) {
+func ExtractImagesFromTar(tarFilePath string) ([]*localImageRef, error) {
 	const indexJSONFileName = "images/index.json"
 
 	if tarFilePath == "" {
@@ -125,7 +171,8 @@ func ExtractImagesFromTar(tarFilePath string) ([]string, error) {
 	tarReader := tar.NewReader(zstdReader)
 
 	var index ImageIndex
-	var imageNames []string
+
+	blobData := make(map[string]*blob)
 
 	for {
 		header, err := tarReader.Next()
@@ -136,6 +183,19 @@ func ExtractImagesFromTar(tarFilePath string) ([]string, error) {
 			return nil, fmt.Errorf("failed to read tar header: %w", err)
 		}
 
+		imageDirPrefix := "images/blobs/sha256/"
+		if strings.Contains(header.Name, imageDirPrefix) {
+			name := strings.TrimPrefix(header.Name, imageDirPrefix)
+			if name != "" {
+				data, err := io.ReadAll(tarReader)
+				if err != nil {
+					log.Printf("issue with reading: %s", err)
+				}
+				blobData[name] = &blob{Digest: name, Data: data}
+				continue
+			}
+		}
+
 		if header.Name == indexJSONFileName {
 			if err := json.NewDecoder(tarReader).Decode(&index); err != nil {
 				return nil, fmt.Errorf("failed to decode index.json: %w", err)
@@ -144,14 +204,75 @@ func ExtractImagesFromTar(tarFilePath string) ([]string, error) {
 		}
 	}
 
+	var results []*localImageRef
+
 	for _, manifest := range index.Manifests {
 		imageName := manifest.Annotations.BaseName
-		if imageName != "" {
-			imageNames = append(imageNames, imageName)
+		if imageName != "" && !strings.HasSuffix(imageName, ".att") && !strings.HasSuffix(imageName, ".sig") {
+			var imageLayerManifest ImageLayerManifest
+			digest := strings.TrimPrefix(manifest.Digest, "sha256:")
+			json.NewDecoder(bytes.NewReader(blobData[digest].Data)).Decode(&imageLayerManifest)
+
+			dir, err := os.MkdirTemp("", "zarf-image-*")
+			if err != nil {
+				return nil, err
+			}
+
+			for _, layer := range imageLayerManifest.Layers {
+				digest := strings.TrimPrefix(layer.Digest, "sha256:")
+				zipReader, err := gzip.NewReader(bytes.NewReader(blobData[digest].Data))
+				if err != nil {
+					return nil, err
+				}
+				tReader := tar.NewReader(zipReader)
+
+				for {
+					header, err := tReader.Next()
+					if err == io.EOF {
+						break
+					}
+
+					if err != nil {
+						return nil, err
+					}
+
+					target := filepath.Join(dir, header.Name)
+
+					switch header.Typeflag {
+
+					// if its a dir and it doesn't exist create it
+					case tar.TypeDir:
+						if _, err := os.Stat(target); err != nil {
+							if err := os.MkdirAll(target, 0755); err != nil {
+								return nil, err
+							}
+						}
+
+					// if it's a file create it
+					case tar.TypeReg:
+						f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+						if err != nil {
+							return nil, err
+						}
+
+						// copy over contents
+						if _, err := io.Copy(f, tReader); err != nil {
+							return nil, err
+						}
+
+						// manually close here after each file operation; defering would cause each file close
+						// to wait until all operations have completed.
+						f.Close()
+					}
+				}
+			}
+
+			results = append(results, &localImageRef{Name: manifest.Annotations.BaseName, RootFSDir: dir})
 		}
+
 	}
 
-	return imageNames, nil
+	return results, nil
 }
 
 // ScanResultReader reads the scan result from the json file and returns the scan result.
