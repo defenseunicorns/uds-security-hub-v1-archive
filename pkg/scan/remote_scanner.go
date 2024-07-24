@@ -291,7 +291,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 		}
 
 		for _, tag := range tags {
-			result, err := scanWithTrivy(tag, dockerConfigPath, s.offlineDBPath, commandExecutor)
+			result, err := scanWithTrivy(&remoteImageRef{ImageRef: tag}, dockerConfigPath, s.offlineDBPath, commandExecutor)
 			if err != nil {
 				errs = errors.Join(errs, fmt.Errorf("error scanning image with Trivy: %w", err))
 				continue
@@ -317,7 +317,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 // Returns:
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
-func scanWithTrivy(imageRef string, dockerConfigPath string, offlineDBPath string,
+func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath string,
 	commandExecutor types.CommandExecutor) (string, error) {
 	const trivyDBFileName = "db/trivy.db"
 	const metadataFileName = "db/metadata.json"
@@ -355,10 +355,11 @@ func scanWithTrivy(imageRef string, dockerConfigPath string, offlineDBPath strin
 		return "", fmt.Errorf("trivy is not installed or not found in PATH: %w", err)
 	}
 
-	args := []string{
-		"image", "--image-src=remote", imageRef, "--scanners", "vuln",
-		"-f", "json", "-o", trivyFile.Name(),
-	}
+	var args []string
+	args = append(args, imageRef.Flags()...)
+	args = append(args,
+		[]string{"--scanners", "vuln", "-f", "json", "-o", trivyFile.Name()}...,
+	)
 	if offlineDBPath != "" {
 		args = append(args,
 			"--skip-db-update", "--skip-java-db-update", "--offline-scan",

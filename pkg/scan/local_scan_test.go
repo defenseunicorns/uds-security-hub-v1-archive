@@ -140,7 +140,7 @@ func TestFetchImageE2E(t *testing.T) {
 	for _, expectedImage := range expectedImages {
 		found := false
 		for _, image := range images {
-			if image == expectedImage {
+			if image.Name == expectedImage {
 				found = true
 				t.Logf("Found expected image: %s", image)
 				break
