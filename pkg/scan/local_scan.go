@@ -183,6 +183,13 @@ func ExtractImagesFromTar(tarFilePath string) ([]*localImageRef, error) {
 			return nil, fmt.Errorf("failed to read tar header: %w", err)
 		}
 
+		if header.Name == indexJSONFileName {
+			if err := json.NewDecoder(tarReader).Decode(&index); err != nil {
+				return nil, fmt.Errorf("failed to decode index.json: %w", err)
+			}
+			continue
+		}
+
 		imageDirPrefix := "images/blobs/sha256/"
 		if strings.Contains(header.Name, imageDirPrefix) {
 			name := strings.TrimPrefix(header.Name, imageDirPrefix)
@@ -194,13 +201,6 @@ func ExtractImagesFromTar(tarFilePath string) ([]*localImageRef, error) {
 				blobData[name] = &blob{Digest: name, Data: data}
 				continue
 			}
-		}
-
-		if header.Name == indexJSONFileName {
-			if err := json.NewDecoder(tarReader).Decode(&index); err != nil {
-				return nil, fmt.Errorf("failed to decode index.json: %w", err)
-			}
-			break // We only need the index.json file
 		}
 	}
 
