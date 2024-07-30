@@ -29,3 +29,4 @@ packages-*/
 sbom-index.*.json
 sbom-*.json
 .cache/
+uds_security_hub.db

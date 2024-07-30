@@ -12,6 +12,7 @@ func TestStore(t *testing.T) {
 	if os.Getenv("integration") != "true" {
 		t.Skip("Skipping integration test")
 	}
+	const testDBPath = "tests/uds_security_hub.db"
 	github := os.Getenv("GITHUB_TOKEN")
 	ghcrCreds := os.Getenv("GHCR_CREDS")
 	registry1Creds := os.Getenv("REGISTRY1_CREDS")
@@ -26,20 +27,14 @@ func TestStore(t *testing.T) {
 		"--registry-creds", registry1Creds,
 		"--registry-creds", dockerCreds,
 		"-n", "packages/uds/gitlab-runner",
-		"--db-host", "localhost",
-		"--db-password", "test_password",
-		"--db-user", "test_user",
-		"--db-ssl-mode", "disable",
+		"--db-path", testDBPath,
 		"-v", "2",
 		"-t", github,
 	}
 
-	main()
-
 	// Use a connection string for a test database
-	connStr := "host=localhost port=5432 user=test_user dbname=test_db password=test_password sslmode=disable"
 
-	db, err := setupDBConnection(connStr)
+	db, err := setupDBConnection(testDBPath)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -55,6 +50,7 @@ func TestStore(t *testing.T) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
+	main()
 	// Check the number of rows in the scans table
 	var count int64
 	row := db.Model(&model.Scan{}).Count(&count)
@@ -82,7 +78,7 @@ func TestSetupDBConnection_Success(t *testing.T) {
 		t.Skip("Skipping integration test")
 	}
 	// Use a connection string for a test database
-	connStr := "host=localhost port=5432 user=test_user dbname=test_db password=test_password sslmode=disable"
+	connStr := "uds_security_hub.db"
 
 	db, err := setupDBConnection(connStr)
 	if err != nil {

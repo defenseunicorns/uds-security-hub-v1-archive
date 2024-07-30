@@ -3,14 +3,13 @@ package db
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
@@ -231,9 +230,6 @@ func TestUpdateScan(t *testing.T) {
 
 // TestGetScan tests the GetScan method of the GormScanManager.
 func TestGetScan(t *testing.T) {
-	if os.Getenv("integration") != "true" {
-		t.Skip("Skipping integration test")
-	}
 	type args struct {
 		db *gorm.DB
 		id uint
@@ -246,7 +242,7 @@ func TestGetScan(t *testing.T) {
 		{
 			name: "successful retrieval",
 			args: args{
-				db: setupPostgresDB(t),
+				db: setupSQLiteDB(t),
 				id: 1, // This ID will be set after insertion
 			},
 			wantErr: false,
@@ -336,7 +332,7 @@ func TestInsertPackageScans(t *testing.T) {
 		{
 			name: "successful insertion",
 			args: args{
-				db: setupPostgresDB(t),
+				db: setupSQLiteDB(t),
 				dto: external.PackageDTO{
 					Name:       "test-package-TestInsertPackageScans",
 					Repository: "test-repo-TestInsertPackageScans",
@@ -431,7 +427,7 @@ func TestScanResultDeserialization(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to deserialize JSON data: %s", err)
 	}
-	db := setupPostgresDB(t)
+	db := setupSQLiteDB(t)
 	// Create the scan manager
 	manager, err := NewGormScanManager(db)
 	if err != nil {
@@ -468,39 +464,21 @@ func TestScanResultDeserialization(t *testing.T) {
 		t.Errorf("fetched scan mismatch (-want +got):\n%s", diff)
 	}
 }
-func setupPostgresDB(t *testing.T) *gorm.DB {
-	t.Helper() // Mark this function as a test helper
-
-	// Set default environment variables for testing
-	setDefaultEnv := func(key, value string) {
-		if os.Getenv(key) == "" {
-			os.Setenv(key, value)
-		}
-	}
-
-	setDefaultEnv("DB_HOST", "localhost")
-	setDefaultEnv("DB_USER", "test_user")
-	setDefaultEnv("DB_PASSWORD", "test_password")
-	setDefaultEnv("DB_NAME", "test_db")
-	setDefaultEnv("DB_PORT", "5432")
-
-	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
-	)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect to PostgreSQL: %v", err)
-	}
-	return db
-}
 
 // setupSQLiteDB sets up a SQLite database for testing.
 func setupDB(t *testing.T) *gorm.DB {
 	t.Helper()
-	return setupPostgresDB(t)
+	return setupSQLiteDB(t)
+}
+func setupSQLiteDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect to in-memory SQLite: %v", err)
+	}
+	err = db.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{})
+	if err != nil {
+		t.Fatalf("failed to migrate database: %v", err)
+	}
+	return db
 }
