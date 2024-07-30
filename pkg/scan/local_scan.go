@@ -10,9 +10,12 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/anchore/syft/syft/format"
+	"github.com/anchore/syft/syft/format/cyclonedxjson"
 	"github.com/klauspost/compress/zstd"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
@@ -40,6 +43,15 @@ func (l *localImageRef) Flags() []string {
 	return []string{"rootfs", l.RootFSDir, "--offline-scan"}
 }
 
+type sbomImageRef struct {
+	Name     string
+	SBOMFile string
+}
+
+func (s *sbomImageRef) Flags() []string {
+	return []string{"sbom", "--offline-scan", s.SBOMFile}
+}
+
 // LocalPackageScanner is a struct that holds the logger and paths for docker configuration and package.
 type LocalPackageScanner struct {
 	logger           types.Logger
@@ -59,12 +71,12 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
-	images, err := ExtractImagesFromTar(lps.packagePath)
+	sbomFiles, err := ExtractSBOMsFromTar(lps.packagePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract images from tar: %w", err)
 	}
 	var scanResults []string
-	for _, image := range images {
+	for _, image := range sbomFiles {
 		scanResult, err := scanWithTrivy(image, lps.dockerConfigPath,
 			lps.offlineDBPath, commandExecutor)
 		if err != nil {
@@ -142,7 +154,7 @@ type ImageLayerManifestLayer struct {
 // Parameters:
 // - tarFilePath: the path to the tar archive to extract the images from.
 // Returns:
-// - []string: the names of the container images.
+// - []*localImageRef: references to images and their unpacked contents
 // - error: an error if the extraction fails.
 func ExtractImagesFromTar(tarFilePath string) ([]*localImageRef, error) {
 	const indexJSONFileName = "images/index.json"
@@ -270,6 +282,100 @@ func ExtractImagesFromTar(tarFilePath string) ([]*localImageRef, error) {
 			results = append(results, &localImageRef{Name: manifest.Annotations.BaseName, RootFSDir: dir})
 		}
 
+	}
+
+	return results, nil
+}
+
+// ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
+// Parameters:
+// - tarFilePath: the path to the tar archive to extract the images from.
+// Returns:
+// - []sbomImageRef: references to images and their sboms.
+// - error: an error if the extraction fails.
+func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
+	if tarFilePath == "" {
+		return nil, fmt.Errorf("tarFilePath cannot be empty")
+	}
+
+	if _, err := os.Stat(tarFilePath); err != nil {
+		return nil, fmt.Errorf("failed to open tar file: %w", err)
+	}
+	file, err := os.Open(tarFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tar file: %w", err)
+	}
+
+	defer file.Close()
+
+	zstdReader, err := zstd.NewReader(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create zstd reader: %w", err)
+	}
+	defer zstdReader.Close()
+
+	tarReader := tar.NewReader(zstdReader)
+
+	sbomFilename := "sboms.tar"
+	var sbomTar []byte
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to read package tar header: %w", err)
+		}
+
+		if header.Name == sbomFilename {
+			var err error
+			sbomTar, err = io.ReadAll(tarReader)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file %q: %w", sbomFilename, err)
+			}
+			break
+		}
+	}
+
+	tmp, err := os.MkdirTemp("", "zarf-sbom-spdx-files-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
+	}
+
+	var results []*sbomImageRef
+
+	sbomTarReader := tar.NewReader(bytes.NewReader(sbomTar))
+	for {
+		header, err := sbomTarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to read header in %q: %w", sbomFilename, err)
+		}
+
+		if strings.HasSuffix(header.Name, ".json") {
+			sbom, _, _, err := format.Decode(sbomTarReader)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert sbom format for %q: %w", header.Name, err)
+			}
+			encoder, _ := cyclonedxjson.NewFormatEncoderWithConfig(cyclonedxjson.DefaultEncoderConfig())
+			cyclonedx, err := format.Encode(*sbom, encoder)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode spdx format for %q: %w", header.Name, err)
+			}
+
+			spdxSBOMFilename := path.Join(tmp, header.Name)
+			if err := os.WriteFile(spdxSBOMFilename, cyclonedx, header.FileInfo().Mode().Perm()); err != nil {
+				return nil, fmt.Errorf("failed to write new spdx file for %q: %w", header.Name, err)
+			}
+
+			results = append(results, &sbomImageRef{
+				Name:     header.Name,
+				SBOMFile: spdxSBOMFilename,
+			})
+		}
 	}
 
 	return results, nil

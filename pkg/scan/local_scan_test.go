@@ -2,12 +2,10 @@ package scan
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -75,25 +73,11 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	}
 }
 func TestScanImageE2E(t *testing.T) {
-	if os.Getenv("integration") != "true" {
-		t.Skip("Skipping integration test")
-	}
 	const zarfPackagePath = "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
-	ghcrCreds := os.Getenv("GHCR_CREDS")
-	registry1Creds := os.Getenv("REGISTRY1_CREDS")
-	dockerCreds := os.Getenv("DOCKER_IO_CREDS")
-	if ghcrCreds == "" || registry1Creds == "" || dockerCreds == "" {
-		t.Fatalf("GHCR_CREDS and REGISTRY1_CREDS must be set")
-	}
-	registryCreds := docker.ParseCredentials([]string{ghcrCreds, registry1Creds, dockerCreds})
 
-	dockerConfigPath, err := docker.GenerateAndWriteDockerConfig(ctx, registryCreds)
-	if err != nil {
-		t.Fatalf("Error generating and writing Docker config: %v", err)
-	}
-	lps, err := NewLocalPackageScanner(logger, dockerConfigPath, zarfPackagePath, "")
+	lps, err := NewLocalPackageScanner(logger, "", zarfPackagePath, "")
 	if err != nil {
 		t.Fatalf("Failed to create local package scanner: %v", err)
 	}
