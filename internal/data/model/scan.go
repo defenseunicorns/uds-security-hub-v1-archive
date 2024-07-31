@@ -12,11 +12,11 @@ type Scan struct {
 	ArtifactName    string          `json:"ArtifactName"`
 	ArtifactType    string          `json:"ArtifactType"`
 	Metadata        json.RawMessage `json:"Metadata" gorm:"type:jsonb"`
-	Vulnerabilities []Vulnerability `json:"Vulnerabilities" gorm:"foreignKey:ScanID"`
+	Vulnerabilities []Vulnerability `json:"Vulnerabilities" gorm:"foreignKey:ScanID;constraint:OnDelete:CASCADE"`
 	Entrypoint      json.RawMessage `json:"Entrypoint" gorm:"type:jsonb"`
 	ID              uint            `json:"ID" gorm:"primaryKey;autoIncrement"`
 	SchemaVersion   int             `json:"SchemaVersion"`
-	PackageID       uint            `json:"PackageID"` // Foreign key to Package
+	PackageID       uint            `json:"PackageID" gorm:"foreignKey:ID;references:ID;constraint:OnDelete:CASCADE"` //nolint:lll
 }
 
 // Metadata contains additional information about the scanned artifact.
