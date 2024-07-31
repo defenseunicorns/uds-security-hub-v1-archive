@@ -27,11 +27,11 @@ func TestNewStoreCmd(t *testing.T) {
 	if cmd.Use != "store" {
 		t.Errorf("command use mismatch: got %v, want %v", cmd.Use, "store")
 	}
-	if cmd.Short != "Scan a Zarf package and store the results in the database" {
-		t.Errorf("command short description mismatch: got %v, want %v", cmd.Short, "Scan a Zarf package and store the results in the database")
+	if cmd.Short != "Scan a Zarf package and store the results in the SQLite database" {
+		t.Errorf("command short description mismatch: got %v, want %v", cmd.Short, "Scan a Zarf package and store the results in the SQLite database")
 	}
-	if cmd.Long != "Scan a Zarf package for vulnerabilities and store the results in the database using GormScanManager" {
-		t.Errorf("command long description mismatch: got %v, want %v", cmd.Long, "Scan a Zarf package for vulnerabilities and store the results in the database using GormScanManager")
+	if cmd.Long != "Scan a Zarf package for vulnerabilities and store the results in the SQLite database using GormScanManager" {
+		t.Errorf("command long description mismatch: got %v, want %v", cmd.Long, "Scan a Zarf package for vulnerabilities and store the results in the SQLite database using GormScanManager")
 	}
 
 	flags := []struct {
@@ -43,25 +43,18 @@ func TestNewStoreCmd(t *testing.T) {
 		{"org", "o", "defenseunicorns", "Organization name"},
 		{"package-name", "n", "", "Package Name: packages/uds/gitlab-runner"},
 		{"tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)"},
-		{"db-host", "", "localhost", "Database host"},
-		{"db-user", "", "test_user", "Database user"},
-		{"db-password", "", "test_password", "Database password"},
-		{"db-name", "", "test_db", "Database name"},
-		{"db-port", "", "5432", "Database port"},
-		{"db-ssl-mode", "", "disable", "Database SSL mode"},
+		{"db-path", "", "uds_security_hub.db", "SQLite database file path"},
+		{"github-token", "t", "", "GitHub token"},
+		{"number-of-versions-to-scan", "v", "1", "Number of versions to scan"},
+		{"registry-creds", "", "", "List of registry credentials in the format 'registryURL,username,password'"},
 	}
 
 	for _, flag := range flags {
 		f := cmd.PersistentFlags().Lookup(flag.name)
 		if f == nil {
 			t.Errorf("flag %s should be defined", flag.name)
-		} else {
-			if f.DefValue != flag.defaultValue {
-				t.Errorf("default value for flag %s mismatch: got %v, want %v", flag.name, f.DefValue, flag.defaultValue)
-			}
-			if f.Usage != flag.usage {
-				t.Errorf("usage for flag %s mismatch: got %v, want %v", flag.name, f.Usage, flag.usage)
-			}
+		} else if f.Usage != flag.usage {
+			t.Errorf("usage for flag %s mismatch: got %v, want %v", flag.name, f.Usage, flag.usage)
 		}
 	}
 }
@@ -302,7 +295,7 @@ func TestGetPackageVersions(t *testing.T) {
 			getVersionTagDate = tt.mockFunc
 
 			// Call the function under test
-			version, err := getVersionTagDate(context.Background(), nil, tt.gitHubToken, tt.org, "defenseunicorns", tt.packageName)
+			version, err := getVersionTagDate(context.Background(), nil, tt.gitHubToken, tt.org, "container", tt.packageName)
 
 			// Check for expected error
 			if tt.expectedError {

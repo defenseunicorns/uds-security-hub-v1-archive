@@ -18,18 +18,8 @@ lint:
 clean:
 	rm -rf bin/
 
-# Run the docker compose
-docker-up: docker-down
-	docker compose -f docker-compose.yml up -d
-	sleep 5
 
-table-init: docker-up
-	@go run ./cmd/table-init/main.go || { echo "Failed to initialize tables"; exit 1; }
-
-docker-down:
-	docker compose -f docker-compose.yml down || true
-
-test-integration: table-init
+test-integration: 
 	@if [ -z "$${GITHUB_TOKEN}" ] || [ -z "$${GHCR_CREDS}" ] || [ -z "$${REGISTRY1_CREDS}" ]; then \
 		echo "Error: GITHUB_TOKEN, GHCR_CREDS, or REGISTRY1_CREDS is not set"; \
 		exit 1; \

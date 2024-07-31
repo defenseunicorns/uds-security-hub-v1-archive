@@ -5,17 +5,6 @@ import (
 	"time"
 )
 
-// Package represents a collection of scans.
-type Package struct {
-	CreatedAt  time.Time `json:"CreatedAt" gorm:"autoCreateTime"`
-	UpdatedAt  time.Time `json:"UpdatedAt" gorm:"autoUpdateTime"`
-	Name       string    `json:"Name"`
-	Repository string    `json:"Repository"`
-	Tag        string    `json:"Tag"`
-	Scans      []Scan    `json:"Scans" gorm:"foreignKey:PackageID"`
-	ID         uint      `json:"ID" gorm:"primaryKey;autoIncrement"`
-}
-
 // Scan represents the result of a vulnerability scan.
 type Scan struct {
 	CreatedAt       time.Time       `json:"CreatedAt" gorm:"autoCreateTime"`
@@ -23,11 +12,11 @@ type Scan struct {
 	ArtifactName    string          `json:"ArtifactName"`
 	ArtifactType    string          `json:"ArtifactType"`
 	Metadata        json.RawMessage `json:"Metadata" gorm:"type:jsonb"`
-	Vulnerabilities []Vulnerability `json:"Vulnerabilities" gorm:"foreignKey:ScanID"`
+	Vulnerabilities []Vulnerability `json:"Vulnerabilities" gorm:"foreignKey:ScanID;constraint:OnDelete:CASCADE"`
 	Entrypoint      json.RawMessage `json:"Entrypoint" gorm:"type:jsonb"`
 	ID              uint            `json:"ID" gorm:"primaryKey;autoIncrement"`
 	SchemaVersion   int             `json:"SchemaVersion"`
-	PackageID       uint            `json:"PackageID"` // Foreign key to Package
+	PackageID       uint            `json:"PackageID" gorm:"foreignKey:ID;references:ID;constraint:OnDelete:CASCADE"` //nolint:lll
 }
 
 // Metadata contains additional information about the scanned artifact.

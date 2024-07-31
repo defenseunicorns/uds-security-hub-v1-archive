@@ -12,15 +12,15 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/db"
+	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
-	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -41,12 +41,11 @@ var errFlagRetrieval = errors.New("error getting flag")
 // errRequiredFlagEmpty is the error message for a required flag that is empty.
 var errRequiredFlagEmpty = errors.New("is required and cannot be empty")
 
-// newStoreCmd creates a new store command.
 func newStoreCmd() *cobra.Command {
 	var storeCmd = &cobra.Command{
 		Use:   "store",
-		Short: "Scan a Zarf package and store the results in the database",
-		Long:  "Scan a Zarf package for vulnerabilities and store the results in the database using GormScanManager",
+		Short: "Scan a Zarf package and store the results in the SQLite database",
+		Long:  "Scan a Zarf package for vulnerabilities and store the results in the SQLite database using GormScanManager",
 		RunE:  runStoreScanner,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Check if Trivy is installed
@@ -54,7 +53,7 @@ func newStoreCmd() *cobra.Command {
 				return fmt.Errorf("trivy is not installed: %w", err)
 			}
 
-			requiredFlags := []string{"org", "package-name", "db-host", "db-user", "db-password", "db-name", "db-port"}
+			requiredFlags := []string{"org", "package-name"}
 			for _, flag := range requiredFlags {
 				value, err := cmd.Flags().GetString(flag)
 				if err != nil {
@@ -71,17 +70,11 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
 	storeCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	storeCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
-	storeCmd.PersistentFlags().StringP("db-host", "", "localhost", "Database host")
-	storeCmd.PersistentFlags().StringP("db-user", "", "test_user", "Database user")
-	storeCmd.PersistentFlags().StringP("db-password", "", "test_password", "Database password")
-	storeCmd.PersistentFlags().StringP("db-name", "", "test_db", "Database name")
-	storeCmd.PersistentFlags().StringP("db-port", "", "5432", "Database port")
-	storeCmd.PersistentFlags().StringP("db-ssl-mode", "", "disable", "Database SSL mode")
+	storeCmd.PersistentFlags().StringP("db-path", "", "uds_security_hub.db", "SQLite database file path")
 	storeCmd.PersistentFlags().StringP("github-token", "t", "", "GitHub token")
 	storeCmd.PersistentFlags().IntP("number-of-versions-to-scan", "v", 1, "Number of versions to scan")
 	storeCmd.PersistentFlags().StringSlice("registry-creds", []string{},
 		"List of registry credentials in the format 'registryURL,username,password'")
-	storeCmd.PersistentFlags().String("instance-connection-name", "", "Cloud SQL instance connection name")
 	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
 	This is for local scanning and not fetching from a remote registry.
 	This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
@@ -193,23 +186,42 @@ type Config struct {
 
 // getConfigFromFlags gets the configuration from the command line flags.
 func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
-	org, _ := cmd.Flags().GetString("org")                                         //nolint:errcheck
-	packageName, _ := cmd.Flags().GetString("package-name")                        //nolint:errcheck
-	tag, _ := cmd.Flags().GetString("tag")                                         //nolint:errcheck
-	dbHost, _ := cmd.Flags().GetString("db-host")                                  //nolint:errcheck
-	dbUser, _ := cmd.Flags().GetString("db-user")                                  //nolint:errcheck
-	dbPassword, _ := cmd.Flags().GetString("db-password")                          //nolint:errcheck
-	dbName, _ := cmd.Flags().GetString("db-name")                                  //nolint:errcheck
-	dbPort, _ := cmd.Flags().GetString("db-port")                                  //nolint:errcheck
-	githubToken, _ := cmd.Flags().GetString("github-token")                        //nolint:errcheck
-	numberOfVersionsToScan, _ := cmd.Flags().GetInt("number-of-versions-to-scan")  //nolint:errcheck
-	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds")               //nolint:errcheck
-	instanceConnectionName, _ := cmd.Flags().GetString("instance-connection-name") //nolint:errcheck
-	parsedCreds := parseCredentials(registryCreds)
-	offlineDBPath, _ := cmd.Flags().GetString("offline-db-path") //nolint:errcheck
+	org, err := cmd.Flags().GetString("org")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'org' flag: %w", err)
+	}
+	packageName, err := cmd.Flags().GetString("package-name")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'package-name' flag: %w", err)
+	}
+	tag, err := cmd.Flags().GetString("tag")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'tag' flag: %w", err)
+	}
+	dbPath, err := cmd.Flags().GetString("db-path")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'db-path' flag: %w", err)
+	}
+	githubToken, err := cmd.Flags().GetString("github-token")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'github-token' flag: %w", err)
+	}
+	numberOfVersionsToScan, err := cmd.Flags().GetInt("number-of-versions-to-scan")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'number-of-versions-to-scan' flag: %w", err)
+	}
+	registryCreds, err := cmd.Flags().GetStringSlice("registry-creds")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'registry-creds' flag: %w", err)
+	}
+	offlineDBPath, err := cmd.Flags().GetString("offline-db-path")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'offline-db-path' flag: %w", err)
+	}
 
-	connector := sql.CreateDBConnector(dbHost, dbPort, dbUser, dbPassword, dbName, instanceConnectionName)
-	dbConn, err := connector.Connect(context.Background())
+	parsedCreds := parseCredentials(registryCreds)
+
+	dbConn, err := setupDBConnection(dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -263,16 +275,6 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 	}
 
 	return nil
-}
-
-// setupDBConnection sets up a database connection using the provided connection string.
-func setupDBConnection(connStr string) (*gorm.DB, error) {
-	database, err := gorm.Open(postgres.Open(connStr), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
-
-	return database, nil
 }
 
 // main is the main function for the store command.
@@ -342,3 +344,22 @@ func GetPackageVersions(ctx context.Context, org, packageName, gitHubToken strin
 }
 
 var getVersionTagDate = github.GetPackageVersions
+
+func setupDBConnection(dbPath string) (*gorm.DB, error) {
+	// Ensure the directory exists
+	if err := os.MkdirAll(filepath.Dir(dbPath), os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create directory for database: %w", err)
+	}
+
+	database, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	// Auto Migrate the schema
+	if err := database.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}); err != nil {
+		return nil, fmt.Errorf("failed to auto migrate schema: %w", err)
+	}
+
+	return database, nil
+}
