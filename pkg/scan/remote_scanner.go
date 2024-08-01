@@ -322,11 +322,13 @@ func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath str
 	const trivyDBFileName = "db/trivy.db"
 	const metadataFileName = "db/metadata.json"
 
-	err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
-	if err != nil {
-		return "", fmt.Errorf("error setting Docker config environment variable: %w", err)
+	if dockerConfigPath != "" {
+		err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
+		if err != nil {
+			return "", fmt.Errorf("error setting Docker config environment variable: %w", err)
+		}
+		defer os.Unsetenv("DOCKER_CONFIG")
 	}
-	defer os.Unsetenv("DOCKER_CONFIG")
 
 	if offlineDBPath != "" {
 		trivyDBPath := filepath.Join(offlineDBPath, trivyDBFileName)
