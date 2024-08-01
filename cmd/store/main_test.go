@@ -84,6 +84,8 @@ func Test_storeScanResults(t *testing.T) {
 
 	// Mock the InsertPackageScans method
 	mockManager.On("InsertPackageScans", ctx, mock.AnythingOfType("*external.PackageDTO")).Return(nil)
+	// Mock the InsertReport method
+	mockManager.On("InsertReport", ctx, mock.AnythingOfType("*model.Report")).Return(nil)
 
 	// Call the function with the mocks
 	err := storeScanResults(ctx, mockScanner, mockManager, config)
