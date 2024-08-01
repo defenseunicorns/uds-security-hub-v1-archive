@@ -108,30 +108,30 @@ func TestScanImageE2E(t *testing.T) {
 
 func TestFetchImageE2E(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
-	images, err := ExtractImagesFromTar(filePath)
+	refs, err := ExtractSBOMsFromTar(filePath)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}
 
-	if len(images) == 0 {
+	if len(refs) == 0 {
 		t.Fatal("Expected non-empty images, got empty")
 	}
 
-	expectedImages := []string{
-		"docker.io/appropriate/curl:latest",
+	expectedSBOMS := []string{
+		"docker.io_appropriate_curl_latest.json",
 	}
 
-	for _, expectedImage := range expectedImages {
+	for _, sbomName := range expectedSBOMS {
 		found := false
-		for _, image := range images {
-			if image.Name == expectedImage {
+		for _, ref := range refs {
+			if ref.Name == sbomName {
 				found = true
-				t.Logf("Found expected image: %s", image)
+				t.Logf("Found expected image: %s", sbomName)
 				break
 			}
 		}
 		if !found {
-			t.Errorf("Expected image not found: %s", expectedImage)
+			t.Errorf("Expected image not found: %s", sbomName)
 		}
 	}
 }
