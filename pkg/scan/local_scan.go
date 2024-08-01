@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -226,19 +227,21 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 				return nil, fmt.Errorf("failed to convert sbom format for %q: %w", header.Name, err)
 			}
 
-			cyclonedx, err := format.Encode(*sbom, cyclonedxEncoder)
+			cyclonedxBytes, err := format.Encode(*sbom, cyclonedxEncoder)
 			if err != nil {
-				return nil, fmt.Errorf("failed to encode spdx format for %q: %w", header.Name, err)
+				return nil, fmt.Errorf("failed to encode cyclonnedx format for %q: %w", header.Name, err)
 			}
 
-			spdxSBOMFilename := path.Join(tmp, header.Name)
-			if err := os.WriteFile(spdxSBOMFilename, cyclonedx, header.FileInfo().Mode().Perm()); err != nil {
-				return nil, fmt.Errorf("failed to write new spdx file for %q: %w", header.Name, err)
+			// use a sha256 for the filename in the tar to avoid zip slip
+			sbomSha256 := sha256.Sum256(cyclonedxBytes)
+			cyclonedxSBOMFilename := path.Join(tmp, fmt.Sprintf("%x", sbomSha256))
+			if err := os.WriteFile(cyclonedxSBOMFilename, cyclonedxBytes, header.FileInfo().Mode().Perm()); err != nil {
+				return nil, fmt.Errorf("failed to write new cyclonnedx file for %q: %w", header.Name, err)
 			}
 
 			results = append(results, &sbomImageRef{
 				Name:     header.Name,
-				SBOMFile: spdxSBOMFilename,
+				SBOMFile: cyclonedxSBOMFilename,
 			})
 		}
 	}

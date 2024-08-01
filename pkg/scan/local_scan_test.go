@@ -106,7 +106,7 @@ func TestScanImageE2E(t *testing.T) {
 	}
 }
 
-func TestFetchImageE2E(t *testing.T) {
+func TestExtractSBOMsFromTar(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	refs, err := ExtractSBOMsFromTar(filePath)
 	if err != nil {
@@ -127,6 +127,10 @@ func TestFetchImageE2E(t *testing.T) {
 			if ref.Name == sbomName {
 				found = true
 				t.Logf("Found expected image: %s", sbomName)
+
+				if ref.SBOMFile == "" {
+					t.Error("got an empty sbomfile, this will be scannable by trivy")
+				}
 				break
 			}
 		}
