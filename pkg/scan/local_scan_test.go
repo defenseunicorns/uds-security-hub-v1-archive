@@ -129,7 +129,7 @@ func TestExtractSBOMsFromTar(t *testing.T) {
 				t.Logf("Found expected image: %s", sbomName)
 
 				if ref.SBOMFile == "" {
-					t.Error("got an empty sbomfile, this will be scannable by trivy")
+					t.Error("got an empty sbomfile, this will not be scannable by trivy")
 				}
 				break
 			}
