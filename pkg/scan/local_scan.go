@@ -118,28 +118,7 @@ type ImageIndex struct {
 	SchemaVersion int             `json:"schemaVersion"`
 }
 
-type blob struct {
-	Digest string
-	Data   []byte `json:"-"`
-}
-type ImageLayerManifest struct {
-	SchemaVersion int                       `json:"schemaVersion"`
-	MediaType     string                    `json:"mediaType"`
-	Config        ImageLayerManifestConfig  `json:"config"`
-	Layers        []ImageLayerManifestLayer `json:"layers"`
-}
-type ImageLayerManifestConfig struct {
-	MediaType string `json:"mediaType"`
-	Digest    string `json:"digest"`
-	Size      int    `json:"size"`
-}
-type ImageLayerManifestLayer struct {
-	MediaType string `json:"mediaType"`
-	Digest    string `json:"digest"`
-	Size      int    `json:"size"`
-}
-
-func extractSBOMTarFromZarfPackage(tarFilePath string, sbomFilename string) ([]byte, error) {
+func extractSBOMTarFromZarfPackage(tarFilePath, sbomFilename string) ([]byte, error) {
 	if tarFilePath == "" {
 		return nil, fmt.Errorf("tarFilePath cannot be empty")
 	}
