@@ -138,13 +138,7 @@ type ImageLayerManifestLayer struct {
 	Size      int    `json:"size"`
 }
 
-// ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
-// Parameters:
-// - tarFilePath: the path to the tar archive to extract the images from.
-// Returns:
-// - []sbomImageRef: references to images and their sboms.
-// - error: an error if the extraction fails.
-func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
+func extractSBOMTarFromZarfPackage(tarFilePath string, sbomFilename string) ([]byte, error) {
 	if tarFilePath == "" {
 		return nil, fmt.Errorf("tarFilePath cannot be empty")
 	}
@@ -167,7 +161,6 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 
 	tarReader := tar.NewReader(zstdReader)
 
-	sbomFilename := "sboms.tar"
 	var sbomTar []byte
 
 	for {
@@ -187,6 +180,22 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 			}
 			break
 		}
+	}
+
+	return sbomTar, nil
+}
+
+// ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
+// Parameters:
+// - tarFilePath: the path to the tar archive to extract the images from.
+// Returns:
+// - []sbomImageRef: references to images and their sboms.
+// - error: an error if the extraction fails.
+func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
+	sbomFilename := "sboms.tar"
+	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath, sbomFilename)
+	if err != nil {
+		return nil, err
 	}
 
 	tmp, err := os.MkdirTemp("", "zarf-sbom-spdx-files-*")
