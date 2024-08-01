@@ -196,6 +196,11 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 
 	var results []*sbomImageRef
 
+	cyclonedxEncoder, err := cyclonedxjson.NewFormatEncoderWithConfig(cyclonedxjson.DefaultEncoderConfig())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cyclonedx encoder: %w", err)
+	}
+
 	sbomTarReader := tar.NewReader(bytes.NewReader(sbomTar))
 	for {
 		header, err := sbomTarReader.Next()
@@ -211,8 +216,8 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert sbom format for %q: %w", header.Name, err)
 			}
-			encoder, _ := cyclonedxjson.NewFormatEncoderWithConfig(cyclonedxjson.DefaultEncoderConfig())
-			cyclonedx, err := format.Encode(*sbom, encoder)
+
+			cyclonedx, err := format.Encode(*sbom, cyclonedxEncoder)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encode spdx format for %q: %w", header.Name, err)
 			}
