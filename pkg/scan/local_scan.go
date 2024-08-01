@@ -29,7 +29,7 @@ type remoteImageRef struct {
 }
 
 func (r *remoteImageRef) Flags() []string {
-	return []string{"image", "--remote", r.ImageRef}
+	return []string{"image", "--image-src=remote", r.ImageRef}
 }
 
 type sbomImageRef struct {
