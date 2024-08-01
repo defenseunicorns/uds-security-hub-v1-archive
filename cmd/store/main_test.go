@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/zeebo/assert"
 
+	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
@@ -110,6 +111,12 @@ type MockScanManager struct {
 // InsertPackageScans is a mock implementation of the InsertPackageScans method.
 func (m *MockScanManager) InsertPackageScans(ctx context.Context, packageDTO *external.PackageDTO) error {
 	args := m.Called(ctx, packageDTO)
+	return args.Error(0)
+}
+
+// InsertReport is a mock implementation of the InsertReport method.
+func (m *MockScanManager) InsertReport(ctx context.Context, report *model.Report) error {
+	args := m.Called(ctx, report)
 	return args.Error(0)
 }
 

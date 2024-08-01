@@ -180,3 +180,23 @@ func (manager *GormScanManager) InsertPackageScans(ctx context.Context, dto *ext
 
 	return nil
 }
+
+// InsertReport inserts a new report into the database.
+func (manager *GormScanManager) InsertReport(ctx context.Context, report *model.Report) error {
+	if ctx == nil {
+		return fmt.Errorf("ctx cannot be nil")
+	}
+	if manager.db == nil {
+		return fmt.Errorf("db cannot be nil")
+	}
+	if report == nil {
+		return fmt.Errorf("report cannot be nil")
+	}
+
+	err := InsertReport(manager.db, report)
+	if err != nil {
+		return fmt.Errorf("error inserting report: %w", err)
+	}
+
+	return nil
+}
