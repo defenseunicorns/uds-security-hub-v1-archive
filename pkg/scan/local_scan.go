@@ -264,12 +264,6 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 // - types.ScanResultReader: the scan result.
 // - error: an error if the reading fails.
 func (lps *LocalPackageScanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader, error) {
-	if jsonFilePath == "" {
-		return nil, fmt.Errorf("jsonFilePath cannot be empty")
-	}
-	if _, err := os.Stat(jsonFilePath); err != nil {
-		return nil, fmt.Errorf("failed to open JSON file: %w", err)
-	}
 	file, err := os.Open(jsonFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open JSON file: %w", err)
