@@ -104,10 +104,6 @@ func (s *localScanResult) GetResultsAsCSV() string {
 //   - types.ScanResultReader: An instance of ScanResultReader that can be used to access the scan results.
 //   - error: An error if the file cannot be opened or the JSON cannot be decoded.
 func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader, error) {
-	if jsonFilePath == "" {
-		return nil, fmt.Errorf("jsonFilePath cannot be empty")
-	}
-
 	file, err := os.Open(jsonFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %w", err)
