@@ -49,7 +49,7 @@ scan -o defenseunicorns -n packages/uds/gitlab-runner -g 16.10.0-uds.0-upstream 
 ```
 **Example Command for Local Scanning**
 ```bash
-scan -p ./pkg/scan/testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst -r ghcr.io:user:password -r registry1.dso.mil:user:password -r docker.io:user:password -f results.csv
+scan -p ./pkg/scan/testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst -f results.csv
 ```
 ![alt text](image.png)
 
