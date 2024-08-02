@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -94,7 +95,9 @@ func TestScanImageE2E(t *testing.T) {
 	if len(vulnerabilities) == 0 {
 		t.Fatalf("Expected non-empty vulnerabilities, got empty")
 	}
-	csv := reader.GetResultsAsCSV()
+	var buf bytes.Buffer
+	reader.WriteToCSV(&buf, true)
+	csv := buf.String()
 	if csv == "" {
 		t.Fatalf("Expected non-empty CSV, got empty")
 	}

@@ -1,8 +1,8 @@
 package scan
 
 import (
-	"bytes"
 	"encoding/csv"
+	"io"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -30,19 +30,19 @@ func (s *scanResultReader) GetVulnerabilities() []types.VulnerabilityInfo {
 	return s.scanResult.Results[0].Vulnerabilities
 }
 
-// GetResultsAsCSV returns the scan results in CSV format.
-// The CSV format includes the following columns:
-// ArtifactName, VulnerabilityID, PkgName, InstalledVersion, FixedVersion, Severity, Description
-// Each row represents a single vulnerability found in the scanned artifact.
-func (s *scanResultReader) GetResultsAsCSV() string {
-	var buf bytes.Buffer
-	w := csv.NewWriter(&buf)
+func (s *scanResultReader) WriteToCSV(w io.Writer, includeHeader bool) error {
+	csvWriter := csv.NewWriter(w)
 
-	w.Write([]string{"ArtifactName", "VulnerabilityID", "PkgName", "InstalledVersion", "FixedVersion", "Severity", "Description"})
+	if includeHeader {
+		err := csvWriter.Write([]string{"ArtifactName", "VulnerabilityID", "PkgName", "InstalledVersion", "FixedVersion", "Severity", "Description"})
+		if err != nil {
+			return err
+		}
+	}
 
 	vulnerabilities := s.GetVulnerabilities()
 	for _, vuln := range vulnerabilities {
-		w.Write([]string{
+		err := csvWriter.Write([]string{
 			s.GetArtifactName(),
 			vuln.VulnerabilityID,
 			vuln.PkgName,
@@ -51,9 +51,12 @@ func (s *scanResultReader) GetResultsAsCSV() string {
 			vuln.Severity,
 			vuln.Description,
 		})
+		if err != nil {
+			return err
+		}
 	}
 
-	w.Flush()
+	csvWriter.Flush()
 
-	return buf.String()
+	return nil
 }

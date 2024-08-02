@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -105,16 +106,17 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error scanning: %w", err)
 	}
 
-	var combinedCSV string
-	for _, v := range results {
+	var buf bytes.Buffer
+	for i, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
 			return fmt.Errorf("error reading scan result: %w", err)
 		}
 
-		csv := r.GetResultsAsCSV()
-		combinedCSV += csv
+		r.WriteToCSV(&buf, i == 0)
 	}
+
+	combinedCSV := buf.String()
 
 	if outputFile != "" {
 		err := os.WriteFile(outputFile, []byte(combinedCSV), 0o600)

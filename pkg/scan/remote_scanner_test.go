@@ -288,7 +288,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 	}
 }
 
-func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
+func Test_localScanResult_WriteToCSV(t *testing.T) {
 	type fields struct {
 		ScanResult types.ScanResult
 	}
@@ -374,14 +374,19 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 			s := &scanResultReader{
 				scanResult: tt.fields.ScanResult,
 			}
-			got := s.GetResultsAsCSV()
+			var buf bytes.Buffer
+			err := s.WriteToCSV(&buf, true)
+			if err != nil {
+				t.Errorf("error occurred while writing to csv: %v", err)
+			}
+			got := buf.String()
 			r := csv.NewReader(strings.NewReader(got))
 			records, err := r.ReadAll()
 			if err != nil {
 				t.Fatalf("Failed to parse CSV: %v", err)
 			}
 			if diff := cmp.Diff(records, tt.want); diff != "" {
-				t.Errorf("GetResultsAsCSV() mismatch (-got +want):\n%s", diff)
+				t.Errorf("WriteToCSV() mismatch (-got +want):\n%s", diff)
 			}
 		})
 	}

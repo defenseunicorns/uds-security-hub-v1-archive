@@ -40,8 +40,8 @@ ScanResultReader
     GetVulnerabilities() []types.VulnerabilityInfo
         Returns the vulnerabilities in the scan result.
 
-    GetResultsAsCSV() string
-        Returns the scan results in CSV format.
+    WriteToCSV(io.Writer, bool) error
+        Writes the results and optinally the headers to the provided writer.
 
 Example usage:
 
@@ -65,6 +65,5 @@ Example usage:
 
     artifactName := reader.GetArtifactName()
     vulnerabilities := reader.GetVulnerabilities()
-    csvOutput := reader.GetResultsAsCSV()
-    fmt.Println(csvOutput)
+    reader.WriteToCSV(os.Stdout, true)
 */
