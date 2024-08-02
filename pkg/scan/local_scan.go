@@ -268,46 +268,5 @@ func (lps *LocalPackageScanner) ScanResultReader(result types.PackageScannerResu
 		return nil, fmt.Errorf("failed to decode JSON file: %w", err)
 	}
 
-	return &localScanResultReader{ArtifactNameOverride: result.ArtifactNameOverride, scanResult: scanResult}, nil
-}
-
-// localScanResultReader is a concrete implementation of the ScanResultReader interface.
-type localScanResultReader struct {
-	ArtifactNameOverride string
-	scanResult           types.ScanResult
-}
-
-// GetArtifactName returns the artifact name of the scan result.
-func (lsr *localScanResultReader) GetArtifactName() string {
-	if lsr.ArtifactNameOverride != "" {
-		return lsr.ArtifactNameOverride
-	}
-	return lsr.scanResult.ArtifactName
-}
-
-// GetVulnerabilities returns the vulnerabilities of the scan result.
-func (lsr *localScanResultReader) GetVulnerabilities() []types.VulnerabilityInfo {
-	if len(lsr.scanResult.Results) == 0 {
-		return []types.VulnerabilityInfo{}
-	}
-	return lsr.scanResult.Results[0].Vulnerabilities
-}
-
-// GetResultsAsCSV returns the scan result as a CSV string.
-func (lsr *localScanResultReader) GetResultsAsCSV() string {
-	var sb strings.Builder
-	sb.WriteString("\"ArtifactName\",\"VulnerabilityID\",\"PkgName\",\"InstalledVersion\",\"FixedVersion\",\"Severity\",\"Description\"\n") //nolint:lll
-
-	vulnerabilities := lsr.GetVulnerabilities()
-	for _, vuln := range vulnerabilities {
-		sb.WriteString(fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			lsr.GetArtifactName(),
-			vuln.VulnerabilityID,
-			vuln.PkgName,
-			vuln.InstalledVersion,
-			vuln.FixedVersion,
-			vuln.Severity,
-			vuln.Description))
-	}
-	return sb.String()
+	return &scanResultReader{ArtifactNameOverride: result.ArtifactNameOverride, scanResult: scanResult}, nil
 }

@@ -20,47 +20,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-type localScanResult struct {
-	types.ScanResult
-}
-
-// GetArtifactName returns the artifact name in the scan result.
-func (s *localScanResult) GetArtifactName() string {
-	return s.ArtifactName
-}
-
-// GetVulnerabilities returns the vulnerabilities in the scan result.
-// It assumes there is only one set of results in the scan result.
-// If there are no results, it returns an empty slice.
-func (s *localScanResult) GetVulnerabilities() []types.VulnerabilityInfo {
-	if len(s.Results) == 0 {
-		return []types.VulnerabilityInfo{}
-	}
-	return s.Results[0].Vulnerabilities
-}
-
-// GetResultsAsCSV returns the scan results in CSV format.
-// The CSV format includes the following columns:
-// ArtifactName, VulnerabilityID, PkgName, InstalledVersion, FixedVersion, Severity, Description
-// Each row represents a single vulnerability found in the scanned artifact.
-func (s *localScanResult) GetResultsAsCSV() string {
-	var sb strings.Builder
-	sb.WriteString("\"ArtifactName\",\"VulnerabilityID\",\"PkgName\",\"InstalledVersion\",\"FixedVersion\",\"Severity\",\"Description\"\n") //nolint:lll
-
-	vulnerabilities := s.GetVulnerabilities()
-	for _, vuln := range vulnerabilities {
-		sb.WriteString(fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			s.GetArtifactName(),
-			vuln.VulnerabilityID,
-			vuln.PkgName,
-			vuln.InstalledVersion,
-			vuln.FixedVersion,
-			vuln.Severity,
-			vuln.Description))
-	}
-	return sb.String()
-}
-
 // Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
 	logger           types.Logger
@@ -116,7 +75,7 @@ func (s *Scanner) ScanResultReader(result types.PackageScannerResult) (types.Sca
 		return nil, fmt.Errorf("error decoding JSON: %w", err)
 	}
 
-	return &localScanResult{ScanResult: scanResult}, nil
+	return &scanResultReader{scanResult: scanResult}, nil
 }
 
 // ScanZarfPackage scans a Zarf package and returns the scan results.

@@ -371,8 +371,8 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &localScanResult{
-				ScanResult: tt.fields.ScanResult,
+			s := &scanResultReader{
+				scanResult: tt.fields.ScanResult,
 			}
 			got := s.GetResultsAsCSV()
 			r := csv.NewReader(strings.NewReader(got))
@@ -478,8 +478,8 @@ func Test_localScanResult_GetVulnerabilities(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &localScanResult{
-				ScanResult: tt.fields.ScanResult,
+			s := &scanResultReader{
+				scanResult: tt.fields.ScanResult,
 			}
 			if got := s.GetVulnerabilities(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetVulnerabilities() = %v, want %v", got, tt.want)
