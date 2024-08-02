@@ -161,6 +161,29 @@ func extractSBOMTarFromZarfPackage(tarFilePath string) ([]byte, error) {
 	return extractSingleFileFromTar(zstdReader, SbomFilename)
 }
 
+func extractArtifactInformationFromSBOM(r io.Reader) string {
+	type SyftSbomHeader struct {
+		Source struct {
+			Metadata struct {
+				Tags []string `json:"tags"`
+			} `json:"metadata"`
+		} `json:"source"`
+	}
+
+	var sbomHeader SyftSbomHeader
+
+	err := json.NewDecoder(r).Decode(&sbomHeader)
+	if err != nil {
+		return ""
+	}
+
+	if len(sbomHeader.Source.Metadata.Tags) == 0 {
+		return ""
+	}
+
+	return sbomHeader.Source.Metadata.Tags[0]
+}
+
 // ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
 // Parameters:
 // - tarFilePath: the path to the tar archive to extract the images from.
@@ -196,7 +219,18 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 		}
 
 		if strings.HasSuffix(header.Name, ".json") {
-			sbom, _, _, err := format.Decode(sbomTarReader)
+			sbomData, err := io.ReadAll(sbomTarReader)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read sbom from tar for %q: %w", header.Name, err)
+			}
+
+			artifactName := extractArtifactInformationFromSBOM(bytes.NewReader(sbomData))
+			if artifactName == "" {
+				// default to the filename if we were unable to extract anything meaningful
+				artifactName = header.Name
+			}
+
+			sbom, _, _, err := format.Decode(bytes.NewReader(sbomData))
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert sbom format for %q: %w", header.Name, err)
 			}
@@ -214,7 +248,7 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 			}
 
 			results = append(results, &sbomImageRef{
-				Name:     header.Name,
+				Name:     artifactName,
 				SBOMFile: cyclonedxSBOMFilename,
 			})
 		}

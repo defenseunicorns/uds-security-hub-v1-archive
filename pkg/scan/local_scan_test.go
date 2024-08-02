@@ -111,11 +111,11 @@ func TestExtractSBOMsFromTar(t *testing.T) {
 		t.Fatal("Expected non-empty images, got empty")
 	}
 
-	expectedSBOMS := []string{
-		"docker.io_appropriate_curl_latest.json",
+	expectedImageNameFromSBOM := []string{
+		"docker.io/appropriate/curl:latest",
 	}
 
-	for _, sbomName := range expectedSBOMS {
+	for _, sbomName := range expectedImageNameFromSBOM {
 		found := false
 		for _, ref := range refs {
 			if ref.Name == sbomName {
