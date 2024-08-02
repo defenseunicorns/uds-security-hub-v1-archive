@@ -20,6 +20,10 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
+const (
+	SbomFilename = "sboms.tar"
+)
+
 type imageRef interface {
 	Flags() []string
 }
@@ -118,28 +122,8 @@ type ImageIndex struct {
 	SchemaVersion int             `json:"schemaVersion"`
 }
 
-func extractSBOMTarFromZarfPackage(tarFilePath, sbomFilename string) ([]byte, error) {
-	if tarFilePath == "" {
-		return nil, fmt.Errorf("tarFilePath cannot be empty")
-	}
-
-	if _, err := os.Stat(tarFilePath); err != nil {
-		return nil, fmt.Errorf("failed to open tar file: %w", err)
-	}
-	file, err := os.Open(tarFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tar file: %w", err)
-	}
-
-	defer file.Close()
-
-	zstdReader, err := zstd.NewReader(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create zstd reader: %w", err)
-	}
-	defer zstdReader.Close()
-
-	tarReader := tar.NewReader(zstdReader)
+func extractSingleFileFromTar(r io.Reader, filename string) ([]byte, error) {
+	tarReader := tar.NewReader(r)
 
 	var sbomTar []byte
 
@@ -152,17 +136,32 @@ func extractSBOMTarFromZarfPackage(tarFilePath, sbomFilename string) ([]byte, er
 			return nil, fmt.Errorf("failed to read package tar header: %w", err)
 		}
 
-		if header.Name == sbomFilename {
+		if header.Name == filename {
 			var err error
 			sbomTar, err = io.ReadAll(tarReader)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read file %q: %w", sbomFilename, err)
+				return nil, fmt.Errorf("failed to read file %q: %w", filename, err)
 			}
 			break
 		}
 	}
 
 	return sbomTar, nil
+}
+
+func extractSBOMTarFromZarfPackage(tarFilePath string) ([]byte, error) {
+	file, err := os.Open(tarFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tar file: %w", err)
+	}
+	defer file.Close()
+
+	zstdReader, err := zstd.NewReader(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create zstd reader: %w", err)
+	}
+	defer zstdReader.Close()
+	return extractSingleFileFromTar(zstdReader, SbomFilename)
 }
 
 // ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
@@ -172,8 +171,7 @@ func extractSBOMTarFromZarfPackage(tarFilePath, sbomFilename string) ([]byte, er
 // - []sbomImageRef: references to images and their sboms.
 // - error: an error if the extraction fails.
 func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
-	sbomFilename := "sboms.tar"
-	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath, sbomFilename)
+	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +195,7 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("failed to read header in %q: %w", sbomFilename, err)
+			return nil, fmt.Errorf("failed to read header in sbom tar: %w", err)
 		}
 
 		if strings.HasSuffix(header.Name, ".json") {
@@ -211,7 +209,7 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 				return nil, fmt.Errorf("failed to encode cyclonnedx format for %q: %w", header.Name, err)
 			}
 
-			// use a sha256 for the filename in the tar to avoid zip slip
+			// use a sha256 for the filename in the tar to avoid any security issues with malformed tar
 			sbomSha256 := sha256.Sum256(cyclonedxBytes)
 			cyclonedxSBOMFilename := path.Join(tmp, fmt.Sprintf("%x", sbomSha256))
 			if err := os.WriteFile(cyclonedxSBOMFilename, cyclonedxBytes, header.FileInfo().Mode().Perm()); err != nil {
