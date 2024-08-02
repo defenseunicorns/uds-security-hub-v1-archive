@@ -35,8 +35,15 @@ func (s *scanResultReader) WriteToCSV(w io.Writer, includeHeader bool) error {
 	csvWriter := csv.NewWriter(w)
 
 	if includeHeader {
-		headers := []string{"ArtifactName", "VulnerabilityID", "PkgName", "InstalledVersion", "FixedVersion", "Severity", "Description"}
-		err := csvWriter.Write(headers)
+		err := csvWriter.Write([]string{
+			"ArtifactName",
+			"VulnerabilityID",
+			"PkgName",
+			"InstalledVersion",
+			"FixedVersion",
+			"Severity",
+			"Description",
+		})
 		if err != nil {
 			return fmt.Errorf("error writing csv header: %w", err)
 		}
