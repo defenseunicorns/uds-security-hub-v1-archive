@@ -47,10 +47,9 @@ func (s *sbomImageRef) Flags() []string {
 
 // LocalPackageScanner is a struct that holds the logger and paths for docker configuration and package.
 type LocalPackageScanner struct {
-	logger           types.Logger
-	dockerConfigPath string
-	packagePath      string
-	offlineDBPath    string // New field for offline DB path
+	logger        types.Logger
+	packagePath   string
+	offlineDBPath string // New field for offline DB path
 }
 
 // Scan scans the package and returns the scan results which are trivy scan results in json format.
@@ -70,8 +69,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]string, error) {
 	}
 	var scanResults []string
 	for _, image := range sbomFiles {
-		scanResult, err := scanWithTrivy(image, lps.dockerConfigPath,
-			lps.offlineDBPath, commandExecutor)
+		scanResult, err := scanWithTrivy(image, "", lps.offlineDBPath, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan image %s: %w", image, err)
 		}
@@ -89,7 +87,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]string, error) {
 // Returns:
 // - *LocalPackageScanner: the LocalPackageScanner instance.
 // - error: an error if the instance cannot be created.
-func NewLocalPackageScanner(logger types.Logger, dockerConfigPath,
+func NewLocalPackageScanner(logger types.Logger,
 	packagePath, offlineDBPath string) (types.PackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
@@ -98,10 +96,9 @@ func NewLocalPackageScanner(logger types.Logger, dockerConfigPath,
 		return nil, fmt.Errorf("logger cannot be nil")
 	}
 	return &LocalPackageScanner{
-		logger:           logger,
-		dockerConfigPath: dockerConfigPath,
-		packagePath:      packagePath,
-		offlineDBPath:    offlineDBPath,
+		logger:        logger,
+		packagePath:   packagePath,
+		offlineDBPath: offlineDBPath,
 	}, nil
 }
 

@@ -20,49 +20,43 @@ func (m *mockLogger) Fatalf(msg string, fields ...interface{}) {}
 
 func TestNewLocalPackageScanner(t *testing.T) {
 	logger := &mockLogger{}
-	dockerConfigPath := "/path/to/docker/config"
 	packagePath := "/path/to/package"
 
 	tests := []struct {
-		name         string
-		logger       types.Logger
-		dockerConfig string
-		packagePath  string
-		expected     *LocalPackageScanner
-		expectError  bool
+		name        string
+		logger      types.Logger
+		packagePath string
+		expected    *LocalPackageScanner
+		expectError bool
 	}{
 		{
-			name:         "valid inputs",
-			logger:       logger,
-			dockerConfig: dockerConfigPath,
-			packagePath:  packagePath,
+			name:        "valid inputs",
+			logger:      logger,
+			packagePath: packagePath,
 			expected: &LocalPackageScanner{
-				logger:           logger,
-				dockerConfigPath: dockerConfigPath,
-				packagePath:      packagePath,
+				logger:      logger,
+				packagePath: packagePath,
 			},
 			expectError: false,
 		},
 		{
-			name:         "empty packagePath",
-			logger:       logger,
-			dockerConfig: dockerConfigPath,
-			packagePath:  "",
-			expected:     nil,
-			expectError:  true,
+			name:        "empty packagePath",
+			logger:      logger,
+			packagePath: "",
+			expected:    nil,
+			expectError: true,
 		},
 		{
-			name:         "nil logger",
-			logger:       nil,
-			dockerConfig: dockerConfigPath,
-			packagePath:  packagePath,
-			expected:     nil,
-			expectError:  true,
+			name:        "nil logger",
+			logger:      nil,
+			packagePath: packagePath,
+			expected:    nil,
+			expectError: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner, err := NewLocalPackageScanner(tt.logger, tt.dockerConfig, tt.packagePath, "")
+			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "")
 			checkError(t, err, tt.expectError)
 			if !tt.expectError {
 				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
@@ -77,7 +71,7 @@ func TestScanImageE2E(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
 
-	lps, err := NewLocalPackageScanner(logger, "", zarfPackagePath, "")
+	lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "")
 	if err != nil {
 		t.Fatalf("Failed to create local package scanner: %v", err)
 	}
