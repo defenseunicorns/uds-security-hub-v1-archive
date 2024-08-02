@@ -71,6 +71,16 @@ func TestStore(t *testing.T) {
 		t.Fatalf("Expected more than 0 row in package table, got %d", count)
 	}
 	t.Logf("Package %d rows", count)
+
+	// Check the number of rows in the report table as there should be a report created.
+	row = db.Model(&model.Report{}).Count(&count)
+	if err := row.Error; err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if count <= 0 {
+		t.Fatalf("Expected more than 0 row in report table, got %d", count)
+	}
+	t.Logf("Report %d rows", count)
 }
 
 func TestSetupDBConnection_Success(t *testing.T) {

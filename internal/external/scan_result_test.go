@@ -122,7 +122,10 @@ func TestMapScanResultToDTO(t *testing.T) {
 	// Call the function
 	actualDTOs := MapScanResultToDTO(scanResult)
 
-	cmp.Diff(expectedDTOs, actualDTOs, cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt"))
+	// Compare the expected and actual DTOs
+	if diff := cmp.Diff(expectedDTOs, actualDTOs, cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt")); diff != "" {
+		t.Errorf("MapScanResultToDTO() mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func TestMapPackageToDTO(t *testing.T) {
@@ -180,5 +183,122 @@ func TestMapPackageToDTO(t *testing.T) {
 	// Compare the expected and actual DTOs
 	if diff := cmp.Diff(expectedDTO, actualDTO, cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt")); diff != "" {
 		t.Errorf("MapPackageToDTO() mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestMapPackageDTOToReport(t *testing.T) {
+	tests := []struct {
+		name     string
+		dto      *PackageDTO
+		sbom     []byte
+		expected *model.Report
+	}{
+		{
+			name: "Basic test",
+			dto: &PackageDTO{
+				CreatedAt: time.Now(),
+				Name:      "test-package",
+				Tag:       "v1.0.0",
+				Scans: []ScanDTO{
+					{
+						Vulnerabilities: []model.Vulnerability{
+							{Severity: "Critical"},
+							{Severity: "High"},
+						},
+					},
+				},
+			},
+			sbom: []byte("test-sbom"),
+			expected: &model.Report{
+				PackageName: "test-package",
+				Tag:         "v1.0.0",
+				SBOM:        []byte("test-sbom"),
+				Critical:    1,
+				High:        1,
+				Medium:      0,
+				Low:         0,
+				Info:        0,
+				Total:       2,
+			},
+		},
+		{
+			name: "No vulnerabilities",
+			dto: &PackageDTO{
+				CreatedAt: time.Now(),
+				Name:      "test-package",
+				Tag:       "v1.0.0",
+				Scans: []ScanDTO{
+					{
+						Vulnerabilities: []model.Vulnerability{},
+					},
+				},
+			},
+			sbom: []byte("test-sbom"),
+			expected: &model.Report{
+				PackageName: "test-package",
+				Tag:         "v1.0.0",
+				SBOM:        []byte("test-sbom"),
+				Critical:    0,
+				High:        0,
+				Medium:      0,
+				Low:         0,
+				Info:        0,
+				Total:       0,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			report := MapPackageDTOToReport(tt.dto, tt.sbom)
+			if diff := cmp.Diff(tt.expected, report, cmpopts.IgnoreFields(model.Report{}, "CreatedAt")); diff != "" {
+				t.Errorf("MapPackageDTOToReport() mismatch (-expected +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestCountVulnerabilities(t *testing.T) {
+	tests := []struct {
+		name     string
+		scans    []ScanDTO
+		severity string
+		expected int
+	}{
+		{
+			name: "Count Critical",
+			scans: []ScanDTO{
+				{
+					Vulnerabilities: []model.Vulnerability{
+						{Severity: "Critical"},
+						{Severity: "High"},
+					},
+				},
+			},
+			severity: "Critical",
+			expected: 1,
+		},
+		{
+			name: "Count High",
+			scans: []ScanDTO{
+				{
+					Vulnerabilities: []model.Vulnerability{
+						{Severity: "Critical"},
+						{Severity: "High"},
+					},
+				},
+			},
+			severity: "High",
+			expected: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			count := countVulnerabilities(tt.scans, tt.severity)
+			if diff := cmp.Diff(tt.expected, count); diff != "" {
+				t.Errorf("countVulnerabilities() mismatch (-expected +got):\n%s", diff)
+			}
+		})
 	}
 }
