@@ -358,7 +358,7 @@ func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath str
 	}
 
 	var args []string
-	args = append(args, imageRef.Flags()...)
+	args = append(args, imageRef.TrivyCommand()...)
 	args = append(args,
 		[]string{"--scanners", "vuln", "-f", "json", "-o", trivyFile.Name()}...,
 	)

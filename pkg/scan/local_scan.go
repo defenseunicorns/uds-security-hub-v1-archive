@@ -25,14 +25,14 @@ const (
 )
 
 type imageRef interface {
-	Flags() []string
+	TrivyCommand() []string
 }
 
 type remoteImageRef struct {
 	ImageRef string
 }
 
-func (r *remoteImageRef) Flags() []string {
+func (r *remoteImageRef) TrivyCommand() []string {
 	return []string{"image", "--image-src=remote", r.ImageRef}
 }
 
@@ -41,7 +41,7 @@ type sbomImageRef struct {
 	SBOMFile string
 }
 
-func (s *sbomImageRef) Flags() []string {
+func (s *sbomImageRef) TrivyCommand() []string {
 	return []string{"sbom", "--offline-scan", s.SBOMFile}
 }
 
