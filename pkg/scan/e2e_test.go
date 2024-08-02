@@ -59,7 +59,7 @@ func TestE2EScanFunctionality(t *testing.T) {
 		}
 
 		if err := r.WriteToCSV(&buf, i == 0); err != nil {
-			t.Fatal("Error creating csv: %v", err)
+			t.Fatalf("Error creating csv: %v", err)
 		}
 	}
 
