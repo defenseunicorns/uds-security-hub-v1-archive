@@ -96,7 +96,9 @@ func TestScanImageE2E(t *testing.T) {
 		t.Fatalf("Expected non-empty vulnerabilities, got empty")
 	}
 	var buf bytes.Buffer
-	reader.WriteToCSV(&buf, true)
+	if err := reader.WriteToCSV(&buf, true); err != nil {
+		t.Fatalf("Error writing csv: %v", err)
+	}
 	csv := buf.String()
 	if csv == "" {
 		t.Fatalf("Expected non-empty CSV, got empty")

@@ -58,7 +58,9 @@ func TestE2EScanFunctionality(t *testing.T) {
 			t.Fatalf("Error reading scan result: %v", err)
 		}
 
-		r.WriteToCSV(&buf, i == 0)
+		if err := r.WriteToCSV(&buf, i == 0); err != nil {
+			t.Fatal("Error creating csv: %v", err)
+		}
 	}
 
 	combinedCSV := buf.String()

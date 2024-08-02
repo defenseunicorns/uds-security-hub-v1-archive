@@ -41,7 +41,7 @@ ScanResultReader
         Returns the vulnerabilities in the scan result.
 
     WriteToCSV(io.Writer, bool) error
-        Writes the results and optinally the headers to the provided writer.
+        Writes the results and optionally the headers to the provided writer.
 
 Example usage:
 

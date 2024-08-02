@@ -2,6 +2,7 @@ package scan
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -36,7 +37,7 @@ func (s *scanResultReader) WriteToCSV(w io.Writer, includeHeader bool) error {
 	if includeHeader {
 		err := csvWriter.Write([]string{"ArtifactName", "VulnerabilityID", "PkgName", "InstalledVersion", "FixedVersion", "Severity", "Description"})
 		if err != nil {
-			return err
+			return fmt.Errorf("error writing csv header: %w", err)
 		}
 	}
 
@@ -52,7 +53,7 @@ func (s *scanResultReader) WriteToCSV(w io.Writer, includeHeader bool) error {
 			vuln.Description,
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("error writing csv record: %w", err)
 		}
 	}
 
