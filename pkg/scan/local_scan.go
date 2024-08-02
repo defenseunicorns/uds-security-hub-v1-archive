@@ -68,10 +68,10 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("failed to extract images from tar: %w", err)
 	}
 	var scanResults []string
-	for _, image := range sbomFiles {
-		scanResult, err := scanWithTrivy(image, "", lps.offlineDBPath, commandExecutor)
+	for _, sbom := range sbomFiles {
+		scanResult, err := scanWithTrivy(sbom, "", lps.offlineDBPath, commandExecutor)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan image %s: %w", image, err)
+			return nil, fmt.Errorf("failed to scan sbom %s: %w", sbom.SBOMFile, err)
 		}
 		scanResults = append(scanResults, scanResult)
 	}
