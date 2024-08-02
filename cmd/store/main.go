@@ -27,7 +27,7 @@ import (
 
 // Scanner is the interface for the scanner.
 type Scanner interface {
-	ScanZarfPackage(org, packageName, tag string) ([]string, error)
+	ScanZarfPackage(org, packageName, tag string) ([]types.PackageScannerResult, error)
 }
 
 // ScanManager is the interface for the scan manager.
@@ -248,7 +248,7 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 
 	var scans []external.ScanDTO
 	for _, result := range results {
-		data, err := os.ReadFile(result)
+		data, err := os.ReadFile(result.JsonFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to read scan result file: %w", err)
 		}

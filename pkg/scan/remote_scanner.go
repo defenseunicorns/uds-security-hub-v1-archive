@@ -29,6 +29,38 @@ func (s *localScanResult) GetArtifactName() string {
 	return s.ArtifactName
 }
 
+// GetVulnerabilities returns the vulnerabilities in the scan result.
+// It assumes there is only one set of results in the scan result.
+// If there are no results, it returns an empty slice.
+func (s *localScanResult) GetVulnerabilities() []types.VulnerabilityInfo {
+	if len(s.Results) == 0 {
+		return []types.VulnerabilityInfo{}
+	}
+	return s.Results[0].Vulnerabilities
+}
+
+// GetResultsAsCSV returns the scan results in CSV format.
+// The CSV format includes the following columns:
+// ArtifactName, VulnerabilityID, PkgName, InstalledVersion, FixedVersion, Severity, Description
+// Each row represents a single vulnerability found in the scanned artifact.
+func (s *localScanResult) GetResultsAsCSV() string {
+	var sb strings.Builder
+	sb.WriteString("\"ArtifactName\",\"VulnerabilityID\",\"PkgName\",\"InstalledVersion\",\"FixedVersion\",\"Severity\",\"Description\"\n") //nolint:lll
+
+	vulnerabilities := s.GetVulnerabilities()
+	for _, vuln := range vulnerabilities {
+		sb.WriteString(fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+			s.GetArtifactName(),
+			vuln.VulnerabilityID,
+			vuln.PkgName,
+			vuln.InstalledVersion,
+			vuln.FixedVersion,
+			vuln.Severity,
+			vuln.Description))
+	}
+	return sb.String()
+}
+
 // Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
 	logger           types.Logger
@@ -62,38 +94,6 @@ func NewRemotePackageScanner(
 	}
 }
 
-// GetVulnerabilities returns the vulnerabilities in the scan result.
-// It assumes there is only one set of results in the scan result.
-// If there are no results, it returns an empty slice.
-func (s *localScanResult) GetVulnerabilities() []types.VulnerabilityInfo {
-	if len(s.Results) == 0 {
-		return []types.VulnerabilityInfo{}
-	}
-	return s.Results[0].Vulnerabilities
-}
-
-// GetResultsAsCSV returns the scan results in CSV format.
-// The CSV format includes the following columns:
-// ArtifactName, VulnerabilityID, PkgName, InstalledVersion, FixedVersion, Severity, Description
-// Each row represents a single vulnerability found in the scanned artifact.
-func (s *localScanResult) GetResultsAsCSV() string {
-	var sb strings.Builder
-	sb.WriteString("\"ArtifactName\",\"VulnerabilityID\",\"PkgName\",\"InstalledVersion\",\"FixedVersion\",\"Severity\",\"Description\"\n") //nolint:lll
-
-	vulnerabilities := s.GetVulnerabilities()
-	for _, vuln := range vulnerabilities {
-		sb.WriteString(fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			s.GetArtifactName(),
-			vuln.VulnerabilityID,
-			vuln.PkgName,
-			vuln.InstalledVersion,
-			vuln.FixedVersion,
-			vuln.Severity,
-			vuln.Description))
-	}
-	return sb.String()
-}
-
 // ScanResultReader creates a new ScanResultReader from a JSON file.
 // This takes a trivy scan result file and returns a ScanResultReader.
 //
@@ -103,8 +103,8 @@ func (s *localScanResult) GetResultsAsCSV() string {
 // Returns:
 //   - types.ScanResultReader: An instance of ScanResultReader that can be used to access the scan results.
 //   - error: An error if the file cannot be opened or the JSON cannot be decoded.
-func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader, error) {
-	file, err := os.Open(jsonFilePath)
+func (s *Scanner) ScanResultReader(result types.PackageScannerResult) (types.ScanResultReader, error) {
+	file, err := os.Open(result.JsonFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %w", err)
 	}
@@ -129,15 +129,16 @@ func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader,
 // Returns:
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the scan operation fails.
-func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]string, error) {
+func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]types.PackageScannerResult, error) {
 	s.org = org
 	s.packageName = packageName
 	s.tag = tag
+
 	return s.Scan(s.ctx)
 }
 
 // Scan scans the remote package and returns the scan results.
-func (s *Scanner) Scan(ctx context.Context) ([]string, error) {
+func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error) {
 	if s.org == "" {
 		return nil, fmt.Errorf("org cannot be empty")
 	}
@@ -152,10 +153,16 @@ func (s *Scanner) Scan(ctx context.Context) ([]string, error) {
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
 	//nolint:contextcheck
-	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
+	jsonFilePaths, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
 	}
+
+	var results []types.PackageScannerResult
+	for _, jsonFilePath := range jsonFilePaths {
+		results = append(results, types.PackageScannerResult{JsonFilePath: jsonFilePath})
+	}
+
 	return results, nil
 }
 

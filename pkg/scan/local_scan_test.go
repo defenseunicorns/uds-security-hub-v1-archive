@@ -118,7 +118,7 @@ func TestExtractSBOMsFromTar(t *testing.T) {
 	for _, sbomName := range expectedImageNameFromSBOM {
 		found := false
 		for _, ref := range refs {
-			if ref.Name == sbomName {
+			if ref.ArtifactName == sbomName {
 				found = true
 				t.Logf("Found expected image: %s", sbomName)
 

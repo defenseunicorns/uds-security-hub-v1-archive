@@ -31,11 +31,16 @@ type ScanResultReader interface {
 	GetResultsAsCSV() string
 }
 
+type PackageScannerResult struct {
+	ArtifactNameOverride string
+	JsonFilePath         string
+}
+
 // PackageScanner defines the methods required for scanning packages.
 type PackageScanner interface {
 	// Scan scans the package and returns the scan results.
 	// Returns a slice of file paths containing the scan results in JSON format and an error if the scan operation fails.
-	Scan(ctx context.Context) ([]string, error)
+	Scan(ctx context.Context) ([]PackageScannerResult, error)
 
 	// ScanResultReader creates a new ScanResultReader from a JSON file.
 	// Takes a trivy scan result file and returns a ScanResultReader.
@@ -44,7 +49,7 @@ type PackageScanner interface {
 	// Returns:
 	//   - types.ScanResultReader: An instance of ScanResultReader that can be used to access the scan results.
 	//   - error: An error if the file cannot be opened or the JSON cannot be decoded.
-	ScanResultReader(jsonFilePath string) (ScanResultReader, error)
+	ScanResultReader(result PackageScannerResult) (ScanResultReader, error)
 }
 
 // ScannerFactory defines the method to create a PackageScanner.

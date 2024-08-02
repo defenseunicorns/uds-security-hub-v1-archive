@@ -72,14 +72,14 @@ func Test_storeScanResults(t *testing.T) {
 	}
 
 	// Mock scan results
-	scanResults := []string{"result1.json", "result2.json"}
+	scanResults := []types.PackageScannerResult{{JsonFilePath: "result1.json"}, {JsonFilePath: "result2.json"}}
 	mockScanner.On("ScanZarfPackage", config.Org, config.PackageName, config.Tag).Return(scanResults, nil)
 
 	// Mock reading files and unmarshalling JSON
 	for _, result := range scanResults {
 		data := `{"some": "data"}`
-		os.WriteFile(result, []byte(data), 0o600) //nolint:errcheck
-		defer os.Remove(result)
+		os.WriteFile(result.JsonFilePath, []byte(data), 0o600) //nolint:errcheck
+		defer os.Remove(result.JsonFilePath)
 	}
 
 	// Mock the InsertPackageScans method
@@ -100,9 +100,9 @@ type MockScanner struct {
 }
 
 // ScanZarfPackage is a mock implementation of the ScanZarfPackage method.
-func (m *MockScanner) ScanZarfPackage(org, packageName, tag string) ([]string, error) {
+func (m *MockScanner) ScanZarfPackage(org, packageName, tag string) ([]types.PackageScannerResult, error) {
 	args := m.Called(org, packageName, tag)
-	return args.Get(0).([]string), args.Error(1)
+	return args.Get(0).([]types.PackageScannerResult), args.Error(1)
 }
 
 // Mock for the ScanManager interface.

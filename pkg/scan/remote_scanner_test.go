@@ -34,7 +34,7 @@ func TestNewScanResultReader(t *testing.T) {
 	s := NewRemotePackageScanner(context.Background(), nil, "", "test", "test", "test", "test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.ScanResultReader(tt.jsonFilePath)
+			got, err := s.ScanResultReader(types.PackageScannerResult{JsonFilePath: tt.jsonFilePath})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewScanResultReader() error = %v, wantErr %v", err, tt.wantErr)
 				return
