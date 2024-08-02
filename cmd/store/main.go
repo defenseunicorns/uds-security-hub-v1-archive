@@ -248,7 +248,7 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 
 	var scans []external.ScanDTO
 	for _, result := range results {
-		data, err := os.ReadFile(result.JsonFilePath)
+		data, err := os.ReadFile(result.JSONFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to read scan result file: %w", err)
 		}

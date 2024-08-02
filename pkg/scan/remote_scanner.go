@@ -104,7 +104,7 @@ func NewRemotePackageScanner(
 //   - types.ScanResultReader: An instance of ScanResultReader that can be used to access the scan results.
 //   - error: An error if the file cannot be opened or the JSON cannot be decoded.
 func (s *Scanner) ScanResultReader(result types.PackageScannerResult) (types.ScanResultReader, error) {
-	file, err := os.Open(result.JsonFilePath)
+	file, err := os.Open(result.JSONFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %w", err)
 	}
@@ -160,7 +160,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 
 	var results []types.PackageScannerResult
 	for _, jsonFilePath := range jsonFilePaths {
-		results = append(results, types.PackageScannerResult{JsonFilePath: jsonFilePath})
+		results = append(results, types.PackageScannerResult{JSONFilePath: jsonFilePath})
 	}
 
 	return results, nil

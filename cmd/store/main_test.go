@@ -72,14 +72,14 @@ func Test_storeScanResults(t *testing.T) {
 	}
 
 	// Mock scan results
-	scanResults := []types.PackageScannerResult{{JsonFilePath: "result1.json"}, {JsonFilePath: "result2.json"}}
+	scanResults := []types.PackageScannerResult{{JSONFilePath: "result1.json"}, {JSONFilePath: "result2.json"}}
 	mockScanner.On("ScanZarfPackage", config.Org, config.PackageName, config.Tag).Return(scanResults, nil)
 
 	// Mock reading files and unmarshalling JSON
 	for _, result := range scanResults {
 		data := `{"some": "data"}`
-		os.WriteFile(result.JsonFilePath, []byte(data), 0o600) //nolint:errcheck
-		defer os.Remove(result.JsonFilePath)
+		os.WriteFile(result.JSONFilePath, []byte(data), 0o600) //nolint:errcheck
+		defer os.Remove(result.JSONFilePath)
 	}
 
 	// Mock the InsertPackageScans method

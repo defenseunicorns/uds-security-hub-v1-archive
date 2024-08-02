@@ -33,7 +33,7 @@ type ScanResultReader interface {
 
 type PackageScannerResult struct {
 	ArtifactNameOverride string
-	JsonFilePath         string
+	JSONFilePath         string
 }
 
 // PackageScanner defines the methods required for scanning packages.

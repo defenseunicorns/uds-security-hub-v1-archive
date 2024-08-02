@@ -236,7 +236,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 		}
 		scanResults = append(scanResults, types.PackageScannerResult{
 			ArtifactNameOverride: sbom.ArtifactName,
-			JsonFilePath:         scanResult,
+			JSONFilePath:         scanResult,
 		})
 	}
 	return scanResults, nil
@@ -249,7 +249,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 // - types.ScanResultReader: the scan result.
 // - error: an error if the reading fails.
 func (lps *LocalPackageScanner) ScanResultReader(result types.PackageScannerResult) (types.ScanResultReader, error) {
-	file, err := os.Open(result.JsonFilePath)
+	file, err := os.Open(result.JSONFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open JSON file: %w", err)
 	}
