@@ -110,6 +110,46 @@ func extractArtifactInformationFromSBOM(r io.Reader) string {
 	return sbomHeader.Source.Metadata.Tags[0]
 }
 
+func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string) (*sbomImageRef, error) {
+	cyclonedxEncoder, err := cyclonedxjson.NewFormatEncoderWithConfig(cyclonedxjson.DefaultEncoderConfig())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cyclonedx encoder: %w", err)
+	}
+
+	sbomData, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read sbom from tar for %q: %w", header.Name, err)
+	}
+
+	artifactName := extractArtifactInformationFromSBOM(bytes.NewReader(sbomData))
+	if artifactName == "" {
+		// default to the filename if we were unable to extract anything meaningful
+		artifactName = header.Name
+	}
+
+	sbom, _, _, err := format.Decode(bytes.NewReader(sbomData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert sbom format for %q: %w", header.Name, err)
+	}
+
+	cyclonedxBytes, err := format.Encode(*sbom, cyclonedxEncoder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode cyclonnedx format for %q: %w", header.Name, err)
+	}
+
+	// use a sha256 for the filename in the tar to avoid any security issues with malformed tar
+	sbomSha256 := sha256.Sum256(cyclonedxBytes)
+	cyclonedxSBOMFilename := path.Join(outputDir, fmt.Sprintf("%x", sbomSha256))
+	if err := os.WriteFile(cyclonedxSBOMFilename, cyclonedxBytes, header.FileInfo().Mode().Perm()); err != nil {
+		return nil, fmt.Errorf("failed to write new cyclonnedx file for %q: %w", header.Name, err)
+	}
+
+	return &sbomImageRef{
+		ArtifactName: artifactName,
+		SBOMFile:     cyclonedxSBOMFilename,
+	}, nil
+}
+
 // ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
 // Parameters:
 // - tarFilePath: the path to the tar archive to extract the images from.
@@ -128,11 +168,6 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 	}
 	var results []*sbomImageRef
 
-	cyclonedxEncoder, err := cyclonedxjson.NewFormatEncoderWithConfig(cyclonedxjson.DefaultEncoderConfig())
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cyclonedx encoder: %w", err)
-	}
-
 	sbomTarReader := tar.NewReader(bytes.NewReader(sbomTar))
 	for {
 		header, err := sbomTarReader.Next()
@@ -144,38 +179,11 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 		}
 
 		if strings.HasSuffix(header.Name, ".json") {
-			sbomData, err := io.ReadAll(sbomTarReader)
+			sbomImageRef, err := convertToCyclonedxFormat(header, sbomTarReader, tmp)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read sbom from tar for %q: %w", header.Name, err)
+				return nil, err
 			}
-
-			artifactName := extractArtifactInformationFromSBOM(bytes.NewReader(sbomData))
-			if artifactName == "" {
-				// default to the filename if we were unable to extract anything meaningful
-				artifactName = header.Name
-			}
-
-			sbom, _, _, err := format.Decode(bytes.NewReader(sbomData))
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert sbom format for %q: %w", header.Name, err)
-			}
-
-			cyclonedxBytes, err := format.Encode(*sbom, cyclonedxEncoder)
-			if err != nil {
-				return nil, fmt.Errorf("failed to encode cyclonnedx format for %q: %w", header.Name, err)
-			}
-
-			// use a sha256 for the filename in the tar to avoid any security issues with malformed tar
-			sbomSha256 := sha256.Sum256(cyclonedxBytes)
-			cyclonedxSBOMFilename := path.Join(tmp, fmt.Sprintf("%x", sbomSha256))
-			if err := os.WriteFile(cyclonedxSBOMFilename, cyclonedxBytes, header.FileInfo().Mode().Perm()); err != nil {
-				return nil, fmt.Errorf("failed to write new cyclonnedx file for %q: %w", header.Name, err)
-			}
-
-			results = append(results, &sbomImageRef{
-				ArtifactName: artifactName,
-				SBOMFile:     cyclonedxSBOMFilename,
-			})
+			results = append(results, sbomImageRef)
 		}
 	}
 
