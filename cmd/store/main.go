@@ -33,6 +33,7 @@ type Scanner interface {
 // ScanManager is the interface for the scan manager.
 type ScanManager interface {
 	InsertPackageScans(ctx context.Context, packageDTO *external.PackageDTO) error
+	InsertReport(ctx context.Context, report *model.Report) error
 }
 
 // errFlagRetrieval is the error message for when a flag cannot be retrieved.
@@ -268,10 +269,14 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 		Tag:        config.Tag,
 		Scans:      scans,
 	}
-
+	report := external.MapPackageDTOToReport(&packageDTO, []byte{})
 	err = manager.InsertPackageScans(ctx, &packageDTO)
 	if err != nil {
 		return fmt.Errorf("failed to insert scan results into DB: %w", err)
+	}
+	err = manager.InsertReport(ctx, report)
+	if err != nil {
+		return fmt.Errorf("failed to insert report into DB: %w", err)
 	}
 
 	return nil
@@ -357,7 +362,7 @@ func setupDBConnection(dbPath string) (*gorm.DB, error) {
 	}
 
 	// Auto Migrate the schema
-	if err := database.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}); err != nil {
+	if err := database.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}, &model.Report{}); err != nil {
 		return nil, fmt.Errorf("failed to auto migrate schema: %w", err)
 	}
 

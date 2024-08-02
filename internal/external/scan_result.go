@@ -97,3 +97,48 @@ func MapPackageToDTO(pkg *model.Package) PackageDTO {
 		Scans:      scanDTOs,
 	}
 }
+
+// MapPackageDTOToReport maps the PackageDTO to a Report.
+func MapPackageDTOToReport(dto *PackageDTO, sbom []byte) *model.Report {
+	const (
+		Critical = "Critical"
+		High     = "High"
+		Medium   = "Medium"
+		Low      = "Low"
+		Info     = "Info"
+	)
+	return &model.Report{
+		CreatedAt:   dto.CreatedAt,
+		PackageName: dto.Name,
+		Tag:         dto.Tag,
+		SBOM:        sbom,
+		Critical:    countVulnerabilities(dto.Scans, Critical),
+		High:        countVulnerabilities(dto.Scans, High),
+		Medium:      countVulnerabilities(dto.Scans, Medium),
+		Low:         countVulnerabilities(dto.Scans, Low),
+		Info:        countVulnerabilities(dto.Scans, Info),
+		Total:       countTotalVulnerabilities(dto.Scans),
+	}
+}
+
+// countVulnerabilities counts the number of vulnerabilities of a specific severity in the scans.
+func countVulnerabilities(scans []ScanDTO, severity string) int {
+	count := 0
+	for i := range scans {
+		for j := range scans[i].Vulnerabilities {
+			if scans[i].Vulnerabilities[j].Severity == severity {
+				count++
+			}
+		}
+	}
+	return count
+}
+
+// countTotalVulnerabilities counts the total number of vulnerabilities in the scans.
+func countTotalVulnerabilities(scans []ScanDTO) int {
+	count := 0
+	for i := range scans {
+		count += len(scans[i].Vulnerabilities)
+	}
+	return count
+}
