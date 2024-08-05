@@ -28,11 +28,11 @@ func TestNewStoreCmd(t *testing.T) {
 	if cmd.Use != "store" {
 		t.Errorf("command use mismatch: got %v, want %v", cmd.Use, "store")
 	}
-	if cmd.Short != "Scan a Zarf package and store the results in the SQLite database" {
-		t.Errorf("command short description mismatch: got %v, want %v", cmd.Short, "Scan a Zarf package and store the results in the SQLite database")
+	if cmd.Short != "Scan a Zarf package and store the results in the database" {
+		t.Errorf("command short description mismatch: got %v, want %v", cmd.Short, "Scan a Zarf package and store the results in the database")
 	}
-	if cmd.Long != "Scan a Zarf package for vulnerabilities and store the results in the SQLite database using GormScanManager" {
-		t.Errorf("command long description mismatch: got %v, want %v", cmd.Long, "Scan a Zarf package for vulnerabilities and store the results in the SQLite database using GormScanManager")
+	if cmd.Long != "Scan a Zarf package for vulnerabilities and store the results in the database using GormScanManager" {
+		t.Errorf("command long description mismatch: got %v, want %v", cmd.Long, "Scan a Zarf package for vulnerabilities and store the results in the database using GormScanManager")
 	}
 
 	flags := []struct {
