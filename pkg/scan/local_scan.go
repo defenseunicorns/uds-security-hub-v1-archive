@@ -42,7 +42,7 @@ type sbomImageRef struct {
 }
 
 func (s *sbomImageRef) TrivyCommand() []string {
-	return []string{"sbom", "--offline-scan", s.SBOMFile}
+	return []string{"sbom", s.SBOMFile}
 }
 
 func extractSingleFileFromTar(r io.Reader, filename string) ([]byte, error) {
