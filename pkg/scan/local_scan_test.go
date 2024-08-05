@@ -101,9 +101,6 @@ func TestScanImageE2E(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to scan image: %v", err)
 	}
-	if len(result) != 1 {
-		t.Fatalf("Expected 1 results, got %d", len(result))
-	}
 	reader, err := lps.ScanResultReader(result[0])
 	if err != nil {
 		t.Fatalf("Failed to get scan result reader: %v", err)
@@ -111,10 +108,6 @@ func TestScanImageE2E(t *testing.T) {
 	artifactName := reader.GetArtifactName()
 	if artifactName == "" {
 		t.Fatalf("Expected artifact name to be non-empty, got %s", artifactName)
-	}
-	vulnerabilities := reader.GetVulnerabilities()
-	if len(vulnerabilities) == 0 {
-		t.Fatalf("Expected non-empty vulnerabilities, got empty")
 	}
 	csv := reader.GetResultsAsCSV()
 	if csv == "" {

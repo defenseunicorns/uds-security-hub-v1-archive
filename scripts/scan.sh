@@ -78,6 +78,7 @@ while IFS= read -r NAME; do
     --instance-connection-name "${INSTANCE_CONNECTION_NAME}" \
     --db-name "${DB_NAME}" \
     --db-user "${DB_USER}" \
-    --db-password "${DB_PASSWORD}"
+    --db-password "${DB_PASSWORD}" \
+    --db-type "postgres" \
   echo "Finished scanning $NAME"
 done < "$NAMES_FILE"

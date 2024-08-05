@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -18,24 +19,18 @@ type DBConnector interface {
 	Connect(ctx context.Context) (*gorm.DB, error)
 }
 
-// StandardDBConnector implements DBConnector for standard PostgreSQL connections.
-type StandardDBConnector struct {
-	host     string
-	port     string
-	user     string
-	password string
-	dbname   string
+// SQLiteConnector implements DBConnector for SQLite connections.
+type SQLiteConnector struct {
+	dbPath string
 }
 
-// Connect connects to the database using the standard PostgreSQL connection.
-func (c *StandardDBConnector) Connect(ctx context.Context) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		c.host, c.port, c.user, c.password, c.dbname)
-	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+// Connect connects to the SQLite database.
+func (c *SQLiteConnector) Connect(ctx context.Context) (*gorm.DB, error) {
+	database, err := gorm.Open(sqlite.Open(c.dbPath), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, fmt.Errorf("failed to connect to SQLite database: %w", err)
 	}
 	return database, nil
 }
@@ -99,20 +94,16 @@ func (c *CloudSQLConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 }
 
 // CreateDBConnector is a factory function that returns the appropriate DBConnector.
-func CreateDBConnector(host, port, user, password, dbname, instanceConnectionName string) DBConnector {
-	if instanceConnectionName != "" {
-		return &CloudSQLConnector{
-			instanceConnectionName: instanceConnectionName,
-			user:                   user,
-			password:               password,
-			dbname:                 dbname,
+func CreateDBConnector(dbType, dbPath, instanceConnectionName, user, password, dbname string) DBConnector {
+	if dbType == "sqlite" {
+		return &SQLiteConnector{
+			dbPath: dbPath,
 		}
 	}
-	return &StandardDBConnector{
-		host:     host,
-		port:     port,
-		user:     user,
-		password: password,
-		dbname:   dbname,
+	return &CloudSQLConnector{
+		instanceConnectionName: instanceConnectionName,
+		user:                   user,
+		password:               password,
+		dbname:                 dbname,
 	}
 }
