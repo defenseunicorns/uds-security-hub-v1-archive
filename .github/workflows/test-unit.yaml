@@ -37,5 +37,5 @@ jobs:
         sudo apt-get update
         sudo apt-get install trivy -y
 
-    - name: E2E Tests
+    - name: Unit Tests
       run: make test-unit
