@@ -150,25 +150,15 @@ func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string)
 	}, nil
 }
 
-// ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
-// Parameters:
-// - tarFilePath: the path to the tar archive to extract the images from.
-// Returns:
-// - []sbomImageRef: references to images and their sboms.
-// - error: an error if the extraction fails.
-func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
-	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
-	if err != nil {
-		return nil, err
-	}
-
+func extractSBOMImageRefsFromReader(r io.Reader) ([]*sbomImageRef, error) {
 	tmp, err := os.MkdirTemp("", "zarf-sbom-spdx-files-*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
+
 	var results []*sbomImageRef
 
-	sbomTarReader := tar.NewReader(bytes.NewReader(sbomTar))
+	sbomTarReader := tar.NewReader(r)
 	for {
 		header, err := sbomTarReader.Next()
 		if err == io.EOF {
@@ -188,6 +178,22 @@ func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
 	}
 
 	return results, nil
+
+}
+
+// ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
+// Parameters:
+// - tarFilePath: the path to the tar archive to extract the images from.
+// Returns:
+// - []sbomImageRef: references to images and their sboms.
+// - error: an error if the extraction fails.
+func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
+	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractSBOMImageRefsFromReader(bytes.NewReader(sbomTar))
 }
 
 // LocalPackageScanner is a struct that holds the logger and paths for docker configuration and package.
