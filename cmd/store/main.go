@@ -21,6 +21,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
+	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -45,8 +46,8 @@ var errRequiredFlagEmpty = errors.New("is required and cannot be empty")
 func newStoreCmd() *cobra.Command {
 	var storeCmd = &cobra.Command{
 		Use:   "store",
-		Short: "Scan a Zarf package and store the results in the SQLite database",
-		Long:  "Scan a Zarf package for vulnerabilities and store the results in the SQLite database using GormScanManager",
+		Short: "Scan a Zarf package and store the results in the database",
+		Long:  "Scan a Zarf package for vulnerabilities and store the results in the database using GormScanManager",
 		RunE:  runStoreScanner,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Check if Trivy is installed
@@ -79,6 +80,12 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
 	This is for local scanning and not fetching from a remote registry.
 	This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
+
+	storeCmd.PersistentFlags().StringP("db-type", "", "sqlite", "Database type (sqlite or postgres)")
+	storeCmd.PersistentFlags().StringP("instance-connection-name", "", "", "GCP Cloud SQL instance connection name")
+	storeCmd.PersistentFlags().StringP("db-user", "", "", "Database user")
+	storeCmd.PersistentFlags().StringP("db-password", "", "", "Database password")
+	storeCmd.PersistentFlags().StringP("db-name", "", "", "Database name")
 
 	return storeCmd
 }
@@ -199,9 +206,29 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get 'tag' flag: %w", err)
 	}
+	dbType, err := cmd.Flags().GetString("db-type")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'db-type' flag: %w", err)
+	}
 	dbPath, err := cmd.Flags().GetString("db-path")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get 'db-path' flag: %w", err)
+	}
+	instanceConnectionName, err := cmd.Flags().GetString("instance-connection-name")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'instance-connection-name' flag: %w", err)
+	}
+	dbUser, err := cmd.Flags().GetString("db-user")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'db-user' flag: %w", err)
+	}
+	dbPassword, err := cmd.Flags().GetString("db-password")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'db-password' flag: %w", err)
+	}
+	dbName, err := cmd.Flags().GetString("db-name")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get 'db-name' flag: %w", err)
 	}
 	githubToken, err := cmd.Flags().GetString("github-token")
 	if err != nil {
@@ -222,7 +249,8 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 
 	parsedCreds := parseCredentials(registryCreds)
 
-	dbConn, err := setupDBConnection(dbPath)
+	connector := sql.CreateDBConnector(dbType, dbPath, instanceConnectionName, dbUser, dbPassword, dbName)
+	dbConn, err := connector.Connect(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
