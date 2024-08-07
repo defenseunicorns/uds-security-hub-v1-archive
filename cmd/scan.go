@@ -105,25 +105,25 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error scanning: %w", err)
 	}
 
-	var combinedCSV string
-	for _, v := range results {
+	output := os.Stdout
+	if outputFile != "" {
+		var err error
+		output, err = os.OpenFile(outputFile, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o600)
+		if err != nil {
+			return fmt.Errorf("error creating output csv: %w", err)
+		}
+	}
+
+	for i, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
 			return fmt.Errorf("error reading scan result: %w", err)
 		}
 
-		csv := r.GetResultsAsCSV()
-		combinedCSV += csv
+		if err := r.WriteToCSV(output, i == 0); err != nil {
+			return fmt.Errorf("failed to write to csv: %w", err)
+		}
 	}
 
-	if outputFile != "" {
-		err := os.WriteFile(outputFile, []byte(combinedCSV), 0o600)
-		if err != nil {
-			return fmt.Errorf("error writing to file: %w", err)
-		}
-		logger.Info(fmt.Sprintf("Results written to %s", outputFile))
-	} else {
-		logger.Info(combinedCSV)
-	}
 	return nil
 }

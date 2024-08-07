@@ -1,13 +1,12 @@
 package scan
 
 import (
+	"bytes"
 	"context"
-	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -22,49 +21,43 @@ func (m *mockLogger) Fatalf(msg string, fields ...interface{}) {}
 
 func TestNewLocalPackageScanner(t *testing.T) {
 	logger := &mockLogger{}
-	dockerConfigPath := "/path/to/docker/config"
 	packagePath := "/path/to/package"
 
 	tests := []struct {
-		name         string
-		logger       types.Logger
-		dockerConfig string
-		packagePath  string
-		expected     *LocalPackageScanner
-		expectError  bool
+		name        string
+		logger      types.Logger
+		packagePath string
+		expected    *LocalPackageScanner
+		expectError bool
 	}{
 		{
-			name:         "valid inputs",
-			logger:       logger,
-			dockerConfig: dockerConfigPath,
-			packagePath:  packagePath,
+			name:        "valid inputs",
+			logger:      logger,
+			packagePath: packagePath,
 			expected: &LocalPackageScanner{
-				logger:           logger,
-				dockerConfigPath: dockerConfigPath,
-				packagePath:      packagePath,
+				logger:      logger,
+				packagePath: packagePath,
 			},
 			expectError: false,
 		},
 		{
-			name:         "empty packagePath",
-			logger:       logger,
-			dockerConfig: dockerConfigPath,
-			packagePath:  "",
-			expected:     nil,
-			expectError:  true,
+			name:        "empty packagePath",
+			logger:      logger,
+			packagePath: "",
+			expected:    nil,
+			expectError: true,
 		},
 		{
-			name:         "nil logger",
-			logger:       nil,
-			dockerConfig: dockerConfigPath,
-			packagePath:  packagePath,
-			expected:     nil,
-			expectError:  true,
+			name:        "nil logger",
+			logger:      nil,
+			packagePath: packagePath,
+			expected:    nil,
+			expectError: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner, err := NewLocalPackageScanner(tt.logger, tt.dockerConfig, tt.packagePath, "")
+			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "")
 			checkError(t, err, tt.expectError)
 			if !tt.expectError {
 				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
@@ -75,25 +68,11 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	}
 }
 func TestScanImageE2E(t *testing.T) {
-	if os.Getenv("integration") != "true" {
-		t.Skip("Skipping integration test")
-	}
 	const zarfPackagePath = "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
-	ghcrCreds := os.Getenv("GHCR_CREDS")
-	registry1Creds := os.Getenv("REGISTRY1_CREDS")
-	dockerCreds := os.Getenv("DOCKER_IO_CREDS")
-	if ghcrCreds == "" || registry1Creds == "" || dockerCreds == "" {
-		t.Fatalf("GHCR_CREDS and REGISTRY1_CREDS must be set")
-	}
-	registryCreds := docker.ParseCredentials([]string{ghcrCreds, registry1Creds, dockerCreds})
 
-	dockerConfigPath, err := docker.GenerateAndWriteDockerConfig(ctx, registryCreds)
-	if err != nil {
-		t.Fatalf("Error generating and writing Docker config: %v", err)
-	}
-	lps, err := NewLocalPackageScanner(logger, dockerConfigPath, zarfPackagePath, "")
+	lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "")
 	if err != nil {
 		t.Fatalf("Failed to create local package scanner: %v", err)
 	}
@@ -109,38 +88,50 @@ func TestScanImageE2E(t *testing.T) {
 	if artifactName == "" {
 		t.Fatalf("Expected artifact name to be non-empty, got %s", artifactName)
 	}
-	csv := reader.GetResultsAsCSV()
+	vulnerabilities := reader.GetVulnerabilities()
+	if len(vulnerabilities) == 0 {
+		t.Fatalf("Expected non-empty vulnerabilities, got empty")
+	}
+	var buf bytes.Buffer
+	if err := reader.WriteToCSV(&buf, true); err != nil {
+		t.Fatalf("Error writing csv: %v", err)
+	}
+	csv := buf.String()
 	if csv == "" {
 		t.Fatalf("Expected non-empty CSV, got empty")
 	}
 }
 
-func TestFetchImageE2E(t *testing.T) {
+func TestExtractSBOMsFromTar(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
-	images, err := ExtractImagesFromTar(filePath)
+	refs, err := ExtractSBOMsFromTar(filePath)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}
 
-	if len(images) == 0 {
+	if len(refs) == 0 {
 		t.Fatal("Expected non-empty images, got empty")
 	}
 
-	expectedImages := []string{
+	expectedImageNameFromSBOM := []string{
 		"docker.io/appropriate/curl:latest",
 	}
 
-	for _, expectedImage := range expectedImages {
+	for _, sbomName := range expectedImageNameFromSBOM {
 		found := false
-		for _, image := range images {
-			if image == expectedImage {
+		for _, ref := range refs {
+			if ref.ArtifactName == sbomName {
 				found = true
-				t.Logf("Found expected image: %s", image)
+				t.Logf("Found expected image: %s", sbomName)
+
+				if ref.SBOMFile == "" {
+					t.Error("got an empty sbomfile, this will not be scannable by trivy")
+				}
 				break
 			}
 		}
 		if !found {
-			t.Errorf("Expected image not found: %s", expectedImage)
+			t.Errorf("Expected image not found: %s", sbomName)
 		}
 	}
 }

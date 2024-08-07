@@ -18,6 +18,10 @@ lint:
 clean:
 	rm -rf bin/
 
+test: test-unit test-integration
+
+test-unit: 
+	go test -timeout 160s ./... -v -coverprofile=coverage.out
 
 test-integration: 
 	@if [ -z "$${GITHUB_TOKEN}" ] || [ -z "$${GHCR_CREDS}" ] || [ -z "$${REGISTRY1_CREDS}" ]; then \

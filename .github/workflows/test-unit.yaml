@@ -1,4 +1,4 @@
-name: E2E Tests
+name: Unit Tests
 
 on:
   push:
@@ -37,17 +37,5 @@ jobs:
         sudo apt-get update
         sudo apt-get install trivy -y
 
-    - name: E2E Tests
-      env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
-        REGISTRY1_CREDS: ${{ secrets.REGISTRY1_CREDS }}
-        DOCKER_IO_CREDS: ${{ secrets.DOCKER_IO_CREDS }}
-      run: make test
-
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: coverage.out
-        verbose: true
+    - name: Unit Tests
+      run: make test-unit

@@ -34,7 +34,7 @@ func TestNewScanResultReader(t *testing.T) {
 	s := NewRemotePackageScanner(context.Background(), nil, "", "test", "test", "test", "test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.ScanResultReader(tt.jsonFilePath)
+			got, err := s.ScanResultReader(types.PackageScannerResult{JSONFilePath: tt.jsonFilePath})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewScanResultReader() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -276,7 +276,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := scanWithTrivy(tt.args.imageRef, "", "", tt.args.commandExecutor)
+			got, err := scanWithTrivy(&remoteImageRef{tt.args.imageRef}, "", "", tt.args.commandExecutor)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scanWithTrivy() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -288,7 +288,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 	}
 }
 
-func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
+func Test_localScanResult_WriteToCSV(t *testing.T) {
 	type fields struct {
 		ScanResult types.ScanResult
 	}
@@ -371,17 +371,22 @@ func Test_localScanResult_GetResultsAsCSV(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &localScanResult{
-				ScanResult: tt.fields.ScanResult,
+			s := &scanResultReader{
+				scanResult: tt.fields.ScanResult,
 			}
-			got := s.GetResultsAsCSV()
+			var buf bytes.Buffer
+			err := s.WriteToCSV(&buf, true)
+			if err != nil {
+				t.Errorf("error occurred while writing to csv: %v", err)
+			}
+			got := buf.String()
 			r := csv.NewReader(strings.NewReader(got))
 			records, err := r.ReadAll()
 			if err != nil {
 				t.Fatalf("Failed to parse CSV: %v", err)
 			}
 			if diff := cmp.Diff(records, tt.want); diff != "" {
-				t.Errorf("GetResultsAsCSV() mismatch (-got +want):\n%s", diff)
+				t.Errorf("WriteToCSV() mismatch (-got +want):\n%s", diff)
 			}
 		})
 	}
@@ -478,8 +483,8 @@ func Test_localScanResult_GetVulnerabilities(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &localScanResult{
-				ScanResult: tt.fields.ScanResult,
+			s := &scanResultReader{
+				scanResult: tt.fields.ScanResult,
 			}
 			if got := s.GetVulnerabilities(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetVulnerabilities() = %v, want %v", got, tt.want)

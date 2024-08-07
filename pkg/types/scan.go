@@ -1,6 +1,9 @@
 package types
 
-import "context"
+import (
+	"context"
+	"io"
+)
 
 // VulnerabilityInfo represents information about a vulnerability found in a scanned artifact.
 type VulnerabilityInfo struct {
@@ -24,18 +27,25 @@ type ScanResult struct {
 type ScanResultReader interface {
 	// GetArtifactName returns the name of the scanned artifact.
 	GetArtifactName() string
+
 	// GetVulnerabilities returns a slice of VulnerabilityInfo representing the vulnerabilities
 	// found in the scanned artifact.
 	GetVulnerabilities() []VulnerabilityInfo
-	// GetResultsAsCSV returns the scan results in CSV format.
-	GetResultsAsCSV() string
+
+	// WriteToCSV writes the results to the provided reader in CSV format.
+	WriteToCSV(w io.Writer, includeHeader bool) error
+}
+
+type PackageScannerResult struct {
+	ArtifactNameOverride string
+	JSONFilePath         string
 }
 
 // PackageScanner defines the methods required for scanning packages.
 type PackageScanner interface {
 	// Scan scans the package and returns the scan results.
 	// Returns a slice of file paths containing the scan results in JSON format and an error if the scan operation fails.
-	Scan(ctx context.Context) ([]string, error)
+	Scan(ctx context.Context) ([]PackageScannerResult, error)
 
 	// ScanResultReader creates a new ScanResultReader from a JSON file.
 	// Takes a trivy scan result file and returns a ScanResultReader.
@@ -44,7 +54,7 @@ type PackageScanner interface {
 	// Returns:
 	//   - types.ScanResultReader: An instance of ScanResultReader that can be used to access the scan results.
 	//   - error: An error if the file cannot be opened or the JSON cannot be decoded.
-	ScanResultReader(jsonFilePath string) (ScanResultReader, error)
+	ScanResultReader(result PackageScannerResult) (ScanResultReader, error)
 }
 
 // ScannerFactory defines the method to create a PackageScanner.
@@ -52,12 +62,12 @@ type ScannerFactory interface {
 	// CreateScanner creates a new PackageScanner based on the provided options.
 	// Parameters:
 	//   - ctx: The context for the scanner.
-	//   logger: The logger to use for logging.
-	//   dockerConfigPath: The path to the Docker config file.
-	//   org: The organization name (for remote scanner).
-	//   packageName: The package name (for remote scanner).
-	//   tag: The tag name (for remote scanner).
-	//   packagePath: The path to the local package (for local scanner).
+	//   - logger: The logger to use for logging.
+	//   - dockerConfigPath: The path to the Docker config file.
+	//   - org: The organization name (for remote scanner).
+	//   - packageName: The package name (for remote scanner).
+	//   - tag: The tag name (for remote scanner).
+	//   - packagePath: The path to the local package (for local scanner).
 	// Returns:
 	//   - PackageScanner: The created PackageScanner.
 	//   - error: An error if the scanner cannot be created.

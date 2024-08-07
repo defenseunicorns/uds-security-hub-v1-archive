@@ -1,8 +1,10 @@
 package scan
 
 import (
+	"bytes"
 	"context"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -49,23 +51,28 @@ func TestE2EScanFunctionality(t *testing.T) {
 	}
 
 	// Process the results
-	var combinedCSV string
+	var buf bytes.Buffer
 	for i, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
 			t.Fatalf("Error reading scan result: %v", err)
 		}
 
-		csv := r.GetResultsAsCSV()
-		if i == 0 {
-			combinedCSV = csv
-		} else {
-			combinedCSV += "\n" + csv[strings.Index(csv, "\n")+1:]
+		if err := r.WriteToCSV(&buf, i == 0); err != nil {
+			t.Fatalf("Error creating csv: %v", err)
 		}
 	}
+
+	combinedCSV := buf.String()
 
 	// Verify the combined CSV output
 	if len(combinedCSV) == 0 {
 		t.Fatalf("Combined CSV output is empty")
+	}
+
+	// make sure the header only exists in the first line
+	lines := strings.Split(combinedCSV, "\n")
+	if slices.Contains(lines[1:], lines[0]) {
+		t.Error("the header line appears more than once")
 	}
 }

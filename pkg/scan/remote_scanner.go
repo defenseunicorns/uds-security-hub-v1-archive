@@ -20,15 +20,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-type localScanResult struct {
-	types.ScanResult
-}
-
-// GetArtifactName returns the artifact name in the scan result.
-func (s *localScanResult) GetArtifactName() string {
-	return s.ArtifactName
-}
-
 // Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
 	logger           types.Logger
@@ -62,38 +53,6 @@ func NewRemotePackageScanner(
 	}
 }
 
-// GetVulnerabilities returns the vulnerabilities in the scan result.
-// It assumes there is only one set of results in the scan result.
-// If there are no results, it returns an empty slice.
-func (s *localScanResult) GetVulnerabilities() []types.VulnerabilityInfo {
-	if len(s.Results) == 0 {
-		return []types.VulnerabilityInfo{}
-	}
-	return s.Results[0].Vulnerabilities
-}
-
-// GetResultsAsCSV returns the scan results in CSV format.
-// The CSV format includes the following columns:
-// ArtifactName, VulnerabilityID, PkgName, InstalledVersion, FixedVersion, Severity, Description
-// Each row represents a single vulnerability found in the scanned artifact.
-func (s *localScanResult) GetResultsAsCSV() string {
-	var sb strings.Builder
-	sb.WriteString("\"ArtifactName\",\"VulnerabilityID\",\"PkgName\",\"InstalledVersion\",\"FixedVersion\",\"Severity\",\"Description\"\n") //nolint:lll
-
-	vulnerabilities := s.GetVulnerabilities()
-	for _, vuln := range vulnerabilities {
-		sb.WriteString(fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			s.GetArtifactName(),
-			vuln.VulnerabilityID,
-			vuln.PkgName,
-			vuln.InstalledVersion,
-			vuln.FixedVersion,
-			vuln.Severity,
-			vuln.Description))
-	}
-	return sb.String()
-}
-
 // ScanResultReader creates a new ScanResultReader from a JSON file.
 // This takes a trivy scan result file and returns a ScanResultReader.
 //
@@ -103,12 +62,8 @@ func (s *localScanResult) GetResultsAsCSV() string {
 // Returns:
 //   - types.ScanResultReader: An instance of ScanResultReader that can be used to access the scan results.
 //   - error: An error if the file cannot be opened or the JSON cannot be decoded.
-func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader, error) {
-	if jsonFilePath == "" {
-		return nil, fmt.Errorf("jsonFilePath cannot be empty")
-	}
-
-	file, err := os.Open(jsonFilePath)
+func (s *Scanner) ScanResultReader(result types.PackageScannerResult) (types.ScanResultReader, error) {
+	file, err := os.Open(result.JSONFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %w", err)
 	}
@@ -120,7 +75,7 @@ func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader,
 		return nil, fmt.Errorf("error decoding JSON: %w", err)
 	}
 
-	return &localScanResult{ScanResult: scanResult}, nil
+	return &scanResultReader{scanResult: scanResult}, nil
 }
 
 // ScanZarfPackage scans a Zarf package and returns the scan results.
@@ -133,15 +88,16 @@ func (s *Scanner) ScanResultReader(jsonFilePath string) (types.ScanResultReader,
 // Returns:
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the scan operation fails.
-func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]string, error) {
+func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]types.PackageScannerResult, error) {
 	s.org = org
 	s.packageName = packageName
 	s.tag = tag
+
 	return s.Scan(s.ctx)
 }
 
 // Scan scans the remote package and returns the scan results.
-func (s *Scanner) Scan(ctx context.Context) ([]string, error) {
+func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error) {
 	if s.org == "" {
 		return nil, fmt.Errorf("org cannot be empty")
 	}
@@ -156,10 +112,16 @@ func (s *Scanner) Scan(ctx context.Context) ([]string, error) {
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
 	//nolint:contextcheck
-	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
+	jsonFilePaths, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
 	}
+
+	var results []types.PackageScannerResult
+	for _, jsonFilePath := range jsonFilePaths {
+		results = append(results, types.PackageScannerResult{JSONFilePath: jsonFilePath})
+	}
+
 	return results, nil
 }
 
@@ -291,7 +253,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 		}
 
 		for _, tag := range tags {
-			result, err := scanWithTrivy(tag, dockerConfigPath, s.offlineDBPath, commandExecutor)
+			result, err := scanWithTrivy(&remoteImageRef{ImageRef: tag}, dockerConfigPath, s.offlineDBPath, commandExecutor)
 			if err != nil {
 				errs = errors.Join(errs, fmt.Errorf("error scanning image with Trivy: %w", err))
 				continue
@@ -317,16 +279,18 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 // Returns:
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
-func scanWithTrivy(imageRef string, dockerConfigPath string, offlineDBPath string,
+func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath string,
 	commandExecutor types.CommandExecutor) (string, error) {
 	const trivyDBFileName = "db/trivy.db"
 	const metadataFileName = "db/metadata.json"
 
-	err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
-	if err != nil {
-		return "", fmt.Errorf("error setting Docker config environment variable: %w", err)
+	if dockerConfigPath != "" {
+		err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
+		if err != nil {
+			return "", fmt.Errorf("error setting Docker config environment variable: %w", err)
+		}
+		defer os.Unsetenv("DOCKER_CONFIG")
 	}
-	defer os.Unsetenv("DOCKER_CONFIG")
 
 	if offlineDBPath != "" {
 		trivyDBPath := filepath.Join(offlineDBPath, trivyDBFileName)
@@ -355,10 +319,11 @@ func scanWithTrivy(imageRef string, dockerConfigPath string, offlineDBPath strin
 		return "", fmt.Errorf("trivy is not installed or not found in PATH: %w", err)
 	}
 
-	args := []string{
-		"image", "--image-src=remote", imageRef, "--scanners", "vuln",
-		"-f", "json", "-o", trivyFile.Name(),
-	}
+	var args []string
+	args = append(args, imageRef.TrivyCommand()...)
+	args = append(args,
+		[]string{"--scanners", "vuln", "-f", "json", "-o", trivyFile.Name()}...,
+	)
 	if offlineDBPath != "" {
 		args = append(args,
 			"--skip-db-update", "--skip-java-db-update", "--offline-scan",
