@@ -36,12 +36,12 @@ func (r *remoteImageRef) TrivyCommand() []string {
 	return []string{"image", "--image-src=remote", r.ImageRef}
 }
 
-type sbomImageRef struct {
+type cyclonedxSbomRef struct {
 	ArtifactName string
 	SBOMFile     string
 }
 
-func (s *sbomImageRef) TrivyCommand() []string {
+func (s *cyclonedxSbomRef) TrivyCommand() []string {
 	return []string{"sbom", s.SBOMFile}
 }
 
@@ -110,7 +110,7 @@ func extractArtifactInformationFromSBOM(r io.Reader) string {
 	return sbomHeader.Source.Metadata.Tags[0]
 }
 
-func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string) (*sbomImageRef, error) {
+func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string) (*cyclonedxSbomRef, error) {
 	cyclonedxEncoder, err := cyclonedxjson.NewFormatEncoderWithConfig(cyclonedxjson.DefaultEncoderConfig())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cyclonedx encoder: %w", err)
@@ -144,19 +144,19 @@ func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string)
 		return nil, fmt.Errorf("failed to write new cyclonnedx file for %q: %w", header.Name, err)
 	}
 
-	return &sbomImageRef{
+	return &cyclonedxSbomRef{
 		ArtifactName: artifactName,
 		SBOMFile:     cyclonedxSBOMFilename,
 	}, nil
 }
 
-func extractSBOMImageRefsFromReader(r io.Reader) ([]*sbomImageRef, error) {
+func extractSBOMImageRefsFromReader(r io.Reader) ([]*cyclonedxSbomRef, error) {
 	tmp, err := os.MkdirTemp("", "zarf-sbom-spdx-files-*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
 
-	var results []*sbomImageRef
+	var results []*cyclonedxSbomRef
 
 	sbomTarReader := tar.NewReader(r)
 	for {
@@ -186,7 +186,7 @@ func extractSBOMImageRefsFromReader(r io.Reader) ([]*sbomImageRef, error) {
 // Returns:
 // - []sbomImageRef: references to images and their sboms.
 // - error: an error if the extraction fails.
-func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
+func ExtractSBOMsFromTar(tarFilePath string) ([]*cyclonedxSbomRef, error) {
 	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
 	if err != nil {
 		return nil, err
