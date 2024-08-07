@@ -178,7 +178,6 @@ func extractSBOMImageRefsFromReader(r io.Reader) ([]*sbomImageRef, error) {
 	}
 
 	return results, nil
-
 }
 
 // ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
