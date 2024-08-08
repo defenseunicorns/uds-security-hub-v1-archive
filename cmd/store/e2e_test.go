@@ -26,9 +26,9 @@ func TestStore(t *testing.T) {
 		"--registry-creds", ghcrCreds,
 		"--registry-creds", registry1Creds,
 		"--registry-creds", dockerCreds,
-		"-n", "packages/uds/gitlab-runner",
+		"-n", "packages/uds/mattermost",
 		"--db-path", testDBPath,
-		"-v", "2",
+		"-v", "1",
 		"-t", github,
 	}
 
