@@ -28,7 +28,7 @@ func NewLogger(ctx context.Context) types.Logger {
 	if logger, ok := ctx.Value(loggerKey).(types.Logger); ok {
 		return logger
 	}
-	zapLoggerInstance, err := zap.NewProduction()
+	zapLoggerInstance, err := zap.NewProduction(zap.AddCallerSkip(1))
 	if err != nil {
 		panic(err)
 	}
