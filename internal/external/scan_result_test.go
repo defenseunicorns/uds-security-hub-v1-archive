@@ -202,8 +202,8 @@ func TestMapPackageDTOToReport(t *testing.T) {
 				Scans: []ScanDTO{
 					{
 						Vulnerabilities: []model.Vulnerability{
-							{Severity: "Critical"},
-							{Severity: "High"},
+							{Severity: "CRITICAL"},
+							{Severity: "HIGH"},
 						},
 					},
 				},

@@ -101,11 +101,11 @@ func MapPackageToDTO(pkg *model.Package) PackageDTO {
 // MapPackageDTOToReport maps the PackageDTO to a Report.
 func MapPackageDTOToReport(dto *PackageDTO, sbom []byte) *model.Report {
 	const (
-		Critical = "Critical"
-		High     = "High"
-		Medium   = "Medium"
-		Low      = "Low"
-		Info     = "Info"
+		Critical = "CRITICAL"
+		High     = "HIGH"
+		Medium   = "MEDIUM"
+		Low      = "LOW"
+		Info     = "INFO"
 	)
 	return &model.Report{
 		CreatedAt:   dto.CreatedAt,
