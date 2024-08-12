@@ -17,6 +17,7 @@ import (
 	"github.com/anchore/syft/syft/format/cyclonedxjson"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/klauspost/compress/zstd"
+	"go.uber.org/zap"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -218,7 +219,7 @@ func (e *ExtractRootFSResult) Cleanup() error {
 	return os.RemoveAll(e.RootPath)
 }
 
-func ExtractRootFS(tarFilePath string, command types.CommandExecutor) (*ExtractRootFSResult, error) {
+func ExtractRootFS(logger types.Logger, tarFilePath string, command types.CommandExecutor) (*ExtractRootFSResult, error) {
 	f, err := os.Open(tarFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open tar: %w", err)
@@ -307,19 +308,39 @@ func ExtractRootFS(tarFilePath string, command types.CommandExecutor) (*ExtractR
 		for i := range manifest.Layers {
 			digest := manifest.Layers[i].Digest.Hex
 			layerBlob := path.Join(pkgOutDir, "images", "blobs", "sha256", digest)
-			_, _, err := command.ExecuteCommand(
+			_, stderr, err := command.ExecuteCommand(
 				"tar",
 				[]string{"-zvxf", layerBlob, "-C", imageRootFS},
 				nil,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("failed to untar package imageRootFS=%s imageName=%s blob=%s: %w", imageRootFS, imageName, digest, err)
+				logger.Warn(
+					"error occurred while untar-ing layer",
+					zap.String("imageName", imageName),
+					zap.String("digest", digest),
+					zap.String("stderr", stderr),
+					zap.Error(err),
+				)
 			}
 		}
 		results = append(results, rootfsRef{
 			ArtifactName: imageName,
 			RootFSDir:    imageRootFS,
 		})
+
+		// add read and write permissions to the user or the trivy scan and the cleanup will fail
+		_, _, err = command.ExecuteCommand(
+			"chmod",
+			[]string{"-R", "u+rw", imageRootFS},
+			nil,
+		)
+		if err != nil {
+			logger.Warn(
+				"unable to ensure proper permissions on extracted files",
+				zap.String("imageName", imageName),
+				zap.Error(err),
+			)
+		}
 	}
 
 	return &ExtractRootFSResult{RootPath: tmpDir, Refs: results}, nil
@@ -382,7 +403,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
-	rootfsResult, err := ExtractRootFS(lps.packagePath, commandExecutor)
+	rootfsResult, err := ExtractRootFS(lps.logger, lps.packagePath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract images from tar: %w", err)
 	}

@@ -159,7 +159,10 @@ func TestScannableImage(t *testing.T) {
 
 func TestExtractRootFS(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
-	refs, err := ExtractRootFS(filePath, executor.NewCommandExecutor(context.TODO()))
+	exe := executor.NewCommandExecutor(context.TODO())
+	l := &mockLogger{}
+
+	refs, err := ExtractRootFS(l, filePath, exe)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}
