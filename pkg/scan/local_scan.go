@@ -10,10 +10,12 @@ import (
 	"io"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/anchore/syft/syft/format"
 	"github.com/anchore/syft/syft/format/cyclonedxjson"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/klauspost/compress/zstd"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
@@ -45,10 +47,19 @@ func (s *cyclonedxSbomRef) TrivyCommand() []string {
 	return []string{"sbom", s.SBOMFile}
 }
 
-func extractSingleFileFromTar(r io.Reader, filename string) ([]byte, error) {
+type rootfsRef struct {
+	ArtifactName string
+	RootFSDir    string
+}
+
+func (r *rootfsRef) TrivyCommand() []string {
+	return []string{"rootf", r.RootFSDir}
+}
+
+func extractFilesFromTar(r io.Reader, filenames ...string) (map[string][]byte, error) {
 	tarReader := tar.NewReader(r)
 
-	var sbomTar []byte
+	results := make(map[string][]byte)
 
 	for {
 		header, err := tarReader.Next()
@@ -59,17 +70,16 @@ func extractSingleFileFromTar(r io.Reader, filename string) ([]byte, error) {
 			return nil, fmt.Errorf("failed to read package tar header: %w", err)
 		}
 
-		if header.Name == filename {
-			var err error
-			sbomTar, err = io.ReadAll(tarReader)
+		if slices.Contains(filenames, header.Name) {
+			sbomTar, err := io.ReadAll(tarReader)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read file %q: %w", filename, err)
+				return nil, fmt.Errorf("failed to read file %q: %w", header.Name, err)
 			}
-			break
+			results[header.Name] = sbomTar
 		}
 	}
 
-	return sbomTar, nil
+	return results, nil
 }
 
 func extractSBOMTarFromZarfPackage(tarFilePath string) ([]byte, error) {
@@ -84,7 +94,12 @@ func extractSBOMTarFromZarfPackage(tarFilePath string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create zstd reader: %w", err)
 	}
 	defer zstdReader.Close()
-	return extractSingleFileFromTar(zstdReader, SbomFilename)
+	files, err := extractFilesFromTar(zstdReader, SbomFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	return files[SbomFilename], nil
 }
 
 func extractArtifactInformationFromSBOM(r io.Reader) string {
@@ -178,6 +193,135 @@ func extractSBOMImageRefsFromReader(r io.Reader) ([]*cyclonedxSbomRef, error) {
 	}
 
 	return results, nil
+}
+
+func scannableImage(name string) bool {
+	if strings.HasSuffix(name, ".att") || strings.HasSuffix(name, ".sig") {
+		return false
+	}
+
+	return true
+}
+
+func replacePathChars(s string) string {
+	s = strings.ReplaceAll(s, "/", "-")
+	s = strings.ReplaceAll(s, ":", "_")
+	return s
+}
+
+type ExtractRootFSResult struct {
+	RootPath string
+	Refs     []rootfsRef
+}
+
+func (e *ExtractRootFSResult) Close() error {
+	return os.RemoveAll(e.RootPath)
+}
+
+func ExtractRootFS(tarFilePath string, command types.CommandExecutor) (*ExtractRootFSResult, error) {
+	f, err := os.Open(tarFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open tar: %w", err)
+	}
+
+	r, err := zstd.NewReader(f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unzstd tar: %w", err)
+	}
+
+	tarBytes, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read tar: %w", err)
+	}
+
+	files, err := extractFilesFromTar(bytes.NewReader(tarBytes), "images/index.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract index.json: %w", err)
+	}
+
+	var imagesIndex v1.IndexManifest
+	if err := json.Unmarshal(files["images/index.json"], &imagesIndex); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal index.json: %w", err)
+	}
+
+	imageNameToManifestFile := make(map[string]string)
+	var manifestFilesToExtract []string
+	for _, manifest := range imagesIndex.Manifests {
+		digest := manifest.Digest.Hex
+		name := manifest.Annotations["org.opencontainers.image.base.name"]
+
+		if !scannableImage(name) {
+			continue
+		}
+
+		layerLocation := fmt.Sprintf("images/blobs/sha256/%s", digest)
+		imageNameToManifestFile[name] = layerLocation
+		manifestFilesToExtract = append(manifestFilesToExtract, layerLocation)
+	}
+
+	extractedManifests, err := extractFilesFromTar(bytes.NewReader(tarBytes), manifestFilesToExtract...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract image manifests: %w", err)
+	}
+
+	imageNameToParsedManifest := make(map[string]v1.Manifest)
+	for imageName, manifestFileName := range imageNameToManifestFile {
+		var packagedManifest v1.Manifest
+		err := json.Unmarshal(extractedManifests[manifestFileName], &packagedManifest)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal image manifest: %w", err)
+		}
+		imageNameToParsedManifest[imageName] = packagedManifest
+	}
+
+	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
+	}
+
+	tarPkgOnDisk := path.Join(tmpDir, "pkg.tar")
+	if err := os.WriteFile(tarPkgOnDisk, tarBytes, 0o600); err != nil {
+		return nil, fmt.Errorf("failed to write tar file: %w", err)
+	}
+
+	pkgOutDir := path.Join(tmpDir, "pkg")
+	if err := os.Mkdir(pkgOutDir, 0o700); err != nil {
+		return nil, err
+	}
+	_, _, err = command.ExecuteCommand(
+		"tar",
+		[]string{"-xf", tarPkgOnDisk, "-C", pkgOutDir},
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to untar package: %w", err)
+	}
+
+	var results []rootfsRef
+
+	for imageName, manifest := range imageNameToParsedManifest {
+		imageRootFS := path.Join(tmpDir, replacePathChars(imageName))
+		if err := os.Mkdir(imageRootFS, 0o700); err != nil {
+			return nil, err
+		}
+		for _, layer := range manifest.Layers {
+			layerBlob := path.Join(pkgOutDir, "images", "blobs", "sha256", layer.Digest.Hex)
+			_, _, err := command.ExecuteCommand(
+				"tar",
+				[]string{"-zxf", layerBlob, "-C", imageRootFS},
+				nil,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to untar package imageRootFS=%s imageName=%s blob=%s: %w", imageRootFS, imageName, layer.Digest.Hex, err)
+			}
+		}
+		results = append(results, rootfsRef{
+			ArtifactName: imageName,
+			RootFSDir:    imageRootFS,
+		})
+	}
+
+	return &ExtractRootFSResult{RootPath: tmpDir, Refs: results}, nil
 }
 
 // ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
