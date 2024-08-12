@@ -11,6 +11,8 @@ permissions:
   security-events: write
   # Only need to read contents
   contents: read
+  # Add actions read permission
+  actions: read
 
 jobs:
   scan-scheduled:
