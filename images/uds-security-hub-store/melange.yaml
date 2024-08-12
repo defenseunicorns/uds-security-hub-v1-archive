@@ -28,7 +28,7 @@ pipeline:
     runs: >
       set -x
 
-      CGO_ENABLED=0 go build -o "${{targets.destdir}}/usr/sbin/store" ./cmd/store
+      CGO_ENABLED=1 go build -o "${{targets.destdir}}/usr/sbin/store" ./cmd/store
   - name: Create dummy Docker config for Google Cloud
     runs: >
       set -x
