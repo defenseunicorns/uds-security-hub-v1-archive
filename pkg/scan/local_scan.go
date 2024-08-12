@@ -52,8 +52,8 @@ type rootfsRef struct {
 	RootFSDir    string
 }
 
-func (r *rootfsRef) TrivyCommand() []string {
-	return []string{"rootf", r.RootFSDir}
+func (r rootfsRef) TrivyCommand() []string {
+	return []string{"rootfs", r.RootFSDir}
 }
 
 func extractFilesFromTar(r io.Reader, filenames ...string) (map[string][]byte, error) {
@@ -214,7 +214,7 @@ type ExtractRootFSResult struct {
 	Refs     []rootfsRef
 }
 
-func (e *ExtractRootFSResult) Close() error {
+func (e *ExtractRootFSResult) Cleanup() error {
 	return os.RemoveAll(e.RootPath)
 }
 
@@ -246,9 +246,9 @@ func ExtractRootFS(tarFilePath string, command types.CommandExecutor) (*ExtractR
 
 	imageNameToManifestFile := make(map[string]string)
 	var manifestFilesToExtract []string
-	for _, manifest := range imagesIndex.Manifests {
-		digest := manifest.Digest.Hex
-		name := manifest.Annotations["org.opencontainers.image.base.name"]
+	for i := range imagesIndex.Manifests {
+		digest := imagesIndex.Manifests[i].Digest.Hex
+		name := imagesIndex.Manifests[i].Annotations["org.opencontainers.image.base.name"]
 
 		if !scannableImage(name) {
 			continue
@@ -286,7 +286,7 @@ func ExtractRootFS(tarFilePath string, command types.CommandExecutor) (*ExtractR
 
 	pkgOutDir := path.Join(tmpDir, "pkg")
 	if err := os.Mkdir(pkgOutDir, 0o700); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create output pkg dir: %w", err)
 	}
 	_, _, err = command.ExecuteCommand(
 		"tar",
@@ -302,17 +302,18 @@ func ExtractRootFS(tarFilePath string, command types.CommandExecutor) (*ExtractR
 	for imageName, manifest := range imageNameToParsedManifest {
 		imageRootFS := path.Join(tmpDir, replacePathChars(imageName))
 		if err := os.Mkdir(imageRootFS, 0o700); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create dir for image %s: %w", imageName, err)
 		}
-		for _, layer := range manifest.Layers {
-			layerBlob := path.Join(pkgOutDir, "images", "blobs", "sha256", layer.Digest.Hex)
+		for i := range manifest.Layers {
+			digest := manifest.Layers[i].Digest.Hex
+			layerBlob := path.Join(pkgOutDir, "images", "blobs", "sha256", digest)
 			_, _, err := command.ExecuteCommand(
 				"tar",
-				[]string{"-zxf", layerBlob, "-C", imageRootFS},
+				[]string{"-zvxf", layerBlob, "-C", imageRootFS},
 				nil,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("failed to untar package imageRootFS=%s imageName=%s blob=%s: %w", imageRootFS, imageName, layer.Digest.Hex, err)
+				return nil, fmt.Errorf("failed to untar package imageRootFS=%s imageName=%s blob=%s: %w", imageRootFS, imageName, digest, err)
 			}
 		}
 		results = append(results, rootfsRef{
@@ -381,21 +382,27 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
-	sbomFiles, err := ExtractSBOMsFromTar(lps.packagePath)
+	rootfsResult, err := ExtractRootFS(lps.packagePath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract images from tar: %w", err)
 	}
 	var scanResults []types.PackageScannerResult
-	for _, sbom := range sbomFiles {
-		scanResult, err := scanWithTrivy(sbom, "", lps.offlineDBPath, commandExecutor)
+	for _, rootfs := range rootfsResult.Refs {
+		scanResult, err := scanWithTrivy(rootfs, "", lps.offlineDBPath, commandExecutor)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan sbom %s: %w", sbom.SBOMFile, err)
+			return nil, fmt.Errorf("failed to scan rootfs %s: %w", rootfs.RootFSDir, err)
 		}
 		scanResults = append(scanResults, types.PackageScannerResult{
-			ArtifactNameOverride: sbom.ArtifactName,
+			ArtifactNameOverride: rootfs.ArtifactName,
 			JSONFilePath:         scanResult,
 		})
 	}
+
+	// this error should fail the scanner, but we want to know about it
+	if err := rootfsResult.Cleanup(); err != nil {
+		lps.logger.Warn("error cleaning up rootfsResult: %s", err)
+	}
+
 	return scanResults, nil
 }
 

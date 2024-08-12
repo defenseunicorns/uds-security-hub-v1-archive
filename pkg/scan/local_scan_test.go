@@ -168,8 +168,8 @@ func TestExtractRootFS(t *testing.T) {
 		t.Errorf("did not extract correct number of refs; want %d, got %d", 1, len(refs.Refs))
 	}
 
-	if err := refs.Close(); err != nil {
-		t.Errorf("unable to clean up results after use: %s", err)
+	if err := refs.Cleanup(); err != nil {
+		t.Errorf("unable to Cleanup() results after use: %s", err)
 	}
 }
 
