@@ -64,6 +64,16 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 		return nil, nil, fmt.Errorf("failed to extract image manifests: %w", err)
 	}
 
+	imageNameToParsedManifest := make(map[string]v1.Manifest)
+	for imageName, manifestFileName := range imageNameToManifestFile {
+		var packagedManifest v1.Manifest
+		err := json.Unmarshal(extractedManifests[manifestFileName], &packagedManifest)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal image manifest: %w", err)
+		}
+		imageNameToParsedManifest[imageName] = packagedManifest
+	}
+
 	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create tmp dir: %w", err)
@@ -85,16 +95,6 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to untar package: %w", err)
-	}
-
-	imageNameToParsedManifest := make(map[string]v1.Manifest)
-	for imageName, manifestFileName := range imageNameToManifestFile {
-		var packagedManifest v1.Manifest
-		err := json.Unmarshal(extractedManifests[manifestFileName], &packagedManifest)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to unmarshal image manifest: %w", err)
-		}
-		imageNameToParsedManifest[imageName] = packagedManifest
 	}
 
 	var results []imageRef
