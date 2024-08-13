@@ -281,7 +281,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 				t.Errorf("scanWithTrivy() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && got == "" {
+			if !tt.wantErr && got.JSONFilePath == "" {
 				t.Errorf("scanWithTrivy() got = %v, want %v", got, tt.want)
 			}
 		})

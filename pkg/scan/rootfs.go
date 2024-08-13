@@ -16,39 +16,32 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-type ExtractRootFSResult struct {
-	RootPath string
-	Refs     []rootfsRef
-}
+type cleanupFunc func() error
 
-func (e *ExtractRootFSResult) Cleanup() error {
-	return os.RemoveAll(e.RootPath)
-}
-
-func ExtractRootFS(logger types.Logger, tarFilePath string, command types.CommandExecutor) (*ExtractRootFSResult, error) {
+func ExtractRootFS(logger types.Logger, tarFilePath string, command types.CommandExecutor) ([]imageRef, cleanupFunc, error) {
 	f, err := os.Open(tarFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open tar: %w", err)
+		return nil, nil, fmt.Errorf("failed to open tar: %w", err)
 	}
 
 	r, err := zstd.NewReader(f)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unzstd tar: %w", err)
+		return nil, nil, fmt.Errorf("failed to unzstd tar: %w", err)
 	}
 
 	tarBytes, err := io.ReadAll(r)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read tar: %w", err)
+		return nil, nil, fmt.Errorf("failed to read tar: %w", err)
 	}
 
 	files, err := extractFilesFromTar(bytes.NewReader(tarBytes), "images/index.json")
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract index.json: %w", err)
+		return nil, nil, fmt.Errorf("failed to extract index.json: %w", err)
 	}
 
 	var imagesIndex v1.IndexManifest
 	if err := json.Unmarshal(files["images/index.json"], &imagesIndex); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal index.json: %w", err)
+		return nil, nil, fmt.Errorf("failed to unmarshal index.json: %w", err)
 	}
 
 	imageNameToManifestFile := make(map[string]string)
@@ -68,7 +61,7 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 
 	extractedManifests, err := extractFilesFromTar(bytes.NewReader(tarBytes), manifestFilesToExtract...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract image manifests: %w", err)
+		return nil, nil, fmt.Errorf("failed to extract image manifests: %w", err)
 	}
 
 	imageNameToParsedManifest := make(map[string]v1.Manifest)
@@ -76,24 +69,24 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 		var packagedManifest v1.Manifest
 		err := json.Unmarshal(extractedManifests[manifestFileName], &packagedManifest)
 		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal image manifest: %w", err)
+			return nil, nil, fmt.Errorf("failed to unmarshal image manifest: %w", err)
 		}
 		imageNameToParsedManifest[imageName] = packagedManifest
 	}
 
 	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
+		return nil, nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
 
 	tarPkgOnDisk := path.Join(tmpDir, "pkg.tar")
 	if err := os.WriteFile(tarPkgOnDisk, tarBytes, 0o600); err != nil {
-		return nil, fmt.Errorf("failed to write tar file: %w", err)
+		return nil, nil, fmt.Errorf("failed to write tar file: %w", err)
 	}
 
 	pkgOutDir := path.Join(tmpDir, "pkg")
 	if err := os.Mkdir(pkgOutDir, 0o700); err != nil {
-		return nil, fmt.Errorf("failed to create output pkg dir: %w", err)
+		return nil, nil, fmt.Errorf("failed to create output pkg dir: %w", err)
 	}
 	_, _, err = command.ExecuteCommand(
 		"tar",
@@ -101,15 +94,15 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to untar package: %w", err)
+		return nil, nil, fmt.Errorf("failed to untar package: %w", err)
 	}
 
-	var results []rootfsRef
+	var results []imageRef
 
 	for imageName, manifest := range imageNameToParsedManifest {
 		imageRootFS := path.Join(tmpDir, replacePathChars(imageName))
 		if err := os.Mkdir(imageRootFS, 0o700); err != nil {
-			return nil, fmt.Errorf("failed to create dir for image %s: %w", imageName, err)
+			return nil, nil, fmt.Errorf("failed to create dir for image %s: %w", imageName, err)
 		}
 		for i := range manifest.Layers {
 			digest := manifest.Layers[i].Digest.Hex
@@ -149,7 +142,11 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 		}
 	}
 
-	return &ExtractRootFSResult{RootPath: tmpDir, Refs: results}, nil
+	cleanup := func() error {
+		return os.RemoveAll(tmpDir)
+	}
+
+	return results, cleanup, nil
 }
 
 func replacePathChars(s string) string {

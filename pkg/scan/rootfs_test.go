@@ -12,17 +12,17 @@ func TestExtractRootFS(t *testing.T) {
 	exe := executor.NewCommandExecutor(context.TODO())
 	l := &mockLogger{}
 
-	refs, err := ExtractRootFS(l, filePath, exe)
+	refs, cleanup, err := ExtractRootFS(l, filePath, exe)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}
 
-	if len(refs.Refs) != 1 {
-		t.Errorf("did not extract correct number of refs; want %d, got %d", 1, len(refs.Refs))
+	if len(refs) != 1 {
+		t.Errorf("did not extract correct number of refs; want %d, got %d", 1, len(refs))
 	}
 
-	if err := refs.Cleanup(); err != nil {
-		t.Errorf("unable to Cleanup() results after use: %s", err)
+	if err := cleanup(); err != nil {
+		t.Errorf("unable to cleanup() results after use: %s", err)
 	}
 }
 

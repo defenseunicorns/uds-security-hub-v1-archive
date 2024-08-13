@@ -12,9 +12,9 @@ type ScannerFactoryImpl struct{}
 
 // CreateScanner creates a new PackageScanner based on the provided options.
 func (sf *ScannerFactoryImpl) CreateScanner(ctx context.Context, logger types.Logger,
-	dockerConfigPath, org, packageName, tag, packagePath, offlineDBPath string) (types.PackageScanner, error) {
+	dockerConfigPath, org, packageName, tag, packagePath, offlineDBPath string, sbom bool) (types.PackageScanner, error) {
 	if packagePath != "" {
-		return NewLocalPackageScanner(logger, packagePath, offlineDBPath)
+		return NewLocalPackageScanner(logger, packagePath, offlineDBPath, sbom)
 	}
 	if org == "" || packageName == "" || tag == "" {
 		return nil, fmt.Errorf("org, packageName, and tag are required for remote scanning")

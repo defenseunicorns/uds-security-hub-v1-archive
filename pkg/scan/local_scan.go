@@ -44,6 +44,7 @@ type LocalPackageScanner struct {
 	logger        types.Logger
 	packagePath   string
 	offlineDBPath string // New field for offline DB path
+	sbom          bool
 }
 
 // NewLocalPackageScanner creates a new LocalPackageScanner instance.
@@ -56,7 +57,7 @@ type LocalPackageScanner struct {
 // - *LocalPackageScanner: the LocalPackageScanner instance.
 // - error: an error if the instance cannot be created.
 func NewLocalPackageScanner(logger types.Logger,
-	packagePath, offlineDBPath string) (types.PackageScanner, error) {
+	packagePath, offlineDBPath string, sbom bool) (types.PackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
@@ -67,6 +68,7 @@ func NewLocalPackageScanner(logger types.Logger,
 		logger:        logger,
 		packagePath:   packagePath,
 		offlineDBPath: offlineDBPath,
+		sbom:          sbom,
 	}, nil
 }
 
@@ -81,27 +83,31 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
-	rootfsResult, err := ExtractRootFS(lps.logger, lps.packagePath, commandExecutor)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract images from tar: %w", err)
+
+	var refs []imageRef
+	if lps.sbom {
+		var err error
+		refs, err = ExtractSBOMsFromTar(lps.packagePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract sboms from tar: %w", err)
+		}
+	} else {
+		var err error
+		rootRefs, cleanup, err := ExtractRootFS(lps.logger, lps.packagePath, commandExecutor)
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract rootfs from tar: %w", err)
+		}
+		defer cleanup()
+		refs = rootRefs
 	}
 	var scanResults []types.PackageScannerResult
-	for _, rootfs := range rootfsResult.Refs {
-		scanResult, err := scanWithTrivy(rootfs, "", lps.offlineDBPath, commandExecutor)
+	for _, result := range refs {
+		scanResult, err := scanWithTrivy(result, "", lps.offlineDBPath, commandExecutor)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan rootfs %s: %w", rootfs.RootFSDir, err)
+			return nil, fmt.Errorf("failed to scan: %w", err)
 		}
-		scanResults = append(scanResults, types.PackageScannerResult{
-			ArtifactNameOverride: rootfs.ArtifactName,
-			JSONFilePath:         scanResult,
-		})
+		scanResults = append(scanResults, *scanResult)
 	}
-
-	// this error should fail the scanner, but we want to know about it
-	if err := rootfsResult.Cleanup(); err != nil {
-		lps.logger.Warn("error cleaning up rootfsResult: %s", err)
-	}
-
 	return scanResults, nil
 }
 

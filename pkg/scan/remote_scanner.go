@@ -112,14 +112,9 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
 	//nolint:contextcheck
-	jsonFilePaths, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
+	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
-	}
-
-	var results []types.PackageScannerResult
-	for _, jsonFilePath := range jsonFilePaths {
-		results = append(results, types.PackageScannerResult{JSONFilePath: jsonFilePath})
 	}
 
 	return results, nil
@@ -137,7 +132,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the scan operation fails.
 func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dockerConfigPath string,
-	commandExecutor types.CommandExecutor) ([]string, error) {
+	commandExecutor types.CommandExecutor) ([]types.PackageScannerResult, error) {
 	ref, err := name.ParseReference(imageRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse reference: %w", err)
@@ -185,13 +180,13 @@ func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.Ima
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the processing operation fails.
 func (s *Scanner) processImageIndex(ctx context.Context, idx v1.ImageIndex, dockerConfigPath string,
-	commandExecutor types.CommandExecutor) ([]string, error) {
+	commandExecutor types.CommandExecutor) ([]types.PackageScannerResult, error) {
 	indexManifest, err := idx.IndexManifest()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching index manifest: %w", err)
 	}
 
-	var results []string
+	var results []types.PackageScannerResult
 	for i := range indexManifest.Manifests {
 		manifestDescriptor := &indexManifest.Manifests[i] // Use a pointer to the element
 		image, err := idx.Image(manifestDescriptor.Digest)
@@ -222,14 +217,14 @@ func (s *Scanner) processImageIndex(ctx context.Context, idx v1.ImageIndex, dock
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the processing operation fails.
 func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dockerConfigPath string,
-	commandExecutor types.CommandExecutor) ([]string, error) {
+	commandExecutor types.CommandExecutor) ([]types.PackageScannerResult, error) {
 	const sbomsTarLayer = "sboms.tar"
 	manifest, err := image.Manifest()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching image manifest: %w", err)
 	}
 
-	var results []string
+	var results []types.PackageScannerResult
 	var errs error
 
 	for i := range manifest.Layers {
@@ -258,7 +253,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 				errs = errors.Join(errs, fmt.Errorf("error scanning image with Trivy: %w", err))
 				continue
 			}
-			results = append(results, result)
+			results = append(results, *result)
 		}
 
 		break // Only process the first sboms.tar layer
@@ -280,14 +275,14 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
 func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath string,
-	commandExecutor types.CommandExecutor) (string, error) {
+	commandExecutor types.CommandExecutor) (*types.PackageScannerResult, error) {
 	const trivyDBFileName = "db/trivy.db"
 	const metadataFileName = "db/metadata.json"
 
 	if dockerConfigPath != "" {
 		err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
 		if err != nil {
-			return "", fmt.Errorf("error setting Docker config environment variable: %w", err)
+			return nil, fmt.Errorf("error setting Docker config environment variable: %w", err)
 		}
 		defer os.Unsetenv("DOCKER_CONFIG")
 	}
@@ -297,18 +292,18 @@ func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath str
 		metadataPath := filepath.Join(offlineDBPath, metadataFileName)
 
 		if _, err := os.Stat(trivyDBPath); os.IsNotExist(err) {
-			return "", fmt.Errorf("trivy.db does not exist in the offline DB path: %s", offlineDBPath)
+			return nil, fmt.Errorf("trivy.db does not exist in the offline DB path: %s", offlineDBPath)
 		}
 
 		if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
-			return "", fmt.Errorf("metadata.json does not exist in the offline DB path: %s", offlineDBPath)
+			return nil, fmt.Errorf("metadata.json does not exist in the offline DB path: %s", offlineDBPath)
 		}
 	}
 
 	// Create a temporary file for the Trivy scan results.
 	trivyFile, err := os.CreateTemp("", "trivy-*.json")
 	if err != nil {
-		return "", fmt.Errorf("error creating temporary file for Trivy result: %w", err)
+		return nil, fmt.Errorf("error creating temporary file for Trivy result: %w", err)
 	}
 	defer trivyFile.Close()
 	// Note: The file cannot be removed here as it is going to be passed up the call stack
@@ -316,7 +311,7 @@ func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath str
 	// Check if Trivy exists in the system
 	_, _, err = commandExecutor.ExecuteCommand("which", []string{"trivy"}, os.Environ())
 	if err != nil {
-		return "", fmt.Errorf("trivy is not installed or not found in PATH: %w", err)
+		return nil, fmt.Errorf("trivy is not installed or not found in PATH: %w", err)
 	}
 
 	var args []string
@@ -335,11 +330,19 @@ func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath str
 		os.Environ(),
 	)
 	if err != nil {
-		return "", fmt.Errorf("error running Trivy on image %s: %w\nstdout: %s\nstderr: %s args: %s",
+		return nil, fmt.Errorf("error running Trivy on image %s: %w\nstdout: %s\nstderr: %s args: %s",
 			imageRef, err, stdout, stderr, args)
 	}
 
-	return trivyFile.Name(), nil
+	result := &types.PackageScannerResult{
+		JSONFilePath: trivyFile.Name(),
+	}
+
+	if override, ok := imageRef.(ArtifactNameOverride); ok {
+		result.ArtifactNameOverride = override.ArtifactNameOverride()
+	}
+
+	return result, nil
 }
 
 // extractSBOMPackages extracts tags from JSON files within a tar archive.

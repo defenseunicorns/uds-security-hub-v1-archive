@@ -27,6 +27,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 		name        string
 		logger      types.Logger
 		packagePath string
+		sbom        bool
 		expected    *LocalPackageScanner
 		expectError bool
 	}{
@@ -34,9 +35,23 @@ func TestNewLocalPackageScanner(t *testing.T) {
 			name:        "valid inputs",
 			logger:      logger,
 			packagePath: packagePath,
+			sbom:        true,
 			expected: &LocalPackageScanner{
 				logger:      logger,
 				packagePath: packagePath,
+				sbom:        true,
+			},
+			expectError: false,
+		},
+		{
+			name:        "valid inputs for rootfs",
+			logger:      logger,
+			packagePath: packagePath,
+			sbom:        false,
+			expected: &LocalPackageScanner{
+				logger:      logger,
+				packagePath: packagePath,
+				sbom:        false,
 			},
 			expectError: false,
 		},
@@ -57,7 +72,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "")
+			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "", tt.sbom)
 			checkError(t, err, tt.expectError)
 			if !tt.expectError {
 				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
@@ -72,7 +87,7 @@ func TestScanImageE2E(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
 
-	lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "")
+	lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "", true)
 	if err != nil {
 		t.Fatalf("Failed to create local package scanner: %v", err)
 	}

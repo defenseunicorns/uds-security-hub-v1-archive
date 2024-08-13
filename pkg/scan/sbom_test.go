@@ -20,11 +20,17 @@ func TestExtractSBOMsFromTar(t *testing.T) {
 	for _, sbomName := range expectedImageNameFromSBOM {
 		found := false
 		for _, ref := range refs {
-			if ref.ArtifactName == sbomName {
+			actualRef, ok := ref.(*cyclonedxSBOMRef)
+			if !ok {
+				t.Errorf("expected ref to be a cyclonedxSBOMRef")
+				continue
+			}
+
+			if actualRef.ArtifactName == sbomName {
 				found = true
 				t.Logf("Found expected image: %s", sbomName)
 
-				if ref.SBOMFile == "" {
+				if actualRef.SBOMFile == "" {
 					t.Error("got an empty sbomfile, this will not be scannable by trivy")
 				}
 				break
