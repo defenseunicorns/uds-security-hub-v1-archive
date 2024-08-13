@@ -109,15 +109,30 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 			layerBlob := path.Join(pkgOutDir, "images", "blobs", "sha256", digest)
 			_, stderr, err := command.ExecuteCommand(
 				"tar",
-				[]string{"-zvxf", layerBlob, "-C", imageRootFS},
+				[]string{"--exclude=dev/*", "-zvxf", layerBlob, "-C", imageRootFS},
 				nil,
 			)
 			if err != nil {
 				logger.Warn(
-					"error occurred while untar-ing layer",
+					"error occurred while extracting layer",
 					zap.String("imageName", imageName),
 					zap.String("digest", digest),
 					zap.String("stderr", stderr),
+					zap.Error(err),
+				)
+			}
+
+			// add read and write permissions to the user or the subsequent layers, the trivy scan,
+			// and the cleanup will fail
+			_, _, err = command.ExecuteCommand(
+				"chmod",
+				[]string{"-R", "u+rw", imageRootFS},
+				nil,
+			)
+			if err != nil {
+				logger.Warn(
+					"unable to ensure proper permissions on extracted files",
+					zap.String("imageName", imageName),
 					zap.Error(err),
 				)
 			}
@@ -126,20 +141,6 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 			ArtifactName: imageName,
 			RootFSDir:    imageRootFS,
 		})
-
-		// add read and write permissions to the user or the trivy scan and the cleanup will fail
-		_, _, err = command.ExecuteCommand(
-			"chmod",
-			[]string{"-R", "u+rw", imageRootFS},
-			nil,
-		)
-		if err != nil {
-			logger.Warn(
-				"unable to ensure proper permissions on extracted files",
-				zap.String("imageName", imageName),
-				zap.Error(err),
-			)
-		}
 	}
 
 	cleanup := func() error {
