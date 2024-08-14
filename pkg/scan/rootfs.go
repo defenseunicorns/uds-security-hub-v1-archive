@@ -1,7 +1,6 @@
 package scan
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +16,51 @@ import (
 )
 
 type cleanupFunc func() error
+
+func extractZarfPackageToTmpDir(tmpDir string, tarBytes []byte, command types.CommandExecutor) (string, error) {
+	pkgOutDir := path.Join(tmpDir, "pkg")
+
+	tarPkgOnDisk := path.Join(tmpDir, "pkg.tar")
+	err := os.WriteFile(tarPkgOnDisk, tarBytes, 0o600)
+	if err != nil {
+		return "", fmt.Errorf("failed to write tar file: %w", err)
+	}
+
+	err = os.Mkdir(pkgOutDir, 0o700)
+	if err != nil {
+		return "", fmt.Errorf("failed to create output pkg dir: %w", err)
+	}
+
+	_, _, err = command.ExecuteCommand(
+		"tar",
+		[]string{"-xf", tarPkgOnDisk, "-C", pkgOutDir},
+		nil,
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to untar package: %w", err)
+	}
+
+	return pkgOutDir, nil
+}
+
+func readJSONFileFromExtractedArchive(filename string, out interface{}) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("failed to open %s: %w", filename, err)
+	}
+
+	err = json.NewDecoder(f).Decode(out)
+	if err != nil {
+		return fmt.Errorf("failed to decode %s: %w", filename, err)
+	}
+
+	err = f.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close file %s: %w", filename, err)
+	}
+
+	return nil
+}
 
 func ExtractRootFS(logger types.Logger, tarFilePath string, command types.CommandExecutor) ([]imageRef, cleanupFunc, error) {
 	f, err := os.Open(tarFilePath)
@@ -34,78 +78,58 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 		return nil, nil, fmt.Errorf("failed to read tar: %w", err)
 	}
 
-	files, err := extractFilesFromTar(bytes.NewReader(tarBytes), "images/index.json")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to extract index.json: %w", err)
-	}
-
-	var imagesIndex v1.IndexManifest
-	if err := json.Unmarshal(files["images/index.json"], &imagesIndex); err != nil {
-		return nil, nil, fmt.Errorf("failed to unmarshal index.json: %w", err)
-	}
-
-	imageNameToManifestFile := make(map[string]string)
-	var manifestFilesToExtract []string
-	for i := range imagesIndex.Manifests {
-		digest := imagesIndex.Manifests[i].Digest.Hex
-		name := imagesIndex.Manifests[i].Annotations["org.opencontainers.image.base.name"]
-
-		if !scannableImage(name) {
-			continue
-		}
-
-		layerLocation := fmt.Sprintf("images/blobs/sha256/%s", digest)
-		imageNameToManifestFile[name] = layerLocation
-		manifestFilesToExtract = append(manifestFilesToExtract, layerLocation)
-	}
-
-	extractedManifests, err := extractFilesFromTar(bytes.NewReader(tarBytes), manifestFilesToExtract...)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to extract image manifests: %w", err)
-	}
-
-	imageNameToParsedManifest := make(map[string]v1.Manifest)
-	for imageName, manifestFileName := range imageNameToManifestFile {
-		var packagedManifest v1.Manifest
-		err := json.Unmarshal(extractedManifests[manifestFileName], &packagedManifest)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to unmarshal image manifest: %w", err)
-		}
-		imageNameToParsedManifest[imageName] = packagedManifest
-	}
-
 	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
 
-	tarPkgOnDisk := path.Join(tmpDir, "pkg.tar")
-	if err := os.WriteFile(tarPkgOnDisk, tarBytes, 0o600); err != nil {
-		return nil, nil, fmt.Errorf("failed to write tar file: %w", err)
+	pkgOutDir, err := extractZarfPackageToTmpDir(tmpDir, tarBytes, command)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	pkgOutDir := path.Join(tmpDir, "pkg")
-	if err := os.Mkdir(pkgOutDir, 0o700); err != nil {
-		return nil, nil, fmt.Errorf("failed to create output pkg dir: %w", err)
-	}
-	_, _, err = command.ExecuteCommand(
-		"tar",
-		[]string{"-xf", tarPkgOnDisk, "-C", pkgOutDir},
-		nil,
-	)
+	var indexManifest v1.IndexManifest
+	err = readJSONFileFromExtractedArchive(path.Join(pkgOutDir, "images/index.json"), &indexManifest)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to untar package: %w", err)
+		return nil, nil, err
+	}
+
+	type ImageToScan struct {
+		Name     string
+		Manifest v1.Manifest
+	}
+
+	var imagesToScan []ImageToScan
+
+	for i := range indexManifest.Manifests {
+		name := indexManifest.Manifests[i].Annotations["org.opencontainers.image.base.name"]
+		digest := indexManifest.Manifests[i].Digest
+
+		if !scannableImage(name) {
+			continue
+		}
+
+		var manifest v1.Manifest
+		manifestLocation := path.Join(pkgOutDir, "images", "blobs", digest.Algorithm, digest.Hex)
+		err := readJSONFileFromExtractedArchive(manifestLocation, &manifest)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		imagesToScan = append(imagesToScan, ImageToScan{
+			Name:     name,
+			Manifest: manifest,
+		})
 	}
 
 	var results []imageRef
-
-	for imageName, manifest := range imageNameToParsedManifest {
-		imageRootFS := path.Join(tmpDir, replacePathChars(imageName))
+	for _, image := range imagesToScan {
+		imageRootFS := path.Join(tmpDir, replacePathChars(image.Name))
 		if err := os.Mkdir(imageRootFS, 0o700); err != nil {
-			return nil, nil, fmt.Errorf("failed to create dir for image %s: %w", imageName, err)
+			return nil, nil, fmt.Errorf("failed to create dir for image %s: %w", image.Name, err)
 		}
-		for i := range manifest.Layers {
-			digest := manifest.Layers[i].Digest.Hex
+		for i := range image.Manifest.Layers {
+			digest := image.Manifest.Layers[i].Digest.Hex
 			layerBlob := path.Join(pkgOutDir, "images", "blobs", "sha256", digest)
 			_, stderr, err := command.ExecuteCommand(
 				"tar",
@@ -115,7 +139,7 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 			if err != nil {
 				logger.Warn(
 					"error occurred while extracting layer",
-					zap.String("imageName", imageName),
+					zap.String("imageName", image.Name),
 					zap.String("digest", digest),
 					zap.String("stderr", stderr),
 					zap.Error(err),
@@ -132,13 +156,13 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 			if err != nil {
 				logger.Warn(
 					"unable to ensure proper permissions on extracted files",
-					zap.String("imageName", imageName),
+					zap.String("imageName", image.Name),
 					zap.Error(err),
 				)
 			}
 		}
 		results = append(results, rootfsRef{
-			ArtifactName: imageName,
+			ArtifactName: image.Name,
 			RootFSDir:    imageRootFS,
 		})
 	}
