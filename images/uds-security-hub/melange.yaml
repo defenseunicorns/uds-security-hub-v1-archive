@@ -28,7 +28,7 @@ pipeline:
     runs: >
       set -x
 
-      CGO_ENABLED=0 go build -o "${{targets.destdir}}/usr/sbin/uds-security-hub" main.go
+      CGO_ENABLED=1 go build -o "${{targets.destdir}}/usr/sbin/uds-security-hub" main.go
   - name: Create dummy Docker config for Google Cloud
     runs: >
       set -x

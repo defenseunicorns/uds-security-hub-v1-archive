@@ -254,6 +254,13 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+	// this is for local sqlite db path and we would need to initialize the db and tables
+	if dbPath != "" {
+		dbConn, err = setupDBConnection(dbPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to setup database connection: %w", err)
+		}
+	}
 
 	return &Config{
 		Org:                    org,
