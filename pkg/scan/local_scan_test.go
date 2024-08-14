@@ -82,6 +82,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 		})
 	}
 }
+
 func TestScanImageE2E(t *testing.T) {
 	const zarfPackagePath = "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	ctx := context.Background()
