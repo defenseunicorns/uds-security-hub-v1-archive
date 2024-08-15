@@ -76,7 +76,7 @@ func (s *Scanner) ScanResultReader(result types.PackageScannerResult) (types.Sca
 		return nil, fmt.Errorf("error decoding JSON: %w", err)
 	}
 
-	return &scanResultReader{scanResult: scanResult}, nil
+	return &scanResultReader{ArtifactNameOverride: result.ArtifactNameOverride, scanResult: scanResult}, nil
 }
 
 // ScanZarfPackage scans a Zarf package and returns the scan results.
