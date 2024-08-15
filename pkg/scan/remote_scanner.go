@@ -227,14 +227,7 @@ func writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(
 		return fmt.Errorf("failed to read IndexManifest from local copy: %w", err)
 	}
 
-	var desiredPlatformDigest *v1.Hash
-	for _, m := range manifest.Manifests {
-		if m.Platform.Architecture == desiredPlatform {
-			desiredPlatformDigest = &m.Digest
-			break
-		}
-	}
-
+	desiredPlatformDigest := findDesiredPlatform(manifest.Manifests, desiredPlatform)
 	if desiredPlatformDigest == nil {
 		return fmt.Errorf("failed to find %s manifest", desiredPlatform)
 	}
@@ -249,13 +242,7 @@ func writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(
 		return fmt.Errorf("failed to json decode %s manifest: %w", desiredPlatform, err)
 	}
 
-	var platformIndexJSON *v1.Hash
-	for _, layer := range platformManifest.Layers {
-		if layer.Annotations["org.opencontainers.image.title"] == "images/index.json" {
-			platformIndexJSON = &layer.Digest
-		}
-	}
-
+	platformIndexJSON := findImagesIndexJSON(platformManifest.Layers)
 	if platformIndexJSON == nil {
 		return fmt.Errorf("failed to find %s images/index.json", desiredPlatform)
 	}
@@ -269,6 +256,28 @@ func writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(
 	err = os.WriteFile(path.Join(imagesDir, "index.json"), platformIndexJSONBytes, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to replace index.json: %w", err)
+	}
+
+	return nil
+}
+
+// findDesiredPlatform returns the v1.Hash for the desiredPlatform, if found
+func findDesiredPlatform(manifests []v1.Descriptor, desiredPlatform string) *v1.Hash {
+	for i := range manifests {
+		if manifests[i].Platform.Architecture == desiredPlatform {
+			return &manifests[i].Digest
+		}
+	}
+
+	return nil
+}
+
+// findImagesIndexJSON returns the v1.Hash of the layer with the correct annotation, if found
+func findImagesIndexJSON(layers []v1.Descriptor) *v1.Hash {
+	for i := range layers {
+		if layers[i].Annotations["org.opencontainers.image.title"] == "images/index.json" {
+			return &layers[i].Digest
+		}
 	}
 
 	return nil
