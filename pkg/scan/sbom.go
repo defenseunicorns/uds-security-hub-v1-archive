@@ -21,7 +21,7 @@ const (
 )
 
 func extractSBOMImageRefsFromReader(r io.Reader) ([]imageRef, error) {
-	tmp, err := os.MkdirTemp("", "zarf-sbom-spdx-files-*")
+	tmp, err := os.MkdirTemp("", "zarf-sbom-files-*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
