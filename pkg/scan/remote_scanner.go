@@ -109,11 +109,11 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 		return nil, fmt.Errorf("tag cannot be empty")
 	}
 	//nolint:contextcheck
-	commandExecutor := executor.NewCommandExecutor(s.ctx)
+	commandExecutor := executor.NewCommandExecutor(ctx)
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
 	//nolint:contextcheck
-	results, err := s.scanImageAndProcessResults(s.ctx, imageRef, s.dockerConfigPath, commandExecutor)
+	results, err := s.scanImageAndProcessResults(ctx, imageRef, s.dockerConfigPath, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
 	}
