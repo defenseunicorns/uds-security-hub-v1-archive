@@ -25,7 +25,7 @@ jobs:
       - name: Run UDS Scan
         env:
           GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
-          REGISTRY1_CREDS: ${{ secrets.REGISTRY1_CREDS }}
+          REGISTRY1_CREDS: "registry1.dso.mil:${{ secrets.IRON_BANK_ROBOT_USERNAME }}:${{ secrets.IRON_BANK_ROBOT_PASSWORD }}"
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           DOCKER_IO_CREDS: ${{ secrets.DOCKER_IO_CREDS }}
           CGR_CREDS: ${{ secrets.CGR_CREDS }}
@@ -36,4 +36,4 @@ jobs:
         run: |
           chmod +x scripts/scan.sh
           ./scripts/scan.sh -f names.txt -v 2 
-          ./scripts/scan.sh -f leapfrog.txt -v 2 
+          ./scripts/scan.sh -f leapfrog.txt -v 1 
