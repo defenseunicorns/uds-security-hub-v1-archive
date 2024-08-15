@@ -7,22 +7,19 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
 )
 
-func TestExtractRootFS(t *testing.T) {
+func TestExtractRootFsFromTarFilePath(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	exe := executor.NewCommandExecutor(context.TODO())
 	l := &mockLogger{}
 
-	refs, cleanup, err := ExtractRootFS(l, filePath, exe)
+	refs, cleanup, err := ExtractRootFsFromTarFilePath(l, filePath, exe)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}
+	defer cleanup()
 
 	if len(refs) != 1 {
 		t.Errorf("did not extract correct number of refs; want %d, got %d", 1, len(refs))
-	}
-
-	if err := cleanup(); err != nil {
-		t.Errorf("unable to cleanup() results after use: %s", err)
 	}
 }
 

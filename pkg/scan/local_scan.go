@@ -93,7 +93,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 		}
 	} else {
 		var err error
-		rootRefs, cleanup, err := ExtractRootFS(lps.logger, lps.packagePath, commandExecutor)
+		rootRefs, cleanup, err := ExtractRootFsFromTarFilePath(lps.logger, lps.packagePath, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract rootfs from tar: %w", err)
 		}

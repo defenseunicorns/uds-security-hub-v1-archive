@@ -278,7 +278,7 @@ func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dock
 		}
 	}
 
-	images, err := extractAllImages(tmpDir, pkgOutDir, s.logger, s.commandExecutor)
+	images, err := extractAllImagesFromOCIDirectory(tmpDir, pkgOutDir, s.logger, s.commandExecutor)
 	if err != nil {
 		return nil, err
 	}

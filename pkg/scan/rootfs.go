@@ -15,7 +15,11 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-func extractZarfPackageToTmpDir(tmpDir string, tarBytes []byte, command types.CommandExecutor) (string, error) {
+func extractZarfPackageToTmpDir(
+	tmpDir string,
+	tarBytes []byte,
+	command types.CommandExecutor,
+) (string, error) {
 	pkgOutDir := path.Join(tmpDir, "pkg")
 
 	tarPkgOnDisk := path.Join(tmpDir, "pkg.tar")
@@ -60,7 +64,12 @@ func readJSONFileFromExtractedArchive(filename string, out interface{}) error {
 	return nil
 }
 
-func extractAllImages(tmpDir string, pkgRoot string, logger types.Logger, command types.CommandExecutor) ([]imageRef, error) {
+func extractAllImagesFromOCIDirectory(
+	outputDir string,
+	pkgRoot string,
+	logger types.Logger,
+	command types.CommandExecutor,
+) ([]imageRef, error) {
 	var indexManifest v1.IndexManifest
 	err := readJSONFileFromExtractedArchive(path.Join(pkgRoot, "images/index.json"), &indexManifest)
 	if err != nil {
@@ -97,7 +106,7 @@ func extractAllImages(tmpDir string, pkgRoot string, logger types.Logger, comman
 
 	var results []imageRef
 	for _, image := range imagesToScan {
-		imageRootFS := path.Join(tmpDir, replacePathChars(image.Name))
+		imageRootFS := path.Join(outputDir, replacePathChars(image.Name))
 		if err := os.Mkdir(imageRootFS, 0o700); err != nil {
 			return nil, fmt.Errorf("failed to create dir for image %s: %w", image.Name, err)
 		}
@@ -145,7 +154,11 @@ func extractAllImages(tmpDir string, pkgRoot string, logger types.Logger, comman
 
 type cleanupFunc func()
 
-func ExtractRootFS(logger types.Logger, tarFilePath string, command types.CommandExecutor) ([]imageRef, cleanupFunc, error) {
+func ExtractRootFsFromTarFilePath(
+	logger types.Logger,
+	tarFilePath string,
+	command types.CommandExecutor,
+) ([]imageRef, cleanupFunc, error) {
 	f, err := os.Open(tarFilePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open tar: %w", err)
@@ -171,7 +184,7 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 		return nil, nil, err
 	}
 
-	results, err := extractAllImages(tmpDir, pkgOutDir, logger, command)
+	results, err := extractAllImagesFromOCIDirectory(tmpDir, pkgOutDir, logger, command)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -183,12 +196,16 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 	return results, cleanup, nil
 }
 
+// replacePathChars replaces characters in a image name that will cause issues in filesystems.
 func replacePathChars(s string) string {
 	s = strings.ReplaceAll(s, "/", "-")
 	s = strings.ReplaceAll(s, ":", "_")
 	return s
 }
 
+// scannableImage returns true if the image should be scanned.
+// it's mainly used to skip *.att and *.sig files which do not represent container images
+// that can be scanned.
 func scannableImage(name string) bool {
 	if strings.HasSuffix(name, ".att") || strings.HasSuffix(name, ".sig") {
 		return false
