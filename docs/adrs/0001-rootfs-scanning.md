@@ -8,7 +8,8 @@ pending
 
 ## Context
 
-Prior local package scanning was implemented using only the sbom. This can result in lower quality CVE results.
+Prior local package scanning was implemented using only the sbom. This can result
+in lower quality CVE results.
 
 Example CVE counts for the zarf argocd example as per 2024-08-12.
 
@@ -19,9 +20,13 @@ Example CVE counts for the zarf argocd example as per 2024-08-12.
 
 ## Implementation
 
-Trivy supports scanning a container using a `rootfs`. We get this from the registry or package.
+Trivy supports scanning a container using a `rootfs`. By extracting the layers
+for each image to a directory we can use this to get a complete scan of an image.
 
-- read the `images/index.json` manifest from the package.
+### Local Package Scans
+
+
+- read the `images/index.json` manifest from the package. Example from `zarf/examples/argocd`
 
 ```
 {
@@ -73,8 +78,9 @@ Trivy supports scanning a container using a `rootfs`. We get this from the regis
 ```
 
 - this will include a list of images, for each image:
-    - ignore any image that has a `org.opencontainers.image.base.name` ending with `*.att` or `*.sig`. These are not images that need to be scanned.
-    - read the digest in `images/blobs/sha256/<digest>`
+    - ignore any image that has a `org.opencontainers.image.base.name` ending with `*.att` or `*.sig`.
+      These are not images that need to be scanned.
+    - read the file in `images/blobs/sha256/<digest>`. It is an image manifest.
 ```
 {
   "schemaVersion": 2,
@@ -90,16 +96,36 @@ Trivy supports scanning a container using a `rootfs`. We get this from the regis
       "digest": "sha256:3153aa388d026c26a2235e1ed0163e350e451f41a8a313e1804d7e1afb857ab4",
       "size": 29533422
     },
-// <redacted>
+// <extra layers redacted>
   ]
 }
 ```
 
-    - the `layers` is a list of tar files.
+    - the `layers` are a list of tar.gz files stored in the blobs directory by their digest
     - extract `tar xf` each layer in the given order to a tmp directory.
         - if there is an error in the step, log a warn and continue
-    - run `trivy rootfs` against that directory and report results
+    - run `trivy rootfs` against that directory and report results.
+
+### Remote Package Scanner
+
+The remote package scanner can use the same process if it's in the same format.
+
+We can take a remote ImageIndex and write it to a local filesystem using the package
+`github.com/google/go-containerregistry/pkg/v1/layout`.
+
+Unfortunately in this method the registry usually includes multiple architectures:
+usually `amd64` and `arm64`. This will mean that the `index.json` file will not be
+compatible with the method above. To remedy this, we will read through the manifests
+and select a single architecture, `amd64`, and find the layer that holds that
+architecture's `index.json`. We will replace the local `index.json` with these contents,
+and then the process will be the same as above.
 
 ## Alternatives Considered
 
 - Trivy also has a oci layout scanner which could work with some tweaking on the results to separate out the individual image components.
+
+Example:
+
+```
+$ trivy image --input /tmp/dir@<image-digest-from-index.json>
+```
