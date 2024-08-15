@@ -190,7 +190,7 @@ func ExtractRootFsFromTarFilePath(
 	}
 
 	cleanup := func() {
-		_ = os.RemoveAll(tmpDir) //nolint: errcheck
+		_ = os.RemoveAll(tmpDir)
 	}
 
 	return results, cleanup, nil
