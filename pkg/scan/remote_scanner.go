@@ -146,7 +146,7 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 
 	tmpDir, err := os.MkdirTemp("", "uds-layout-*")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
 
 	// mirror the structure from a zarf package extract
