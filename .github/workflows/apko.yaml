@@ -56,7 +56,8 @@ jobs:
         run: |
           docker push ghcr.io/defenseunicorns/uds-security-hub:latest
           docker push ghcr.io/defenseunicorns/uds-security-hub-store:latest
-          if [[ "${TAG_MODE:-}" == "git" ]]; then
+          # push the tag if it exists, but skip main because there is no "main" tag
+          if [[ "${TAG_MODE:-}" == "git" && "${GIT_TAG}" != "main" ]]; then
             docker push ghcr.io/defenseunicorns/uds-security-hub:${GIT_TAG}
             docker push ghcr.io/defenseunicorns/uds-security-hub-store:${GIT_TAG}
           fi
