@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
@@ -143,9 +144,38 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 		return nil, fmt.Errorf("failed to fetch image index: %w", err)
 	}
 
-	results, err := s.processImageIndex(ctx, idx, dockerConfigPath, commandExecutor)
+	tmpDir, err := os.MkdirTemp("", "uds-layout-*")
 	if err != nil {
-		return nil, fmt.Errorf("failed to process image index: %w", err)
+		return nil, err
+	}
+
+	// mirror the structure from a zarf package extract
+	pkgOutDir := path.Join(tmpDir, "pkg")
+	imagesDir := path.Join(pkgOutDir, "images")
+	err = os.MkdirAll(imagesDir, 0o700)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create output directories: %w", err)
+	}
+
+	err = writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(idx, imagesDir, "amd64")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create local oci image directory: %w", err)
+	}
+
+	images, err := extractAllImagesFromOCIDirectory(tmpDir, pkgOutDir, s.logger, commandExecutor)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extractAllImagesFromOCIDirectory: %w", err)
+	}
+
+	var errs error
+	var results []types.PackageScannerResult
+	for _, image := range images {
+		result, err := scanWithTrivy(image, dockerConfigPath, s.offlineDBPath, commandExecutor)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to scanWithTrivy: %w", err))
+			continue
+		}
+		results = append(results, *result)
 	}
 
 	return results, nil
@@ -168,131 +198,80 @@ func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.Ima
 	return idx, nil
 }
 
-// processImageIndex processes an image index, extracting SBOMs and running trivy on the SBOM.
+// writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform takes in an
+// ImageIndex and writes to imagesDir. It then reads through the ImageManifest and finds
+// the first manifest with the desired platform. It will replace the index.json with the
+// index.json from that desired platform.
 //
-// Parameters:
-//   - ctx: The context for the processing operation.
-//   - idx: The image index to process.
-//   - dockerConfigPath: The path to the Docker config file.
-//   - executor: The command executor to use for running commands.
-//
-// Returns:
-//   - []string: A slice of file paths containing the scan results in JSON format.
-//   - error: An error if the processing operation fails.
-func (s *Scanner) processImageIndex(ctx context.Context, idx v1.ImageIndex, dockerConfigPath string,
-	commandExecutor types.CommandExecutor) ([]types.PackageScannerResult, error) {
-	indexManifest, err := idx.IndexManifest()
+// The local filesystem will include all layers from both platforms, but when used with
+// other scanning code it will ignore the layers unrelated to the platform the index.json
+// will only be for the desired platform.
+func writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(
+	idx v1.ImageIndex,
+	imagesDir string,
+	desiredPlatform string,
+) error {
+	ociPath, err := layout.Write(imagesDir, idx)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching index manifest: %w", err)
+		return fmt.Errorf("failed to write ImageIndex to layout: %w", err)
 	}
 
-	var results []types.PackageScannerResult
-	for i := range indexManifest.Manifests {
-		manifestDescriptor := &indexManifest.Manifests[i] // Use a pointer to the element
-		image, err := idx.Image(manifestDescriptor.Digest)
-		if err != nil {
-			return nil, fmt.Errorf("error fetching image: %w", err)
-		}
-
-		manifestResults, err := s.processImageManifest(ctx, image, dockerConfigPath, commandExecutor)
-		if err != nil {
-			return nil, fmt.Errorf("error processing image manifest: %w", err)
-		}
-		// Only process the first image manifest to avoid redundant scans
-		results = append(results, manifestResults...)
-	}
-
-	return results, nil
-}
-
-// processImageManifest processes an image manifest, extracting SBOMs and running Trivy on them.
-//
-// Parameters:
-//   - ctx: The context for the processing operation.
-//   - image: The image manifest to process.
-//   - dockerConfigPath: The path to the Docker config file.
-//   - executor: The command executor to use for running commands.
-//
-// Returns:
-//   - []string: A slice of file paths containing the scan results in JSON format.
-//   - error: An error if the processing operation fails.
-func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dockerConfigPath string,
-	commandExecutor types.CommandExecutor) ([]types.PackageScannerResult, error) {
-	manifest, err := image.Manifest()
+	// now we can use the local copy for querying for the specific index.json
+	ociPathIndex, err := ociPath.ImageIndex()
 	if err != nil {
-		return nil, fmt.Errorf("error fetching image manifest: %w", err)
+		return fmt.Errorf("failed to read ImageIndex from local copy: %w", err)
 	}
 
-	var errs error
-
-	tmpDir, err := os.MkdirTemp("", "uds-scan-remote-*")
+	manifest, err := ociPathIndex.IndexManifest()
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to read IndexManifest from local copy: %w", err)
 	}
 
-	pkgOutDir := path.Join(tmpDir, "pkg")
-
-	for i := range manifest.Layers {
-		layerDescriptor := &manifest.Layers[i] // Use a pointer to the element
-		title, ok := layerDescriptor.Annotations["org.opencontainers.image.title"]
-		if !ok {
-			continue
-		}
-
-		// extract all layers into their original filesystem location
-		layer, err := image.LayerByDigest(layerDescriptor.Digest)
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("failed to fetch LayerByDigest: %w", err))
-			continue
-		}
-
-		r, err := layer.Compressed()
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("failed to fetch layer: %w", err))
-			continue
-		}
-
-		err = os.MkdirAll(path.Join(pkgOutDir, path.Dir(title)), 0o700)
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("failed to mkdir for extracted layer: %w", err))
-			continue
-		}
-
-		f, err := os.Create(path.Join(pkgOutDir, title))
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("failed to create output file: %w", err))
-			continue
-		}
-
-		_, err = io.Copy(f, r)
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("failed to write layer to disk: %w", err))
-			continue
-		}
-
-		err = f.Close()
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("failed to close file after writing: %w", err))
-			continue
+	var desiredPlatformDigest *v1.Hash
+	for _, m := range manifest.Manifests {
+		if m.Platform.Architecture == desiredPlatform {
+			desiredPlatformDigest = &m.Digest
+			break
 		}
 	}
 
-	images, err := extractAllImagesFromOCIDirectory(tmpDir, pkgOutDir, s.logger, s.commandExecutor)
+	if desiredPlatformDigest == nil {
+		return fmt.Errorf("failed to find %s manifest", desiredPlatform)
+	}
+
+	platformManifestBytes, err := ociPath.Bytes(*desiredPlatformDigest)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to read %s manifest file: %w", desiredPlatform, err)
 	}
 
-	var results []types.PackageScannerResult
-	for _, image := range images {
-		result, err := scanWithTrivy(image, dockerConfigPath, s.offlineDBPath, s.commandExecutor)
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("failed to scanWithTrivy: %w", err))
-			continue
+	var platformManifest v1.Manifest
+	if err := json.Unmarshal(platformManifestBytes, &platformManifest); err != nil {
+		return fmt.Errorf("failed to json decode %s manifest: %w", desiredPlatform, err)
+	}
+
+	var platformIndexJSON *v1.Hash
+	for _, layer := range platformManifest.Layers {
+		if layer.Annotations["org.opencontainers.image.title"] == "images/index.json" {
+			platformIndexJSON = &layer.Digest
 		}
-		results = append(results, *result)
 	}
 
-	return results, errs
+	if platformIndexJSON == nil {
+		return fmt.Errorf("failed to find %s images/index.json", desiredPlatform)
+	}
+
+	platformIndexJSONBytes, err := ociPath.Bytes(*platformIndexJSON)
+	if err != nil {
+		return fmt.Errorf("failed to read %s images/index.json bytes", desiredPlatform)
+	}
+
+	// overwrite the existing index.json we found with the platform specific one
+	err = os.WriteFile(path.Join(imagesDir, "index.json"), platformIndexJSONBytes, 0o600)
+	if err != nil {
+		return fmt.Errorf("failed to replace index.json: %w", err)
+	}
+
+	return nil
 }
 
 // scanWithTrivy saves the image layer and scans it with Trivy.

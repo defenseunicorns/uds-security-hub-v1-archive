@@ -78,7 +78,7 @@ func extractAllImagesFromOCIDirectory(
 
 	type ImageToScan struct {
 		Name     string
-		Manifest v1.Manifest
+		Manifest *v1.Manifest
 	}
 
 	var imagesToScan []ImageToScan
@@ -100,7 +100,7 @@ func extractAllImagesFromOCIDirectory(
 
 		imagesToScan = append(imagesToScan, ImageToScan{
 			Name:     name,
-			Manifest: manifest,
+			Manifest: &manifest,
 		})
 	}
 
