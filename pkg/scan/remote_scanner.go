@@ -261,7 +261,7 @@ func writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(
 	return nil
 }
 
-// findDesiredPlatform returns the v1.Hash for the desiredPlatform, if found
+// findDesiredPlatform returns the v1.Hash for the desiredPlatform, if found.
 func findDesiredPlatform(manifests []v1.Descriptor, desiredPlatform string) *v1.Hash {
 	for i := range manifests {
 		if manifests[i].Platform.Architecture == desiredPlatform {
@@ -272,7 +272,7 @@ func findDesiredPlatform(manifests []v1.Descriptor, desiredPlatform string) *v1.
 	return nil
 }
 
-// findImagesIndexJSON returns the v1.Hash of the layer with the correct annotation, if found
+// findImagesIndexJSON returns the v1.Hash of the layer with the correct annotation, if found.
 func findImagesIndexJSON(layers []v1.Descriptor) *v1.Hash {
 	for i := range layers {
 		if layers[i].Annotations["org.opencontainers.image.title"] == "images/index.json" {
