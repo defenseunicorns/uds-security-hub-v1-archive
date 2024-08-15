@@ -15,8 +15,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-type cleanupFunc func() error
-
 func extractZarfPackageToTmpDir(tmpDir string, tarBytes []byte, command types.CommandExecutor) (string, error) {
 	pkgOutDir := path.Join(tmpDir, "pkg")
 
@@ -145,6 +143,8 @@ func extractAllImages(tmpDir string, pkgRoot string, logger types.Logger, comman
 	return results, nil
 }
 
+type cleanupFunc func()
+
 func ExtractRootFS(logger types.Logger, tarFilePath string, command types.CommandExecutor) ([]imageRef, cleanupFunc, error) {
 	f, err := os.Open(tarFilePath)
 	if err != nil {
@@ -176,8 +176,8 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 		return nil, nil, err
 	}
 
-	cleanup := func() error {
-		return os.RemoveAll(tmpDir)
+	cleanup := func() {
+		_ = os.RemoveAll(tmpDir) //nolint: errcheck
 	}
 
 	return results, cleanup, nil
