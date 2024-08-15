@@ -107,6 +107,7 @@ func createMockTarReaderWithJSON(t *testing.T, jsonContent string) io.Reader {
 
 	return bytes.NewReader(buf.Bytes())
 }
+
 func Test_extractSBOMPackages(t *testing.T) {
 	type args struct {
 		ctx   context.Context

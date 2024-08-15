@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -218,45 +219,78 @@ func (s *Scanner) processImageIndex(ctx context.Context, idx v1.ImageIndex, dock
 //   - error: An error if the processing operation fails.
 func (s *Scanner) processImageManifest(ctx context.Context, image v1.Image, dockerConfigPath string,
 	commandExecutor types.CommandExecutor) ([]types.PackageScannerResult, error) {
-	const sbomsTarLayer = "sboms.tar"
 	manifest, err := image.Manifest()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching image manifest: %w", err)
 	}
 
-	var results []types.PackageScannerResult
 	var errs error
+
+	tmpDir, err := os.MkdirTemp("", "uds-scan-remote-*")
+	if err != nil {
+		return nil, err
+	}
+
+	pkgOutDir := path.Join(tmpDir, "pkg")
 
 	for i := range manifest.Layers {
 		layerDescriptor := &manifest.Layers[i] // Use a pointer to the element
 		title, ok := layerDescriptor.Annotations["org.opencontainers.image.title"]
-		if !ok || title != sbomsTarLayer {
-			continue // Skip layers without the title annotation or title not equal to sboms.tar
+		if !ok {
+			continue
 		}
 
+		// extract all layers into their original filesystem location
 		layer, err := image.LayerByDigest(layerDescriptor.Digest)
 		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("error fetching sboms.tar layer: %w", err))
+			errs = errors.Join(errs, fmt.Errorf("failed to fetch LayerByDigest: %w", err))
 			continue
 		}
 
-		// Extract tags from the SBOM JSON files
-		tags, err := extractSBOMPackages(ctx, layer)
+		r, err := layer.Compressed()
 		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("error extracting tags from sboms.tar: %w", err))
+			errs = errors.Join(errs, fmt.Errorf("failed to fetch layer: %w", err))
 			continue
 		}
 
-		for _, tag := range tags {
-			result, err := scanWithTrivy(&remoteImageRef{ImageRef: tag}, dockerConfigPath, s.offlineDBPath, commandExecutor)
-			if err != nil {
-				errs = errors.Join(errs, fmt.Errorf("error scanning image with Trivy: %w", err))
-				continue
-			}
-			results = append(results, *result)
+		err = os.MkdirAll(path.Join(pkgOutDir, path.Dir(title)), 0o700)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to mkdir for extracted layer: %w", err))
+			continue
 		}
 
-		break // Only process the first sboms.tar layer
+		f, err := os.Create(path.Join(pkgOutDir, title))
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to create output file: %w", err))
+			continue
+		}
+
+		_, err = io.Copy(f, r)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to write layer to disk: %w", err))
+			continue
+		}
+
+		err = f.Close()
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to close file after writing: %w", err))
+			continue
+		}
+	}
+
+	images, err := extractAllImages(tmpDir, pkgOutDir, s.logger, s.commandExecutor)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []types.PackageScannerResult
+	for _, image := range images {
+		result, err := scanWithTrivy(image, dockerConfigPath, s.offlineDBPath, s.commandExecutor)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to scanWithTrivy: %w", err))
+			continue
+		}
+		results = append(results, *result)
 	}
 
 	return results, errs

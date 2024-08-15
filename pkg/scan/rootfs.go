@@ -62,36 +62,11 @@ func readJSONFileFromExtractedArchive(filename string, out interface{}) error {
 	return nil
 }
 
-func ExtractRootFS(logger types.Logger, tarFilePath string, command types.CommandExecutor) ([]imageRef, cleanupFunc, error) {
-	f, err := os.Open(tarFilePath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open tar: %w", err)
-	}
-
-	r, err := zstd.NewReader(f)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to unzstd tar: %w", err)
-	}
-
-	tarBytes, err := io.ReadAll(r)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read tar: %w", err)
-	}
-
-	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create tmp dir: %w", err)
-	}
-
-	pkgOutDir, err := extractZarfPackageToTmpDir(tmpDir, tarBytes, command)
-	if err != nil {
-		return nil, nil, err
-	}
-
+func extractAllImages(tmpDir string, pkgRoot string, logger types.Logger, command types.CommandExecutor) ([]imageRef, error) {
 	var indexManifest v1.IndexManifest
-	err = readJSONFileFromExtractedArchive(path.Join(pkgOutDir, "images/index.json"), &indexManifest)
+	err := readJSONFileFromExtractedArchive(path.Join(pkgRoot, "images/index.json"), &indexManifest)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	type ImageToScan struct {
@@ -110,10 +85,10 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 		}
 
 		var manifest v1.Manifest
-		manifestLocation := path.Join(pkgOutDir, "images", "blobs", digest.Algorithm, digest.Hex)
+		manifestLocation := path.Join(pkgRoot, "images", "blobs", digest.Algorithm, digest.Hex)
 		err := readJSONFileFromExtractedArchive(manifestLocation, &manifest)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		imagesToScan = append(imagesToScan, ImageToScan{
@@ -126,11 +101,11 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 	for _, image := range imagesToScan {
 		imageRootFS := path.Join(tmpDir, replacePathChars(image.Name))
 		if err := os.Mkdir(imageRootFS, 0o700); err != nil {
-			return nil, nil, fmt.Errorf("failed to create dir for image %s: %w", image.Name, err)
+			return nil, fmt.Errorf("failed to create dir for image %s: %w", image.Name, err)
 		}
 		for i := range image.Manifest.Layers {
 			digest := image.Manifest.Layers[i].Digest.Hex
-			layerBlob := path.Join(pkgOutDir, "images", "blobs", "sha256", digest)
+			layerBlob := path.Join(pkgRoot, "images", "blobs", "sha256", digest)
 			_, stderr, err := command.ExecuteCommand(
 				"tar",
 				[]string{"--exclude=dev/*", "-zvxf", layerBlob, "-C", imageRootFS},
@@ -165,6 +140,40 @@ func ExtractRootFS(logger types.Logger, tarFilePath string, command types.Comman
 			ArtifactName: image.Name,
 			RootFSDir:    imageRootFS,
 		})
+	}
+
+	return results, nil
+}
+
+func ExtractRootFS(logger types.Logger, tarFilePath string, command types.CommandExecutor) ([]imageRef, cleanupFunc, error) {
+	f, err := os.Open(tarFilePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to open tar: %w", err)
+	}
+
+	r, err := zstd.NewReader(f)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to unzstd tar: %w", err)
+	}
+
+	tarBytes, err := io.ReadAll(r)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to read tar: %w", err)
+	}
+
+	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create tmp dir: %w", err)
+	}
+
+	pkgOutDir, err := extractZarfPackageToTmpDir(tmpDir, tarBytes, command)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	results, err := extractAllImages(tmpDir, pkgOutDir, logger, command)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	cleanup := func() error {
