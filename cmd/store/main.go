@@ -129,7 +129,7 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error generating and writing Docker config: %w", err)
 	}
 	scanner := scan.NewRemotePackageScanner(ctx, logInstance, dockerConfigPath, config.Org, config.PackageName,
-		config.Tag, config.OfflineDBPath)
+		config.Tag, config.GitHubToken, config.OfflineDBPath)
 	manager, err := db.NewGormScanManager(config.DBConn)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)

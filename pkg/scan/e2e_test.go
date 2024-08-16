@@ -36,7 +36,7 @@ func TestE2EScanFunctionality(t *testing.T) {
 		t.Fatalf("Error generating and writing Docker config: %v", err)
 	}
 	// Create the scanner
-	scanner := NewRemotePackageScanner(ctx, logger, dockerConfigPath, org, packageName, tag, "")
+	scanner := NewRemotePackageScanner(ctx, logger, dockerConfigPath, org, packageName, tag, ghcrCreds, "")
 	if err != nil {
 		t.Fatalf("Error creating scanner: %v", err)
 	}

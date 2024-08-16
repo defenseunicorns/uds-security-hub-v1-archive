@@ -29,7 +29,8 @@ type Scanner struct {
 	org              string
 	packageName      string
 	tag              string
-	offlineDBPath    string // New field for offline DB path
+	offlineDBPath    string
+	token            string
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.
@@ -40,6 +41,7 @@ func NewRemotePackageScanner(
 	org,
 	packageName,
 	tag,
+	token,
 	offlineDBPath string, // New parameter for offline DB path
 ) types.PackageScanner {
 	return &Scanner{
@@ -50,6 +52,7 @@ func NewRemotePackageScanner(
 		packageName:      packageName,
 		tag:              tag,
 		offlineDBPath:    offlineDBPath,
+		token:            token,
 	}
 }
 
@@ -166,7 +169,20 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 //   - v1.ImageIndex: The fetched image index.
 //   - error: An error if the fetch operation fails.
 func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.ImageIndex, error) {
-	idx, err := remote.Index(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	var auth authn.Authenticator
+	if s.token != "" {
+		// Use token-based authentication
+		auth = authn.FromConfig(authn.AuthConfig{
+			Username: s.token,
+			Password: s.token,
+		})
+	}
+	var options []remote.Option
+	if auth != nil {
+		options = append(options, remote.WithAuth(auth))
+	}
+
+	idx, err := remote.Index(ref, options...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch image index: %w", err)
 	}

@@ -26,7 +26,7 @@ func TestStore(t *testing.T) {
 		"--registry-creds", ghcrCreds,
 		"--registry-creds", registry1Creds,
 		"--registry-creds", dockerCreds,
-		"-n", "packages/uds/mattermost",
+		"-n", "packages/private/uds/core",
 		"--db-path", testDBPath,
 		"-v", "1",
 		"-t", github,

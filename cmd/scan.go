@@ -95,7 +95,7 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 	}
 
 	factory := &scan.ScannerFactoryImpl{}
-	scanner, err := factory.CreateScanner(ctx, logger, dockerConfigPath, org, packageName, tag, packagePath, offlineDBPath)
+	scanner, err := factory.CreateScanner(ctx, logger, dockerConfigPath, org, packageName, tag, packagePath, "", offlineDBPath) //nolint:lll
 	if err != nil {
 		return fmt.Errorf("error creating scanner: %w", err)
 	}

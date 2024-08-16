@@ -78,6 +78,7 @@ type ScannerFactory interface {
 		org,
 		packageName,
 		tag,
+		githubToken,
 		packagePath string,
 	) (PackageScanner, error)
 }
