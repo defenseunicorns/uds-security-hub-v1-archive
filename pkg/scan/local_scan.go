@@ -84,7 +84,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
 
-	var refs []imageRef
+	var refs []trivyScannable
 	if lps.sbom {
 		var err error
 		refs, err = ExtractSBOMsFromTar(lps.packagePath)

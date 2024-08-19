@@ -277,7 +277,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := scanWithTrivy(&remoteImageRef{tt.args.imageRef}, "", "", tt.args.commandExecutor)
+			got, err := scanWithTrivy(&remoteScannable{tt.args.imageRef}, "", "", tt.args.commandExecutor)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scanWithTrivy() error = %v, wantErr %v", err, tt.wantErr)
 				return

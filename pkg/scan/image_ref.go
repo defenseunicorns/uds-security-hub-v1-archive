@@ -1,6 +1,6 @@
 package scan
 
-type imageRef interface {
+type trivyScannable interface {
 	TrivyCommand() []string
 }
 
@@ -8,36 +8,36 @@ type ArtifactNameOverride interface {
 	ArtifactNameOverride() string
 }
 
-type remoteImageRef struct {
+type remoteScannable struct {
 	ImageRef string
 }
 
-func (r *remoteImageRef) TrivyCommand() []string {
+func (r *remoteScannable) TrivyCommand() []string {
 	return []string{"image", "--image-src=remote", r.ImageRef}
 }
 
-type cyclonedxSBOMRef struct {
+type cyclonedxSBOMScannable struct {
 	ArtifactName string
 	SBOMFile     string
 }
 
-func (c cyclonedxSBOMRef) ArtifactNameOverride() string {
+func (c cyclonedxSBOMScannable) ArtifactNameOverride() string {
 	return c.ArtifactName
 }
 
-func (c cyclonedxSBOMRef) TrivyCommand() []string {
+func (c cyclonedxSBOMScannable) TrivyCommand() []string {
 	return []string{"sbom", c.SBOMFile}
 }
 
-type rootfsRef struct {
+type rootfsScannable struct {
 	ArtifactName string
 	RootFSDir    string
 }
 
-func (r rootfsRef) TrivyCommand() []string {
+func (r rootfsScannable) TrivyCommand() []string {
 	return []string{"rootfs", r.RootFSDir}
 }
 
-func (r rootfsRef) ArtifactNameOverride() string {
+func (r rootfsScannable) ArtifactNameOverride() string {
 	return r.ArtifactName
 }

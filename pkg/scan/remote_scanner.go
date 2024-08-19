@@ -144,7 +144,7 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 		return nil, fmt.Errorf("failed to fetch image index: %w", err)
 	}
 
-	tmpDir, err := os.MkdirTemp("", "uds-layout-*")
+	tmpDir, err := os.MkdirTemp("", "uds-remote-oci-*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
@@ -199,7 +199,6 @@ func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.Ima
 	if err != nil {
 		return nil, err
 	}
-
 	defer os.Unsetenv("DOCKER_CONFIG")
 
 	idx, err := remote.Index(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
@@ -306,7 +305,7 @@ func findImagesIndexJSON(layers []v1.Descriptor) *v1.Hash {
 // Returns:
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
-func scanWithTrivy(imageRef imageRef, dockerConfigPath string, offlineDBPath string,
+func scanWithTrivy(imageRef trivyScannable, dockerConfigPath string, offlineDBPath string,
 	commandExecutor types.CommandExecutor) (*types.PackageScannerResult, error) {
 	const trivyDBFileName = "db/trivy.db"
 	const metadataFileName = "db/metadata.json"

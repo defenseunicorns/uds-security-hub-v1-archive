@@ -20,7 +20,7 @@ func TestExtractSBOMsFromTar(t *testing.T) {
 	for _, sbomName := range expectedImageNameFromSBOM {
 		found := false
 		for _, ref := range refs {
-			actualRef, ok := ref.(*cyclonedxSBOMRef)
+			actualRef, ok := ref.(*cyclonedxSBOMScannable)
 			if !ok {
 				t.Errorf("expected ref to be a cyclonedxSBOMRef")
 				continue

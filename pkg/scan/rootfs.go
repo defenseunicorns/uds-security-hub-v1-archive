@@ -71,7 +71,7 @@ func extractAllImagesFromOCIDirectory(
 	ociRoot string,
 	logger types.Logger,
 	command types.CommandExecutor,
-) ([]imageRef, error) {
+) ([]trivyScannable, error) {
 	var indexManifest v1.IndexManifest
 	err := unmarshalJSONFromFilename(path.Join(ociRoot, "images/index.json"), &indexManifest)
 	if err != nil {
@@ -105,7 +105,7 @@ func extractAllImagesFromOCIDirectory(
 		})
 	}
 
-	var results []imageRef
+	var results []trivyScannable
 	for _, image := range imagesToScan {
 		imageRootFS := path.Join(outputDir, replacePathChars(image.Name))
 		if err := os.Mkdir(imageRootFS, 0o700); err != nil {
@@ -144,7 +144,7 @@ func extractAllImagesFromOCIDirectory(
 				)
 			}
 		}
-		results = append(results, rootfsRef{
+		results = append(results, rootfsScannable{
 			ArtifactName: image.Name,
 			RootFSDir:    imageRootFS,
 		})
@@ -159,7 +159,7 @@ func ExtractRootFsFromTarFilePath(
 	logger types.Logger,
 	tarFilePath string,
 	command types.CommandExecutor,
-) ([]imageRef, cleanupFunc, error) {
+) ([]trivyScannable, cleanupFunc, error) {
 	f, err := os.Open(tarFilePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open tar: %w", err)

@@ -20,13 +20,13 @@ const (
 	SbomFilename = "sboms.tar"
 )
 
-func extractSBOMImageRefsFromReader(r io.Reader) ([]imageRef, error) {
+func extractSBOMImageRefsFromReader(r io.Reader) ([]trivyScannable, error) {
 	tmp, err := os.MkdirTemp("", "zarf-sbom-files-*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
 
-	var results []imageRef
+	var results []trivyScannable
 
 	sbomTarReader := tar.NewReader(r)
 	for {
@@ -56,7 +56,7 @@ func extractSBOMImageRefsFromReader(r io.Reader) ([]imageRef, error) {
 // Returns:
 // - []sbomImageRef: references to images and their sboms.
 // - error: an error if the extraction fails.
-func ExtractSBOMsFromTar(tarFilePath string) ([]imageRef, error) {
+func ExtractSBOMsFromTar(tarFilePath string) ([]trivyScannable, error) {
 	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func extractArtifactInformationFromSBOM(r io.Reader) string {
 	return sbomHeader.Source.Metadata.Tags[0]
 }
 
-func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string) (*cyclonedxSBOMRef, error) {
+func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string) (*cyclonedxSBOMScannable, error) {
 	cyclonedxEncoder, err := cyclonedxjson.NewFormatEncoderWithConfig(cyclonedxjson.DefaultEncoderConfig())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cyclonedx encoder: %w", err)
@@ -142,7 +142,7 @@ func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string)
 		return nil, fmt.Errorf("failed to write new cyclonnedx file for %q: %w", header.Name, err)
 	}
 
-	return &cyclonedxSBOMRef{
+	return &cyclonedxSBOMScannable{
 		ArtifactName: artifactName,
 		SBOMFile:     cyclonedxSBOMFilename,
 	}, nil
