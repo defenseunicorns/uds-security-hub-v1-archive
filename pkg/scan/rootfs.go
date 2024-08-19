@@ -68,12 +68,12 @@ func unmarshalJSONFromFilename(filename string, out interface{}) error {
 // all images from that IndexManifest
 func extractAllImagesFromOCIDirectory(
 	outputDir string,
-	pkgRoot string,
+	ociRoot string,
 	logger types.Logger,
 	command types.CommandExecutor,
 ) ([]imageRef, error) {
 	var indexManifest v1.IndexManifest
-	err := unmarshalJSONFromFilename(path.Join(pkgRoot, "images/index.json"), &indexManifest)
+	err := unmarshalJSONFromFilename(path.Join(ociRoot, "images/index.json"), &indexManifest)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func extractAllImagesFromOCIDirectory(
 		}
 
 		var manifest v1.Manifest
-		manifestLocation := path.Join(pkgRoot, "images", "blobs", digest.Algorithm, digest.Hex)
+		manifestLocation := path.Join(ociRoot, "images", "blobs", digest.Algorithm, digest.Hex)
 		err := unmarshalJSONFromFilename(manifestLocation, &manifest)
 		if err != nil {
 			return nil, err
@@ -113,7 +113,7 @@ func extractAllImagesFromOCIDirectory(
 		}
 		for i := range image.Manifest.Layers {
 			digest := image.Manifest.Layers[i].Digest
-			layerBlob := path.Join(pkgRoot, "images", "blobs", digest.Algorithm, digest.Hex)
+			layerBlob := path.Join(ociRoot, "images", "blobs", digest.Algorithm, digest.Hex)
 			_, stderr, err := command.ExecuteCommand(
 				"tar",
 				[]string{"--exclude=dev/*", "-zvxf", layerBlob, "-C", imageRootFS},
