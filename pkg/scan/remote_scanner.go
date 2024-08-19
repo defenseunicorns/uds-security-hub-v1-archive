@@ -202,6 +202,8 @@ func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.Ima
 	return idx, nil
 }
 
+// processSBOMScannables reads from an ImageIndex and returns a list of
+// scannable sbom files.
 func (s *Scanner) processSBOMScannables(
 	ctx context.Context,
 	idx v1.ImageIndex,
@@ -210,7 +212,6 @@ func (s *Scanner) processSBOMScannables(
 	manifest, err := idx.IndexManifest()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch image manifest: %w", err)
-
 	}
 
 	platformDigest := findDesiredPlatform(manifest.Manifests, desiredPlatform)
@@ -243,6 +244,9 @@ func (s *Scanner) processSBOMScannables(
 	return nil, fmt.Errorf("failed to find an sboms.tar layer")
 }
 
+// processRootfsScannables reads an ImageIndex, extracts those layers to disk,
+// then uses the extractAllImagesFromOCIDirectory method to create a list of
+// trivyScannable to process trivy results from.
 func (s *Scanner) processRootfsScannables(
 	idx v1.ImageIndex,
 	commandExecutor types.CommandExecutor,
