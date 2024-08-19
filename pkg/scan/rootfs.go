@@ -113,8 +113,8 @@ func extractAllImagesFromOCIDirectory(
 			return nil, fmt.Errorf("failed to create dir for image %s: %w", image.Name, err)
 		}
 		for i := range image.Manifest.Layers {
-			digest := image.Manifest.Layers[i].Digest.Hex
-			layerBlob := path.Join(pkgRoot, "images", "blobs", "sha256", digest)
+			digest := image.Manifest.Layers[i].Digest
+			layerBlob := path.Join(pkgRoot, "images", "blobs", digest.Algorithm, digest.Hex)
 			_, stderr, err := command.ExecuteCommand(
 				"tar",
 				[]string{"--exclude=dev/*", "-zvxf", layerBlob, "-C", imageRootFS},
