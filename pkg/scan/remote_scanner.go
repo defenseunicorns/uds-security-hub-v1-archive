@@ -178,6 +178,10 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 		results = append(results, *result)
 	}
 
+	if errs != nil {
+		return nil, errs
+	}
+
 	return results, nil
 }
 
