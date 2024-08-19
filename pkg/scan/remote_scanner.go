@@ -1,16 +1,13 @@
 package scan
 
 import (
-	"archive/tar"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -32,6 +29,7 @@ type Scanner struct {
 	packageName      string
 	tag              string
 	offlineDBPath    string // New field for offline DB path
+	sbom             bool
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.
@@ -43,6 +41,7 @@ func NewRemotePackageScanner(
 	packageName,
 	tag,
 	offlineDBPath string, // New parameter for offline DB path
+	sbom bool,
 ) types.PackageScanner {
 	return &Scanner{
 		logger:           logger,
@@ -52,6 +51,7 @@ func NewRemotePackageScanner(
 		packageName:      packageName,
 		tag:              tag,
 		offlineDBPath:    offlineDBPath,
+		sbom:             sbom,
 	}
 }
 
@@ -144,32 +144,26 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 		return nil, fmt.Errorf("failed to fetch image index: %w", err)
 	}
 
-	tmpDir, err := os.MkdirTemp("", "uds-remote-oci-*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
-	}
+	desiredPlatform := "amd64"
 
-	// mirror the structure from a zarf package extract
-	pkgOutDir := path.Join(tmpDir, "pkg")
-	imagesDir := path.Join(pkgOutDir, "images")
-	err = os.MkdirAll(imagesDir, 0o700)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create output directories: %w", err)
-	}
-
-	err = writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(idx, imagesDir, "amd64")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create local oci image directory: %w", err)
-	}
-
-	images, err := extractAllImagesFromOCIDirectory(tmpDir, pkgOutDir, s.logger, commandExecutor)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extractAllImagesFromOCIDirectory: %w", err)
+	var scannables []trivyScannable
+	if s.sbom {
+		sbomScannables, err := s.processSBOMScannables(ctx, idx, desiredPlatform)
+		if err != nil {
+			return nil, fmt.Errorf("failed to process SBOM scannables: %w", err)
+		}
+		scannables = sbomScannables
+	} else {
+		rootfsScannables, err := s.processRootfsScannables(idx, commandExecutor, desiredPlatform)
+		if err != nil {
+			return nil, fmt.Errorf("failed to process rootfs scannables: %w", err)
+		}
+		scannables = rootfsScannables
 	}
 
 	var errs error
 	var results []types.PackageScannerResult
-	for _, image := range images {
+	for _, image := range scannables {
 		result, err := scanWithTrivy(image, dockerConfigPath, s.offlineDBPath, commandExecutor)
 		if err != nil {
 			errs = errors.Join(errs, fmt.Errorf("failed to scanWithTrivy: %w", err))
@@ -183,6 +177,78 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 	}
 
 	return results, nil
+}
+
+func (s *Scanner) processSBOMScannables(
+	ctx context.Context,
+	idx v1.ImageIndex,
+	desiredPlatform string,
+) ([]trivyScannable, error) {
+	manifest, err := idx.IndexManifest()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch image manifest: %w", err)
+
+	}
+
+	platformDigest := findDesiredPlatform(manifest.Manifests, desiredPlatform)
+	if platformDigest == nil {
+		return nil, fmt.Errorf("failed to find desired platform: %s", desiredPlatform)
+	}
+
+	platformImage, err := idx.Image(*platformDigest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read platform %s image: %w", desiredPlatform, err)
+	}
+
+	platformManifest, err := platformImage.Manifest()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get platform %s manifest: %w", desiredPlatform, err)
+	}
+
+	for i := range platformManifest.Layers {
+		layerDescriptor := platformManifest.Layers[i]
+		if layerDescriptor.Annotations["org.opencontainers.image.title"] == "sboms.tar" {
+			layer, err := platformImage.LayerByDigest(layerDescriptor.Digest)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get sboms.tar layer for platform %s: %w", desiredPlatform, err)
+			}
+			// do something with it
+			return extractSBOMPackages(ctx, layer)
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find an sboms.tar layer")
+}
+
+func (s *Scanner) processRootfsScannables(
+	idx v1.ImageIndex,
+	commandExecutor types.CommandExecutor,
+	desiredPlatform string,
+) ([]trivyScannable, error) {
+	tmpDir, err := os.MkdirTemp("", "uds-remote-oci-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
+	}
+
+	// mirror the structure from a zarf package extract
+	pkgOutDir := path.Join(tmpDir, "pkg")
+	imagesDir := path.Join(pkgOutDir, "images")
+	err = os.MkdirAll(imagesDir, 0o700)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create output directories: %w", err)
+	}
+
+	err = writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(idx, imagesDir, desiredPlatform)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create local oci image directory: %w", err)
+	}
+
+	images, err := extractAllImagesFromOCIDirectory(tmpDir, pkgOutDir, s.logger, commandExecutor)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extractAllImagesFromOCIDirectory: %w", err)
+	}
+
+	return images, nil
 }
 
 // fetchImageIndex fetches the image index for the given reference.
@@ -385,120 +451,15 @@ func scanWithTrivy(imageRef trivyScannable, dockerConfigPath string, offlineDBPa
 // Returns:
 //   - []string: A slice of tags extracted from the layer.
 //   - error: An error if the operation fails.
-func extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]string, error) {
+func extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]trivyScannable, error) {
 	if layer == nil {
 		return nil, fmt.Errorf("layer cannot be nil")
 	}
 
-	layerReader, err := writeLayerToTempFile(ctx, layer)
+	r, err := layer.Uncompressed()
 	if err != nil {
-		return nil, fmt.Errorf("error writing layer to temp file: %w", err)
-	}
-	defer layerReader.Close()
-
-	tags, err := readTagsFromLayerFile(ctx, layerReader)
-	if err != nil {
-		return nil, fmt.Errorf("error reading tags from layer file: %w", err)
+		return nil, fmt.Errorf("failed to read uncompressed layer: %w", err)
 	}
 
-	return tags, nil
-}
-
-// readTagsFromLayerFile extracts tags from JSON files within a tar archive.
-//
-// It reads from the provided io.Reader, assuming it to be a tar archive, and searches for JSON files.
-// For each JSON file found, it decodes the file into a JSONFile struct and appends the tags found within to a slice.
-//
-// Parameters:
-//   - ctx: The context for the operation. Currently unused.
-//   - r: An io.Reader representing the tar archive to read from.
-//
-// Returns:
-//   - []string: A slice of tags extracted from the JSON files within the tar archive.
-//   - error: An error if any issues occur during the reading or decoding process.
-func readTagsFromLayerFile(_ context.Context, r io.Reader) ([]string, error) {
-	tr := tar.NewReader(r)
-	var tags []string
-
-	// JSONFile represents the structure of the JSON files within the tar archive.
-	type JSONFile struct {
-		Source struct {
-			Metadata struct {
-				Tags []string `json:"tags"`
-			} `json:"metadata"`
-		} `json:"source"`
-	}
-
-	for {
-		// Iterate through the contents of the tar archive.
-		header, err := tr.Next()
-		if err == io.EOF {
-			break // End of archive
-		}
-		if err != nil {
-			return nil, fmt.Errorf("error reading tar file: %w", err)
-		}
-
-		// Check if the file is a JSON file based on its name.
-		if strings.HasSuffix(header.Name, ".json") {
-			var jsonFile JSONFile
-
-			// Decode the JSON file into the JSONFile struct.
-			decoder := json.NewDecoder(tr)
-			if err := decoder.Decode(&jsonFile); err != nil {
-				return nil, fmt.Errorf("error decoding JSON file: %w", err)
-			}
-
-			// Append the tags found in the JSON file to the tags slice.
-			tags = append(tags, jsonFile.Source.Metadata.Tags...)
-		}
-	}
-
-	return tags, nil
-}
-
-// writeLayerToTempFile writes the provided layer to a temporary file.
-//
-// Parameters:
-//   - ctx: The context for the operation. Currently unused.
-//   - layer: The layer to write to the temporary file.
-//
-// Returns:
-//   - io.ReadCloser: A reader pointing to the beginning of the temporary file.
-//   - error: An error if any issues occur during the writing process.
-func writeLayerToTempFile(_ context.Context, layer v1.Layer) (io.ReadCloser, error) {
-	if layer == nil {
-		return nil, fmt.Errorf("layer cannot be nil")
-	}
-
-	// Create a temporary file with a prefix of "layer-" and a suffix of ".tar"
-	tmpFile, err := os.CreateTemp("", "layer-*.tar")
-	if err != nil {
-		return nil, fmt.Errorf("error creating temp file: %w", err)
-	}
-	defer func() {
-		if err != nil {
-			tmpFile.Close()
-			os.Remove(tmpFile.Name())
-		}
-	}()
-
-	// Get the compressed layer reader
-	rc, err := layer.Compressed()
-	if err != nil {
-		return nil, fmt.Errorf("error getting layer reader: %w", err)
-	}
-	defer rc.Close()
-
-	// Copy the layer content to the temporary file
-	if _, err := io.Copy(tmpFile, rc); err != nil {
-		return nil, fmt.Errorf("error writing layer to temp file: %w", err)
-	}
-
-	// Seek to the beginning of the file for reading
-	if _, err := tmpFile.Seek(0, io.SeekStart); err != nil {
-		return nil, fmt.Errorf("error seeking temp file: %w", err)
-	}
-
-	return tmpFile, nil
+	return extractSBOMImageRefsFromReader(r)
 }
