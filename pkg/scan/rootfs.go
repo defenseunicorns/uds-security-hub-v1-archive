@@ -84,7 +84,6 @@ func extractAllImagesFromOCIDirectory(
 	}
 
 	var imagesToScan []ImageToScan
-
 	for i := range indexManifest.Manifests {
 		name := indexManifest.Manifests[i].Annotations["org.opencontainers.image.base.name"]
 		digest := indexManifest.Manifests[i].Digest
