@@ -123,7 +123,7 @@ func extractAllImagesFromOCIDirectory(
 				logger.Warn(
 					"error occurred while extracting layer",
 					zap.String("imageName", image.Name),
-					zap.String("digest", digest),
+					zap.String("digest", digest.Hex),
 					zap.String("stderr", stderr),
 					zap.Error(err),
 				)
