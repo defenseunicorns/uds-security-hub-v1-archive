@@ -195,6 +195,9 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 //   - v1.ImageIndex: The fetched image index.
 //   - error: An error if the fetch operation fails.
 func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.ImageIndex, error) {
+	os.Setenv("DOCKER_CONFIG", s.dockerConfigPath)
+	defer os.Unsetenv("DOCKER_CONFIG")
+
 	idx, err := remote.Index(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch image index: %w", err)
