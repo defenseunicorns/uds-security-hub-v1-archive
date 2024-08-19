@@ -179,6 +179,29 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 	return results, nil
 }
 
+// fetchImageIndex fetches the image index for the given reference.
+//
+// Parameters:
+//   - ctx: The context for the fetch operation (unused).
+//   - ref: The reference to the image index to fetch.
+//
+// Returns:
+//   - v1.ImageIndex: The fetched image index.
+//   - error: An error if the fetch operation fails.
+func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.ImageIndex, error) {
+	err := os.Setenv("DOCKER_CONFIG", s.dockerConfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set DOCKER_CONFIG env var: %w", err)
+	}
+	defer os.Unsetenv("DOCKER_CONFIG")
+
+	idx, err := remote.Index(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch image index: %w", err)
+	}
+	return idx, nil
+}
+
 func (s *Scanner) processSBOMScannables(
 	ctx context.Context,
 	idx v1.ImageIndex,
@@ -249,29 +272,6 @@ func (s *Scanner) processRootfsScannables(
 	}
 
 	return images, nil
-}
-
-// fetchImageIndex fetches the image index for the given reference.
-//
-// Parameters:
-//   - ctx: The context for the fetch operation (unused).
-//   - ref: The reference to the image index to fetch.
-//
-// Returns:
-//   - v1.ImageIndex: The fetched image index.
-//   - error: An error if the fetch operation fails.
-func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.ImageIndex, error) {
-	err := os.Setenv("DOCKER_CONFIG", s.dockerConfigPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to set DOCKER_CONFIG env var: %w", err)
-	}
-	defer os.Unsetenv("DOCKER_CONFIG")
-
-	idx, err := remote.Index(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch image index: %w", err)
-	}
-	return idx, nil
 }
 
 // writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform takes in an
