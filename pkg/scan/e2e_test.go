@@ -3,6 +3,7 @@ package scan
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"slices"
 	"strings"
@@ -20,12 +21,10 @@ func TestE2EScanFunctionality(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
 	ghcrCreds := os.Getenv("GHCR_CREDS")
-	registry1Creds := os.Getenv("REGISTRY1_CREDS")
-	dockerCreds := os.Getenv("DOCKER_IO_CREDS")
-	if ghcrCreds == "" || registry1Creds == "" || dockerCreds == "" {
-		t.Fatalf("GHCR_CREDS and REGISTRY1_CREDS must be set")
+	if ghcrCreds == "" {
+		t.Fatalf("GHCR_CREDS must be set")
 	}
-	registryCreds := docker.ParseCredentials([]string{ghcrCreds, registry1Creds, dockerCreds})
+	registryCreds := docker.ParseCredentials([]string{fmt.Sprintf("ghcr.io:%s", ghcrCreds)})
 	// Define the test inputs
 
 	org := "defenseunicorns"
