@@ -263,7 +263,7 @@ func (s *Scanner) processRootfsScannables(
 func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.ImageIndex, error) {
 	err := os.Setenv("DOCKER_CONFIG", s.dockerConfigPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to set DOCKER_CONFIG env var: %w", err)
 	}
 	defer os.Unsetenv("DOCKER_CONFIG")
 

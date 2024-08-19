@@ -65,7 +65,7 @@ func unmarshalJSONFromFilename(filename string, out interface{}) error {
 }
 
 // extractAllImagesFromOCIDirectory reads from the images/index.json file and extracts
-// all images from that IndexManifest
+// all images from that IndexManifest.
 func extractAllImagesFromOCIDirectory(
 	outputDir string,
 	ociRoot string,
