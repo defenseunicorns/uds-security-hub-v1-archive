@@ -236,7 +236,6 @@ func (s *Scanner) processSBOMScannables(
 			if err != nil {
 				return nil, fmt.Errorf("failed to get sboms.tar layer for platform %s: %w", desiredPlatform, err)
 			}
-			// do something with it
 			return extractSBOMPackages(ctx, layer)
 		}
 	}
