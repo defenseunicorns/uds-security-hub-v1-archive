@@ -45,7 +45,7 @@ func extractZarfPackageToTmpDir(
 	return pkgOutDir, nil
 }
 
-func readJSONFileFromExtractedArchive(filename string, out interface{}) error {
+func unmarshalJSONFromFilename(filename string, out interface{}) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		return fmt.Errorf("failed to open %s: %w", filename, err)
@@ -64,6 +64,8 @@ func readJSONFileFromExtractedArchive(filename string, out interface{}) error {
 	return nil
 }
 
+// extractAllImagesFromOCIDirectory reads from the images/index.json file and extracts
+// all images from that IndexManifest
 func extractAllImagesFromOCIDirectory(
 	outputDir string,
 	pkgRoot string,
@@ -71,7 +73,7 @@ func extractAllImagesFromOCIDirectory(
 	command types.CommandExecutor,
 ) ([]imageRef, error) {
 	var indexManifest v1.IndexManifest
-	err := readJSONFileFromExtractedArchive(path.Join(pkgRoot, "images/index.json"), &indexManifest)
+	err := unmarshalJSONFromFilename(path.Join(pkgRoot, "images/index.json"), &indexManifest)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +95,7 @@ func extractAllImagesFromOCIDirectory(
 
 		var manifest v1.Manifest
 		manifestLocation := path.Join(pkgRoot, "images", "blobs", digest.Algorithm, digest.Hex)
-		err := readJSONFileFromExtractedArchive(manifestLocation, &manifest)
+		err := unmarshalJSONFromFilename(manifestLocation, &manifest)
 		if err != nil {
 			return nil, err
 		}
