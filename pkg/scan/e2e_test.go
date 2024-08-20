@@ -40,21 +40,10 @@ func TestE2EScanFunctionality(t *testing.T) {
 			org := "defenseunicorns"
 			packageName := "packages/uds/sonarqube"
 			tag := "9.9.5-uds.1-upstream"
-			dockerConfigPath, err := docker.GenerateAndWriteDockerConfig(ctx, registryCreds)
-			if err != nil {
-				t.Fatalf("Error generating and writing Docker config: %v", err)
-			}
 			// Create the scanner
-			scanner := NewRemotePackageScanner(ctx, logger, dockerConfigPath, org, packageName, tag, "", tt.sbom)
-			if err != nil {
-				t.Fatalf("Error creating scanner: %v", err)
-			}
-			rps, ok := scanner.(*Scanner)
-			if !ok {
-				t.Fatalf("Error creating scanner: %v", err)
-			}
+			scanner := NewRemotePackageScanner(ctx, logger, "", org, packageName, tag, "", registryCreds, tt.sbom)
 			// Perform the scan
-			results, err := rps.ScanZarfPackage(org, packageName, tag)
+			results, err := scanner.Scan(ctx)
 			if err != nil {
 				t.Fatalf("Error scanning package: %v", err)
 			}

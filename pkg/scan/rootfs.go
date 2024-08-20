@@ -69,11 +69,12 @@ func unmarshalJSONFromFilename(filename string, out interface{}) error {
 func extractAllImagesFromOCIDirectory(
 	outputDir string,
 	ociRoot string,
+	indexJSONFilename string,
 	logger types.Logger,
 	command types.CommandExecutor,
 ) ([]trivyScannable, error) {
 	var indexManifest v1.IndexManifest
-	err := unmarshalJSONFromFilename(path.Join(ociRoot, "images/index.json"), &indexManifest)
+	err := unmarshalJSONFromFilename(indexJSONFilename, &indexManifest)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func extractAllImagesFromOCIDirectory(
 		}
 
 		var manifest v1.Manifest
-		manifestLocation := path.Join(ociRoot, "images", "blobs", digest.Algorithm, digest.Hex)
+		manifestLocation := path.Join(ociRoot, "blobs", digest.Algorithm, digest.Hex)
 		err := unmarshalJSONFromFilename(manifestLocation, &manifest)
 		if err != nil {
 			return nil, err
@@ -113,7 +114,7 @@ func extractAllImagesFromOCIDirectory(
 		}
 		for i := range image.Manifest.Layers {
 			digest := image.Manifest.Layers[i].Digest
-			layerBlob := path.Join(ociRoot, "images", "blobs", digest.Algorithm, digest.Hex)
+			layerBlob := path.Join(ociRoot, "blobs", digest.Algorithm, digest.Hex)
 			_, stderr, err := command.ExecuteCommand(
 				"tar",
 				[]string{"--exclude=dev/*", "-zvxf", layerBlob, "-C", imageRootFS},
@@ -185,7 +186,13 @@ func ExtractRootFsFromTarFilePath(
 		return nil, nil, err
 	}
 
-	results, err := extractAllImagesFromOCIDirectory(tmpDir, pkgOutDir, logger, command)
+	results, err := extractAllImagesFromOCIDirectory(
+		tmpDir,
+		path.Join(pkgOutDir, "images"),
+		path.Join(pkgOutDir, "images", "index.json"),
+		logger,
+		command,
+	)
 	if err != nil {
 		return nil, nil, err
 	}

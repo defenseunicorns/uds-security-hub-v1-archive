@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
 
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/layout"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content/oci"
+	"oras.land/oras-go/v2/registry"
+	"oras.land/oras-go/v2/registry/remote"
+	"oras.land/oras-go/v2/registry/remote/auth"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -21,15 +23,16 @@ import (
 
 // Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
-	logger           types.Logger
-	ctx              context.Context
-	commandExecutor  types.CommandExecutor
-	dockerConfigPath string
-	org              string
-	packageName      string
-	tag              string
-	offlineDBPath    string // New field for offline DB path
-	sbom             bool
+	logger              types.Logger
+	ctx                 context.Context
+	commandExecutor     types.CommandExecutor
+	dockerConfigPath    string
+	registryCredentials []types.RegistryCredentials
+	org                 string
+	packageName         string
+	tag                 string
+	offlineDBPath       string // New field for offline DB path
+	sbom                bool
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.
@@ -41,17 +44,19 @@ func NewRemotePackageScanner(
 	packageName,
 	tag,
 	offlineDBPath string, // New parameter for offline DB path
+	registryCredentials []types.RegistryCredentials,
 	sbom bool,
 ) types.PackageScanner {
 	return &Scanner{
-		logger:           logger,
-		commandExecutor:  executor.NewCommandExecutor(ctx),
-		dockerConfigPath: dockerConfigPath,
-		org:              org,
-		packageName:      packageName,
-		tag:              tag,
-		offlineDBPath:    offlineDBPath,
-		sbom:             sbom,
+		logger:              logger,
+		commandExecutor:     executor.NewCommandExecutor(ctx),
+		dockerConfigPath:    dockerConfigPath,
+		registryCredentials: registryCredentials,
+		org:                 org,
+		packageName:         packageName,
+		tag:                 tag,
+		offlineDBPath:       offlineDBPath,
+		sbom:                sbom,
 	}
 }
 
@@ -95,6 +100,10 @@ func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]types.Package
 	s.packageName = packageName
 	s.tag = tag
 
+	if s.ctx == nil {
+		s.ctx = context.Background()
+	}
+
 	return s.Scan(s.ctx)
 }
 
@@ -127,34 +136,83 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 //   - ctx: The context for the scan operation.
 //   - imageRef: The reference to the image to scan.
 //   - dockerConfigPath: The path to the Docker config file.
-//   - executor: The command executor to use for running commands.
+//   - commandExecutor: The command executor to use for running commands.
 //
 // Returns:
-//   - []string: A slice of file paths containing the scan results in JSON format.
+//   - []types.PackageScannerResult: A slice of results to be consumed.
 //   - error: An error if the scan operation fails.
-func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dockerConfigPath string,
-	commandExecutor types.CommandExecutor) ([]types.PackageScannerResult, error) {
-	ref, err := name.ParseReference(imageRef)
+func (s *Scanner) scanImageAndProcessResults(
+	ctx context.Context,
+	imageRef string,
+	dockerConfigPath string,
+	commandExecutor types.CommandExecutor,
+) ([]types.PackageScannerResult, error) {
+	ref, err := registry.ParseReference(imageRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse reference: %w", err)
 	}
 
-	idx, err := s.fetchImageIndex(ctx, ref)
+	repo, err := remote.NewRepository(fmt.Sprintf("%s/%s", ref.Registry, ref.Repository))
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch image index: %w", err)
+		return nil, fmt.Errorf("failed to connect to remote repository: %w", err)
 	}
 
+	tmpDir, err := os.MkdirTemp("", "uds-remote-oci-root-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
+	}
+
+	// cleanup the tmpdir when done
+	defer os.RemoveAll(tmpDir)
+
+	ociRootDir := path.Join(tmpDir, "oci")
+	err = os.MkdirAll(ociRootDir, 0o700)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create oci root dir: %w", err)
+	}
+
+	ociRoot, err := oci.New(ociRootDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create oci store: %w", err)
+	}
+
+	repo.Client = &auth.Client{
+		Credential: func(ctx context.Context, hostport string) (auth.Credential, error) {
+			for _, cred := range s.registryCredentials {
+				if cred.RegistryURL == hostport {
+					return auth.Credential{
+						Username: cred.Username,
+						Password: cred.Password,
+					}, nil
+				}
+			}
+
+			return auth.EmptyCredential, fmt.Errorf("registry %s not supported", hostport)
+		},
+	}
+
+	manifestDescriptor, err := oras.Copy(ctx, repo, ref.Reference, ociRoot, "", oras.DefaultCopyOptions)
+	if err != nil {
+		return nil, fmt.Errorf("failed to copy remote repository: %w", err)
+	}
+
+	log.Printf("pulled %s mediatype=%s", manifestDescriptor.Digest, manifestDescriptor.MediaType)
+
 	desiredPlatform := "amd64"
+	zarfOverrides, err := scanForZarfLayers(ociRootDir, desiredPlatform)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create local oci image directory: %w", err)
+	}
 
 	var scannables []trivyScannable
 	if s.sbom {
-		sbomScannables, err := s.processSBOMScannables(ctx, idx, desiredPlatform)
+		sbomScannables, err := s.processSBOMScannables(zarfOverrides.sbomFilename)
 		if err != nil {
 			return nil, fmt.Errorf("failed to process SBOM scannables: %w", err)
 		}
 		scannables = sbomScannables
 	} else {
-		rootfsScannables, err := s.processRootfsScannables(idx, commandExecutor, desiredPlatform)
+		rootfsScannables, err := s.processRootfsScannables(tmpDir, ociRootDir, zarfOverrides.indexJSONFilename, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to process rootfs scannables: %w", err)
 		}
@@ -179,97 +237,28 @@ func (s *Scanner) scanImageAndProcessResults(ctx context.Context, imageRef, dock
 	return results, nil
 }
 
-// fetchImageIndex fetches the image index for the given reference.
-//
-// Parameters:
-//   - ctx: The context for the fetch operation (unused).
-//   - ref: The reference to the image index to fetch.
-//
-// Returns:
-//   - v1.ImageIndex: The fetched image index.
-//   - error: An error if the fetch operation fails.
-func (s *Scanner) fetchImageIndex(_ context.Context, ref name.Reference) (v1.ImageIndex, error) {
-	err := os.Setenv("DOCKER_CONFIG", s.dockerConfigPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to set DOCKER_CONFIG env var: %w", err)
-	}
-	defer os.Unsetenv("DOCKER_CONFIG")
-
-	idx, err := remote.Index(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch image index: %w", err)
-	}
-	return idx, nil
-}
-
 // processSBOMScannables reads from an ImageIndex and returns a list of
 // scannable sbom files.
-func (s *Scanner) processSBOMScannables(
-	ctx context.Context,
-	idx v1.ImageIndex,
-	desiredPlatform string,
-) ([]trivyScannable, error) {
-	manifest, err := idx.IndexManifest()
+func (s *Scanner) processSBOMScannables(sbomsTarFilename string) ([]trivyScannable, error) {
+	f, err := os.Open(sbomsTarFilename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch image manifest: %w", err)
+		return nil, fmt.Errorf("failed to open sboms.tar file: %w", err)
 	}
+	defer f.Close()
 
-	platformDigest := findDesiredPlatform(manifest.Manifests, desiredPlatform)
-	if platformDigest == nil {
-		return nil, fmt.Errorf("failed to find desired platform: %s", desiredPlatform)
-	}
-
-	platformImage, err := idx.Image(*platformDigest)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read platform %s image: %w", desiredPlatform, err)
-	}
-
-	platformManifest, err := platformImage.Manifest()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get platform %s manifest: %w", desiredPlatform, err)
-	}
-
-	for i := range platformManifest.Layers {
-		layerDescriptor := platformManifest.Layers[i]
-		if layerDescriptor.Annotations["org.opencontainers.image.title"] == "sboms.tar" {
-			layer, err := platformImage.LayerByDigest(layerDescriptor.Digest)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get sboms.tar layer for platform %s: %w", desiredPlatform, err)
-			}
-			return extractSBOMPackages(ctx, layer)
-		}
-	}
-
-	return nil, fmt.Errorf("failed to find an sboms.tar layer")
+	return extractSBOMImageRefsFromReader(f)
 }
 
 // processRootfsScannables reads an ImageIndex, extracts those layers to disk,
 // then uses the extractAllImagesFromOCIDirectory method to create a list of
 // trivyScannable to process trivy results from.
 func (s *Scanner) processRootfsScannables(
-	idx v1.ImageIndex,
+	tmpDir string,
+	ociRootDir string,
+	indexJSONFilename string,
 	commandExecutor types.CommandExecutor,
-	desiredPlatform string,
 ) ([]trivyScannable, error) {
-	tmpDir, err := os.MkdirTemp("", "uds-remote-oci-*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
-	}
-
-	// mirror the structure from a zarf package extract
-	pkgOutDir := path.Join(tmpDir, "pkg")
-	imagesDir := path.Join(pkgOutDir, "images")
-	err = os.MkdirAll(imagesDir, 0o700)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create output directories: %w", err)
-	}
-
-	err = writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(idx, imagesDir, desiredPlatform)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create local oci image directory: %w", err)
-	}
-
-	images, err := extractAllImagesFromOCIDirectory(tmpDir, pkgOutDir, s.logger, commandExecutor)
+	images, err := extractAllImagesFromOCIDirectory(tmpDir, ociRootDir, indexJSONFilename, s.logger, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extractAllImagesFromOCIDirectory: %w", err)
 	}
@@ -277,73 +266,52 @@ func (s *Scanner) processRootfsScannables(
 	return images, nil
 }
 
-// writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform takes in an
-// ImageIndex and writes to imagesDir. It then reads through the ImageManifest and finds
-// the first manifest with the desired platform. It will replace the index.json with the
-// index.json from that desired platform.
-//
-// The local filesystem will include all layers from both platforms, but when used with
-// other scanning code it will ignore the layers unrelated to the platform the index.json
-// will only be for the desired platform.
-func writeImageIndexToLocalLayoutAndReplaceIndexJSONWithDesiredPlatform(
-	idx v1.ImageIndex,
-	imagesDir string,
-	desiredPlatform string,
-) error {
-	ociPath, err := layout.Write(imagesDir, idx)
+type zarfOverrides struct {
+	indexJSONFilename string
+	sbomFilename      string
+}
+
+// scanForZarfLayers takes in a local oci directory and finds the images/index.json and
+// sboms.tar for the provided platform.
+func scanForZarfLayers(imagesDir string, platform string) (*zarfOverrides, error) {
+	var idx v1.IndexManifest
+	err := unmarshalJSONFromFilename(path.Join(imagesDir, "index.json"), &idx)
 	if err != nil {
-		return fmt.Errorf("failed to write ImageIndex to layout: %w", err)
+		return nil, fmt.Errorf("failed to read index.json: %w", err)
 	}
 
-	// now we can use the local copy for querying for the specific index.json
-	ociPathIndex, err := ociPath.ImageIndex()
+	manifestDigest := findDesiredPlatform(idx.Manifests, platform)
+	if manifestDigest == nil {
+		return nil, fmt.Errorf("failed to find platform %s manifest", platform)
+	}
+
+	var manifest v1.Manifest
+	err = unmarshalJSONFromFilename(path.Join(imagesDir, "blobs", manifestDigest.Algorithm, manifestDigest.Hex), &manifest)
 	if err != nil {
-		return fmt.Errorf("failed to read ImageIndex from local copy: %w", err)
+		return nil, fmt.Errorf("failed to read platform %s manifest: %w", platform, err)
 	}
 
-	manifest, err := ociPathIndex.IndexManifest()
-	if err != nil {
-		return fmt.Errorf("failed to read IndexManifest from local copy: %w", err)
+	indexJSONDigest := findLayerByTitle(manifest.Layers, "images/index.json")
+	if indexJSONDigest == nil {
+		return nil, fmt.Errorf("failed to find images/index.json in platform %s", platform)
 	}
 
-	desiredPlatformDigest := findDesiredPlatform(manifest.Manifests, desiredPlatform)
-	if desiredPlatformDigest == nil {
-		return fmt.Errorf("failed to find %s manifest", desiredPlatform)
+	sbomsTarDigest := findLayerByTitle(manifest.Layers, "sboms.tar")
+	if sbomsTarDigest == nil {
+		return nil, fmt.Errorf("failed to find sboms.tar layer in platform %s: %w", platform, err)
 	}
 
-	platformManifestBytes, err := ociPath.Bytes(*desiredPlatformDigest)
-	if err != nil {
-		return fmt.Errorf("failed to read %s manifest file: %w", desiredPlatform, err)
-	}
-
-	var platformManifest v1.Manifest
-	if err := json.Unmarshal(platformManifestBytes, &platformManifest); err != nil {
-		return fmt.Errorf("failed to json decode %s manifest: %w", desiredPlatform, err)
-	}
-
-	platformIndexJSON := findImagesIndexJSON(platformManifest.Layers)
-	if platformIndexJSON == nil {
-		return fmt.Errorf("failed to find %s images/index.json", desiredPlatform)
-	}
-
-	platformIndexJSONBytes, err := ociPath.Bytes(*platformIndexJSON)
-	if err != nil {
-		return fmt.Errorf("failed to read %s images/index.json bytes", desiredPlatform)
-	}
-
-	// overwrite the existing index.json we found with the platform specific one
-	err = os.WriteFile(path.Join(imagesDir, "index.json"), platformIndexJSONBytes, 0o600)
-	if err != nil {
-		return fmt.Errorf("failed to replace index.json: %w", err)
-	}
-
-	return nil
+	return &zarfOverrides{
+		indexJSONFilename: path.Join(imagesDir, "blobs", indexJSONDigest.Algorithm, indexJSONDigest.Hex),
+		sbomFilename:      path.Join(imagesDir, "blobs", sbomsTarDigest.Algorithm, sbomsTarDigest.Hex),
+	}, nil
 }
 
 // findDesiredPlatform returns the v1.Hash for the desiredPlatform, if found.
 func findDesiredPlatform(manifests []v1.Descriptor, desiredPlatform string) *v1.Hash {
 	for i := range manifests {
-		if manifests[i].Platform.Architecture == desiredPlatform {
+		platform := manifests[i].Platform
+		if platform != nil && platform.Architecture == desiredPlatform {
 			return &manifests[i].Digest
 		}
 	}
@@ -351,10 +319,10 @@ func findDesiredPlatform(manifests []v1.Descriptor, desiredPlatform string) *v1.
 	return nil
 }
 
-// findImagesIndexJSON returns the v1.Hash of the layer with the correct annotation, if found.
-func findImagesIndexJSON(layers []v1.Descriptor) *v1.Hash {
+// findLayerByTitle returns the v1.Hash of the layer with the correct annotation, if found.
+func findLayerByTitle(layers []v1.Descriptor, title string) *v1.Hash {
 	for i := range layers {
-		if layers[i].Annotations["org.opencontainers.image.title"] == "images/index.json" {
+		if layers[i].Annotations["org.opencontainers.image.title"] == title {
 			return &layers[i].Digest
 		}
 	}
@@ -443,26 +411,4 @@ func scanWithTrivy(imageRef trivyScannable, dockerConfigPath string, offlineDBPa
 	}
 
 	return result, nil
-}
-
-// extractSBOMPackages extracts tags from JSON files within a tar archive.
-//
-// Parameters:
-//   - ctx: The context for the operation.
-//   - layer: The layer to extract tags from.
-//
-// Returns:
-//   - []trivyScannable: A slice of scannable elements.
-//   - error: An error if the operation fails.
-func extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]trivyScannable, error) {
-	if layer == nil {
-		return nil, fmt.Errorf("layer cannot be nil")
-	}
-
-	r, err := layer.Uncompressed()
-	if err != nil {
-		return nil, fmt.Errorf("failed to read uncompressed layer: %w", err)
-	}
-
-	return extractSBOMImageRefsFromReader(r)
 }

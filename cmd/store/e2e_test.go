@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -21,7 +22,7 @@ func TestStore(t *testing.T) {
 
 	os.Args = []string{
 		"program",
-		"--registry-creds", ghcrCreds,
+		"--registry-creds", fmt.Sprintf("ghcr.io:%s", ghcrCreds),
 		"-n", "packages/uds/mattermost",
 		"--db-path", testDBPath,
 		"-v", "1",

@@ -50,13 +50,13 @@ func extractSBOMImageRefsFromReader(r io.Reader) ([]trivyScannable, error) {
 	return results, nil
 }
 
-// ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
+// ExtractSBOMsFromZarfTarFile extracts images from the tar archive and returns names of the container images.
 // Parameters:
 // - tarFilePath: the path to the tar archive to extract the images from.
 // Returns:
 // - []sbomImageRef: references to images and their sboms.
 // - error: an error if the extraction fails.
-func ExtractSBOMsFromTar(tarFilePath string) ([]trivyScannable, error) {
+func ExtractSBOMsFromZarfTarFile(tarFilePath string) ([]trivyScannable, error) {
 	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
 	if err != nil {
 		return nil, err

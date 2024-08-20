@@ -87,7 +87,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 	var refs []trivyScannable
 	if lps.sbom {
 		var err error
-		refs, err = ExtractSBOMsFromTar(lps.packagePath)
+		refs, err = ExtractSBOMsFromZarfTarFile(lps.packagePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract sboms from tar: %w", err)
 		}

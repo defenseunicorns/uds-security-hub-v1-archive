@@ -4,7 +4,7 @@ import "testing"
 
 func TestExtractSBOMsFromTar(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
-	refs, err := ExtractSBOMsFromTar(filePath)
+	refs, err := ExtractSBOMsFromZarfTarFile(filePath)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}

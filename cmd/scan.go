@@ -91,21 +91,18 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 	offlineDBPath, _ := cmd.Flags().GetString("offline-db-path")     //nolint:errcheck
 
 	parsedCreds := docker.ParseCredentials(registryCreds)
-	dockerConfigPath, err := docker.GenerateAndWriteDockerConfig(ctx, parsedCreds)
-	if err != nil {
-		return fmt.Errorf("error generating and writing Docker config: %w", err)
-	}
 
 	factory := &scan.ScannerFactoryImpl{}
 	scanner, err := factory.CreateScanner(
 		ctx,
 		logger,
-		dockerConfigPath,
+		"",
 		org,
 		packageName,
 		tag,
 		packagePath,
 		offlineDBPath,
+		parsedCreds,
 		scannerType == "sbom",
 	)
 	if err != nil {
