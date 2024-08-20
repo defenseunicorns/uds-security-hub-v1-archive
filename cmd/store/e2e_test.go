@@ -15,17 +15,13 @@ func TestStore(t *testing.T) {
 	const testDBPath = "tests/uds_security_hub.db"
 	github := os.Getenv("GITHUB_TOKEN")
 	ghcrCreds := os.Getenv("GHCR_CREDS")
-	registry1Creds := os.Getenv("REGISTRY1_CREDS")
-	dockerCreds := os.Getenv("DOCKER_IO_CREDS")
-	if github == "" || ghcrCreds == "" || registry1Creds == "" {
-		t.Fatalf("GITHUB_TOKEN, GHCR_CREDS, and REGISTRY1_CREDS are required")
+	if github == "" || ghcrCreds == "" {
+		t.Fatalf("GITHUB_TOKEN and GHCR_CREDS are required")
 	}
 
 	os.Args = []string{
 		"program",
 		"--registry-creds", ghcrCreds,
-		"--registry-creds", registry1Creds,
-		"--registry-creds", dockerCreds,
 		"-n", "packages/uds/mattermost",
 		"--db-path", testDBPath,
 		"-v", "1",

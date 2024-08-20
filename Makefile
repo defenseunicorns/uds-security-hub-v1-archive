@@ -24,8 +24,8 @@ test-unit:
 	go test -timeout 160s ./... -v -coverprofile=coverage.out
 
 test-integration: 
-	@if [ -z "$${GITHUB_TOKEN}" ] || [ -z "$${GHCR_CREDS}" ] || [ -z "$${REGISTRY1_CREDS}" ]; then \
-		echo "Error: GITHUB_TOKEN, GHCR_CREDS, or REGISTRY1_CREDS is not set"; \
+	@if [ -z "$${GITHUB_TOKEN}" ] || [ -z "$${GHCR_CREDS}" ]; then \
+		echo "Error: GITHUB_TOKEN or GHCR_CREDS is not set"; \
 		exit 1; \
 	fi
 	integration=true go test -timeout 160s ./... -v -coverprofile=coverage.out

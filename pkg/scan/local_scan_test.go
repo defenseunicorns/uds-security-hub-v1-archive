@@ -27,6 +27,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 		name        string
 		logger      types.Logger
 		packagePath string
+		sbom        bool
 		expected    *LocalPackageScanner
 		expectError bool
 	}{
@@ -34,9 +35,23 @@ func TestNewLocalPackageScanner(t *testing.T) {
 			name:        "valid inputs",
 			logger:      logger,
 			packagePath: packagePath,
+			sbom:        true,
 			expected: &LocalPackageScanner{
 				logger:      logger,
 				packagePath: packagePath,
+				sbom:        true,
+			},
+			expectError: false,
+		},
+		{
+			name:        "valid inputs for rootfs",
+			logger:      logger,
+			packagePath: packagePath,
+			sbom:        false,
+			expected: &LocalPackageScanner{
+				logger:      logger,
+				packagePath: packagePath,
+				sbom:        false,
 			},
 			expectError: false,
 		},
@@ -57,7 +72,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "")
+			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "", tt.sbom)
 			checkError(t, err, tt.expectError)
 			if !tt.expectError {
 				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
@@ -67,12 +82,13 @@ func TestNewLocalPackageScanner(t *testing.T) {
 		})
 	}
 }
+
 func TestScanImageE2E(t *testing.T) {
 	const zarfPackagePath = "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
 
-	lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "")
+	lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "", true)
 	if err != nil {
 		t.Fatalf("Failed to create local package scanner: %v", err)
 	}
@@ -99,40 +115,6 @@ func TestScanImageE2E(t *testing.T) {
 	csv := buf.String()
 	if csv == "" {
 		t.Fatalf("Expected non-empty CSV, got empty")
-	}
-}
-
-func TestExtractSBOMsFromTar(t *testing.T) {
-	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
-	refs, err := ExtractSBOMsFromTar(filePath)
-	if err != nil {
-		t.Fatalf("Failed to extract images from tar: %v", err)
-	}
-
-	if len(refs) == 0 {
-		t.Fatal("Expected non-empty images, got empty")
-	}
-
-	expectedImageNameFromSBOM := []string{
-		"docker.io/appropriate/curl:latest",
-	}
-
-	for _, sbomName := range expectedImageNameFromSBOM {
-		found := false
-		for _, ref := range refs {
-			if ref.ArtifactName == sbomName {
-				found = true
-				t.Logf("Found expected image: %s", sbomName)
-
-				if ref.SBOMFile == "" {
-					t.Error("got an empty sbomfile, this will not be scannable by trivy")
-				}
-				break
-			}
-		}
-		if !found {
-			t.Errorf("Expected image not found: %s", sbomName)
-		}
 	}
 }
 

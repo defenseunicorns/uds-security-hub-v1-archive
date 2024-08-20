@@ -1,7 +1,6 @@
 package scan
 
 import (
-	"archive/tar"
 	"bytes"
 	"context"
 	"encoding/csv"
@@ -11,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	version "github.com/google/go-containerregistry/pkg/v1/types"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -31,7 +28,7 @@ func TestNewScanResultReader(t *testing.T) {
 			wantErr:      false,
 		},
 	}
-	s := NewRemotePackageScanner(context.Background(), nil, "", "test", "test", "test", "test")
+	s := NewRemotePackageScanner(context.Background(), nil, "", "test", "test", "test", "test", nil, false)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.ScanResultReader(types.PackageScannerResult{JSONFilePath: tt.jsonFilePath})
@@ -44,154 +41,6 @@ func TestNewScanResultReader(t *testing.T) {
 			}
 			if len(got.GetVulnerabilities()) != 44 {
 				t.Errorf("NewScanResultReader() got = %v, want %v", len(got.GetVulnerabilities()), 44)
-			}
-		})
-	}
-}
-
-// mockLayer implements the v1.Layer interface for testing purposes.
-type mockLayer struct {
-	content []byte
-}
-
-func (m *mockLayer) Digest() (v1.Hash, error) {
-	return v1.Hash{}, nil
-}
-
-func (m *mockLayer) DiffID() (v1.Hash, error) {
-	return v1.Hash{}, nil
-}
-
-func (m *mockLayer) Compressed() (io.ReadCloser, error) {
-	return io.NopCloser(bytes.NewReader(m.content)), nil
-}
-
-func (m *mockLayer) Uncompressed() (io.ReadCloser, error) {
-	return io.NopCloser(bytes.NewReader(m.content)), nil
-}
-
-func (m *mockLayer) Size() (int64, error) {
-	return int64(len(m.content)), nil
-}
-
-func (m *mockLayer) MediaType() (version.MediaType, error) {
-	return version.DockerLayer, nil
-}
-
-// createMockLayer creates a mock layer with the specified content for testing.
-func createMockLayer(content []byte) v1.Layer {
-	return &mockLayer{content: content}
-}
-
-// Helper function to create a mock tar file containing JSON data.
-func createMockTarReaderWithJSON(t *testing.T, jsonContent string) io.Reader {
-	t.Helper()
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-
-	// Create a header
-	hdr := &tar.Header{
-		Name: "data.json",
-		Mode: 0o600,
-		Size: int64(len(jsonContent)),
-	}
-	if err := tw.WriteHeader(hdr); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := tw.Write([]byte(jsonContent)); err != nil {
-		t.Fatal(err)
-	}
-	if err := tw.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	return bytes.NewReader(buf.Bytes())
-}
-func Test_extractSBOMPackages(t *testing.T) {
-	type args struct {
-		ctx   context.Context
-		layer v1.Layer
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []string
-		wantErr bool
-	}{
-		{
-			name: "Success - Single Tag",
-			args: args{
-				ctx: context.Background(),
-				layer: createMockLayer(func() []byte {
-					// Using the structure from Test_readTagsFromLayerFile for SBOM data
-					sbomData := `{"Source": {"Metadata": {"Tags": ["v1.0.0"]}}}`
-					reader := createMockTarReaderWithJSON(t, sbomData)
-					var buf bytes.Buffer
-					io.Copy(&buf, reader) //nolint:errcheck    // Assuming this operation succeeds without error for simplicity
-					return buf.Bytes()
-				}()),
-			},
-			want:    []string{"v1.0.0"},
-			wantErr: false,
-		},
-		{
-			name: "Success - Multiple Tags",
-			args: args{
-				ctx: context.Background(),
-				layer: createMockLayer(func() []byte {
-					// Using the structure from Test_readTagsFromLayerFile for SBOM data with multiple tags
-					sbomData := `{"Source": {"Metadata": {"Tags": ["v1.0.0", "v1.0.1"]}}}`
-					reader := createMockTarReaderWithJSON(t, sbomData)
-					var buf bytes.Buffer
-					io.Copy(&buf, reader) //nolint:errcheck    // Assuming this operation succeeds without error for simplicity
-					return buf.Bytes()
-				}()),
-			},
-			want:    []string{"v1.0.0", "v1.0.1"},
-			wantErr: false,
-		},
-		{
-			name: "Failure - Invalid JSON",
-			args: args{
-				ctx: context.Background(),
-				layer: createMockLayer(func() []byte {
-					// Using the structure from Test_readTagsFromLayerFile but with invalid JSON
-					sbomData := `{"Source": {"Metadata": {"Tags": ["v1.0.0",]}}}` // Invalid JSON due to trailing comma
-					reader := createMockTarReaderWithJSON(t, sbomData)
-					var buf bytes.Buffer
-					io.Copy(&buf, reader) //nolint:errcheck    // Assuming this operation succeeds without error for simplicity
-					return buf.Bytes()
-				}()),
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "Failure - No Tags Field",
-			args: args{
-				ctx: context.Background(),
-				layer: createMockLayer(func() []byte {
-					// Using the structure from Test_readTagsFromLayerFile but missing the "Tags" field
-					sbomData := `{"Source": {"Metadata": {}}}` // Missing "Tags" field
-					reader := createMockTarReaderWithJSON(t, sbomData)
-					var buf bytes.Buffer
-					io.Copy(&buf, reader) //nolint:errcheck    // Assuming this operation succeeds without error for simplicity
-					return buf.Bytes()
-				}()),
-			},
-			want:    nil,
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := extractSBOMPackages(tt.args.ctx, tt.args.layer)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("extractSBOMPackages() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("extractSBOMPackages() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -276,12 +125,12 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := scanWithTrivy(&remoteImageRef{tt.args.imageRef}, "", "", tt.args.commandExecutor)
+			got, err := scanWithTrivy(&rootfsScannable{RootFSDir: "/dev/null"}, "", "", tt.args.commandExecutor)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scanWithTrivy() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !tt.wantErr && got == "" {
+			if !tt.wantErr && got.JSONFilePath == "" {
 				t.Errorf("scanWithTrivy() got = %v, want %v", got, tt.want)
 			}
 		})

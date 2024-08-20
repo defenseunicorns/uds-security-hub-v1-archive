@@ -2,53 +2,21 @@ package scan
 
 import (
 	"archive/tar"
-	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"path"
-	"strings"
-
-	"github.com/anchore/syft/syft/format"
-	"github.com/anchore/syft/syft/format/cyclonedxjson"
-	"github.com/klauspost/compress/zstd"
+	"slices"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-const (
-	SbomFilename = "sboms.tar"
-)
-
-type imageRef interface {
-	TrivyCommand() []string
-}
-
-type remoteImageRef struct {
-	ImageRef string
-}
-
-func (r *remoteImageRef) TrivyCommand() []string {
-	return []string{"image", "--image-src=remote", r.ImageRef}
-}
-
-type sbomImageRef struct {
-	ArtifactName string
-	SBOMFile     string
-}
-
-func (s *sbomImageRef) TrivyCommand() []string {
-	return []string{"sbom", s.SBOMFile}
-}
-
-func extractSingleFileFromTar(r io.Reader, filename string) ([]byte, error) {
+func extractFilesFromTar(r io.Reader, filenames ...string) (map[string][]byte, error) {
 	tarReader := tar.NewReader(r)
 
-	var sbomTar []byte
+	results := make(map[string][]byte)
 
 	for {
 		header, err := tarReader.Next()
@@ -59,140 +27,16 @@ func extractSingleFileFromTar(r io.Reader, filename string) ([]byte, error) {
 			return nil, fmt.Errorf("failed to read package tar header: %w", err)
 		}
 
-		if header.Name == filename {
-			var err error
-			sbomTar, err = io.ReadAll(tarReader)
+		if slices.Contains(filenames, header.Name) {
+			sbomTar, err := io.ReadAll(tarReader)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read file %q: %w", filename, err)
+				return nil, fmt.Errorf("failed to read file %q: %w", header.Name, err)
 			}
-			break
-		}
-	}
-
-	return sbomTar, nil
-}
-
-func extractSBOMTarFromZarfPackage(tarFilePath string) ([]byte, error) {
-	file, err := os.Open(tarFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tar file: %w", err)
-	}
-	defer file.Close()
-
-	zstdReader, err := zstd.NewReader(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create zstd reader: %w", err)
-	}
-	defer zstdReader.Close()
-	return extractSingleFileFromTar(zstdReader, SbomFilename)
-}
-
-func extractArtifactInformationFromSBOM(r io.Reader) string {
-	type SyftSbomHeader struct {
-		Source struct {
-			Metadata struct {
-				Tags []string `json:"tags"`
-			} `json:"metadata"`
-		} `json:"source"`
-	}
-
-	var sbomHeader SyftSbomHeader
-
-	err := json.NewDecoder(r).Decode(&sbomHeader)
-	if err != nil {
-		return ""
-	}
-
-	if len(sbomHeader.Source.Metadata.Tags) == 0 {
-		return ""
-	}
-
-	return sbomHeader.Source.Metadata.Tags[0]
-}
-
-func convertToCyclonedxFormat(header *tar.Header, r io.Reader, outputDir string) (*sbomImageRef, error) {
-	cyclonedxEncoder, err := cyclonedxjson.NewFormatEncoderWithConfig(cyclonedxjson.DefaultEncoderConfig())
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cyclonedx encoder: %w", err)
-	}
-
-	sbomData, err := io.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read sbom from tar for %q: %w", header.Name, err)
-	}
-
-	artifactName := extractArtifactInformationFromSBOM(bytes.NewReader(sbomData))
-	if artifactName == "" {
-		// default to the filename if we were unable to extract anything meaningful
-		artifactName = header.Name
-	}
-
-	sbom, _, _, err := format.Decode(bytes.NewReader(sbomData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert sbom format for %q: %w", header.Name, err)
-	}
-
-	cyclonedxBytes, err := format.Encode(*sbom, cyclonedxEncoder)
-	if err != nil {
-		return nil, fmt.Errorf("failed to encode cyclonnedx format for %q: %w", header.Name, err)
-	}
-
-	// use a sha256 for the filename in the tar to avoid any security issues with malformed tar
-	sbomSha256 := sha256.Sum256(cyclonedxBytes)
-	cyclonedxSBOMFilename := path.Join(outputDir, fmt.Sprintf("%x", sbomSha256))
-	if err := os.WriteFile(cyclonedxSBOMFilename, cyclonedxBytes, header.FileInfo().Mode().Perm()); err != nil {
-		return nil, fmt.Errorf("failed to write new cyclonnedx file for %q: %w", header.Name, err)
-	}
-
-	return &sbomImageRef{
-		ArtifactName: artifactName,
-		SBOMFile:     cyclonedxSBOMFilename,
-	}, nil
-}
-
-func extractSBOMImageRefsFromReader(r io.Reader) ([]*sbomImageRef, error) {
-	tmp, err := os.MkdirTemp("", "zarf-sbom-spdx-files-*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
-	}
-
-	var results []*sbomImageRef
-
-	sbomTarReader := tar.NewReader(r)
-	for {
-		header, err := sbomTarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to read header in sbom tar: %w", err)
-		}
-
-		if strings.HasSuffix(header.Name, ".json") {
-			sbomImageRef, err := convertToCyclonedxFormat(header, sbomTarReader, tmp)
-			if err != nil {
-				return nil, err
-			}
-			results = append(results, sbomImageRef)
+			results[header.Name] = sbomTar
 		}
 	}
 
 	return results, nil
-}
-
-// ExtractSBOMsFromTar extracts images from the tar archive and returns names of the container images.
-// Parameters:
-// - tarFilePath: the path to the tar archive to extract the images from.
-// Returns:
-// - []sbomImageRef: references to images and their sboms.
-// - error: an error if the extraction fails.
-func ExtractSBOMsFromTar(tarFilePath string) ([]*sbomImageRef, error) {
-	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	return extractSBOMImageRefsFromReader(bytes.NewReader(sbomTar))
 }
 
 // LocalPackageScanner is a struct that holds the logger and paths for docker configuration and package.
@@ -200,6 +44,7 @@ type LocalPackageScanner struct {
 	logger        types.Logger
 	packagePath   string
 	offlineDBPath string // New field for offline DB path
+	sbom          bool
 }
 
 // NewLocalPackageScanner creates a new LocalPackageScanner instance.
@@ -212,7 +57,7 @@ type LocalPackageScanner struct {
 // - *LocalPackageScanner: the LocalPackageScanner instance.
 // - error: an error if the instance cannot be created.
 func NewLocalPackageScanner(logger types.Logger,
-	packagePath, offlineDBPath string) (types.PackageScanner, error) {
+	packagePath, offlineDBPath string, sbom bool) (types.PackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
@@ -223,6 +68,7 @@ func NewLocalPackageScanner(logger types.Logger,
 		logger:        logger,
 		packagePath:   packagePath,
 		offlineDBPath: offlineDBPath,
+		sbom:          sbom,
 	}, nil
 }
 
@@ -237,20 +83,30 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
-	sbomFiles, err := ExtractSBOMsFromTar(lps.packagePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract images from tar: %w", err)
+
+	var refs []trivyScannable
+	if lps.sbom {
+		var err error
+		refs, err = ExtractSBOMsFromZarfTarFile(lps.packagePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract sboms from tar: %w", err)
+		}
+	} else {
+		var err error
+		rootRefs, cleanup, err := ExtractRootFsFromTarFilePath(lps.logger, lps.packagePath, commandExecutor)
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract rootfs from tar: %w", err)
+		}
+		defer cleanup()
+		refs = rootRefs
 	}
 	var scanResults []types.PackageScannerResult
-	for _, sbom := range sbomFiles {
-		scanResult, err := scanWithTrivy(sbom, "", lps.offlineDBPath, commandExecutor)
+	for _, result := range refs {
+		scanResult, err := scanWithTrivy(result, "", lps.offlineDBPath, commandExecutor)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan sbom %s: %w", sbom.SBOMFile, err)
+			return nil, fmt.Errorf("failed to scan: %w", err)
 		}
-		scanResults = append(scanResults, types.PackageScannerResult{
-			ArtifactNameOverride: sbom.ArtifactName,
-			JSONFilePath:         scanResult,
-		})
+		scanResults = append(scanResults, *scanResult)
 	}
 	return scanResults, nil
 }
