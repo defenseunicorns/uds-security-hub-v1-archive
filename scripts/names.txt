@@ -1,3 +1,4 @@
+packages/private/uds/core
 packages/uds/gitlab
 packages/uds/sonarqube
 packages/uds/mattermost

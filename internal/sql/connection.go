@@ -89,7 +89,6 @@ func (c *CloudSQLConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize Gorm with pgx connection: %w", err)
 	}
-
 	return gormDB, nil
 }
 
