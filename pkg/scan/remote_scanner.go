@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -195,8 +194,6 @@ func (s *Scanner) scanImageAndProcessResults(
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy remote repository: %w", err)
 	}
-
-	log.Printf("pulled %s mediatype=%s", manifestDescriptor.Digest, manifestDescriptor.MediaType)
 
 	desiredPlatform := "amd64"
 	zarfOverrides, err := scanForZarfLayers(ociRootDir, desiredPlatform)
