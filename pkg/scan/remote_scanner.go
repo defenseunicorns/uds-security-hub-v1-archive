@@ -25,13 +25,13 @@ type Scanner struct {
 	logger              types.Logger
 	ctx                 context.Context
 	commandExecutor     types.CommandExecutor
-	registryCredentials []types.RegistryCredentials
-	sbom                bool
 	dockerConfigPath    string
 	org                 string
 	packageName         string
 	tag                 string
-	offlineDBPath       string // New field for offline DB path
+	offlineDBPath       string
+	registryCredentials []types.RegistryCredentials
+	sbom                bool
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.
