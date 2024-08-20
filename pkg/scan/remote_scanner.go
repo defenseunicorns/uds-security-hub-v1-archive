@@ -452,7 +452,7 @@ func scanWithTrivy(imageRef trivyScannable, dockerConfigPath string, offlineDBPa
 //   - layer: The layer to extract tags from.
 //
 // Returns:
-//   - []string: A slice of tags extracted from the layer.
+//   - []trivyScannable: A slice of scannable elements.
 //   - error: An error if the operation fails.
 func extractSBOMPackages(ctx context.Context, layer v1.Layer) ([]trivyScannable, error) {
 	if layer == nil {
