@@ -8,13 +8,24 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/klauspost/compress/zstd"
 )
 
-func extractTarFileTo(outDir string, r io.Reader) error {
+// Sanitize archive file pathing from "G305: Zip Slip vulnerability"
+func sanitizeArchivePath(dir, filename string) (v string, err error) {
+	v = filepath.Join(dir, filename)
+	if strings.HasPrefix(v, filepath.Clean(dir)) {
+		return v, nil
+	}
+
+	return "", fmt.Errorf("%s: %s", "content filepath is tainted", filename)
+}
+
+func extractTarToDir(outDir string, r io.Reader) error {
 	tarReader := tar.NewReader(r)
 
 	for {
@@ -26,7 +37,10 @@ func extractTarFileTo(outDir string, r io.Reader) error {
 			return fmt.Errorf("error reading tar reader: %w", err)
 		}
 
-		p := path.Join(outDir, header.Name)
+		p, err := sanitizeArchivePath(outDir, header.Name)
+		if err != nil {
+			return err
+		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
@@ -138,7 +152,7 @@ func extractAllImagesFromOCIDirectory(
 			}
 			defer zr.Close()
 
-			err = extractTarFileTo(imageRootFS, zr)
+			err = extractTarToDir(imageRootFS, zr)
 			if err != nil {
 				return nil, fmt.Errorf("failed to extract tar layer %s: %w", layerBlob, err)
 			}
@@ -172,7 +186,7 @@ func ExtractRootFsFromTarFilePath(tarFilePath string) ([]trivyScannable, cleanup
 	}
 
 	pkgOutDir := path.Join(tmpDir, "oci")
-	err = extractTarFileTo(pkgOutDir, r)
+	err = extractTarToDir(pkgOutDir, r)
 	if err != nil {
 		return nil, nil, err
 	}
