@@ -26,13 +26,13 @@ type Scanner struct {
 	logger              types.Logger
 	ctx                 context.Context
 	commandExecutor     types.CommandExecutor
-	dockerConfigPath    string
 	registryCredentials []types.RegistryCredentials
+	sbom                bool
+	dockerConfigPath    string
 	org                 string
 	packageName         string
 	tag                 string
 	offlineDBPath       string // New field for offline DB path
-	sbom                bool
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.
@@ -52,11 +52,11 @@ func NewRemotePackageScanner(
 		commandExecutor:     executor.NewCommandExecutor(ctx),
 		dockerConfigPath:    dockerConfigPath,
 		registryCredentials: registryCredentials,
+		sbom:                sbom,
 		org:                 org,
 		packageName:         packageName,
 		tag:                 tag,
 		offlineDBPath:       offlineDBPath,
-		sbom:                sbom,
 	}
 }
 
@@ -273,7 +273,7 @@ type zarfOverrides struct {
 
 // scanForZarfLayers takes in a local oci directory and finds the images/index.json and
 // sboms.tar for the provided platform.
-func scanForZarfLayers(imagesDir string, platform string) (*zarfOverrides, error) {
+func scanForZarfLayers(imagesDir, platform string) (*zarfOverrides, error) {
 	var idx v1.IndexManifest
 	err := unmarshalJSONFromFilename(path.Join(imagesDir, "index.json"), &idx)
 	if err != nil {
