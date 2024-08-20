@@ -3,7 +3,6 @@ package scan
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"slices"
 	"strings"
@@ -34,7 +33,7 @@ func TestE2EScanFunctionality(t *testing.T) {
 			if ghcrCreds == "" {
 				t.Fatalf("GHCR_CREDS must be set")
 			}
-			registryCreds := docker.ParseCredentials([]string{fmt.Sprintf("ghcr.io:%s", ghcrCreds)})
+			registryCreds := docker.ParseCredentials([]string{ghcrCreds})
 			// Define the test inputs
 
 			org := "defenseunicorns"
