@@ -213,7 +213,6 @@ func (s *Scanner) scanImageAndProcessResults(
 			tmpDir,
 			ociRootDir,
 			zarfOverrides.indexJSONFilename,
-			commandExecutor,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to process rootfs scannables: %w", err)
@@ -258,9 +257,8 @@ func (s *Scanner) processRootfsScannables(
 	tmpDir string,
 	ociRootDir string,
 	indexJSONFilename string,
-	commandExecutor types.CommandExecutor,
 ) ([]trivyScannable, error) {
-	images, err := extractAllImagesFromOCIDirectory(tmpDir, ociRootDir, indexJSONFilename, s.logger, commandExecutor)
+	images, err := extractAllImagesFromOCIDirectory(tmpDir, ociRootDir, indexJSONFilename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extractAllImagesFromOCIDirectory: %w", err)
 	}
