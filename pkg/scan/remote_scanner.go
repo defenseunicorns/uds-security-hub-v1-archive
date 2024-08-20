@@ -190,7 +190,7 @@ func (s *Scanner) scanImageAndProcessResults(
 		},
 	}
 
-	manifestDescriptor, err := oras.Copy(ctx, repo, ref.Reference, ociRoot, "", oras.DefaultCopyOptions)
+	_, err = oras.Copy(ctx, repo, ref.Reference, ociRoot, "", oras.DefaultCopyOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy remote repository: %w", err)
 	}
