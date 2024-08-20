@@ -209,7 +209,12 @@ func (s *Scanner) scanImageAndProcessResults(
 		}
 		scannables = sbomScannables
 	} else {
-		rootfsScannables, err := s.processRootfsScannables(tmpDir, ociRootDir, zarfOverrides.indexJSONFilename, commandExecutor)
+		rootfsScannables, err := s.processRootfsScannables(
+			tmpDir,
+			ociRootDir,
+			zarfOverrides.indexJSONFilename,
+			commandExecutor,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to process rootfs scannables: %w", err)
 		}
