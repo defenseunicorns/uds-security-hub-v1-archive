@@ -14,7 +14,7 @@ type ScannerFactoryImpl struct{}
 func (sf *ScannerFactoryImpl) CreateScanner(
 	ctx context.Context,
 	logger types.Logger,
-	dockerConfigPath, org, packageName, tag, packagePath, offlineDBPath string,
+	org, packageName, tag, packagePath, offlineDBPath string,
 	registryCredentials []types.RegistryCredentials,
 	sbom bool,
 ) (types.PackageScanner, error) {
@@ -29,7 +29,6 @@ func (sf *ScannerFactoryImpl) CreateScanner(
 	return NewRemotePackageScanner(
 		ctx,
 		logger,
-		dockerConfigPath,
 		org,
 		packageName,
 		tag,

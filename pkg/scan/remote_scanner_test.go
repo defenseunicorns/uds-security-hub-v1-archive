@@ -28,7 +28,7 @@ func TestNewScanResultReader(t *testing.T) {
 			wantErr:      false,
 		},
 	}
-	s := NewRemotePackageScanner(context.Background(), nil, "", "test", "test", "test", "test", nil, false)
+	s := NewRemotePackageScanner(context.Background(), nil, "test", "test", "test", "test", nil, false)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.ScanResultReader(types.PackageScannerResult{JSONFilePath: tt.jsonFilePath})
@@ -125,7 +125,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := scanWithTrivy(&rootfsScannable{RootFSDir: "/dev/null"}, "", "", tt.args.commandExecutor)
+			got, err := scanWithTrivy(&rootfsScannable{RootFSDir: "/dev/null"}, "", tt.args.commandExecutor)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("scanWithTrivy() error = %v, wantErr %v", err, tt.wantErr)
 				return

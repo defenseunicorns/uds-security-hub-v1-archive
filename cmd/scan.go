@@ -96,7 +96,6 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 	scanner, err := factory.CreateScanner(
 		ctx,
 		logger,
-		"",
 		org,
 		packageName,
 		tag,
