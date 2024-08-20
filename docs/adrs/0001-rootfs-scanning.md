@@ -108,21 +108,29 @@ for each image to a directory we can use this to get a complete scan of an image
 
 ### Remote Package Scanner
 
-The remote package scanner uses the same process if it's in the same format.
+For the remote scanner we download the image to a local directory using oras.land. 
+Once it's on disk, we read the `index.json` file to get a list of manifests. These 
+are the supported platforms. We are currently only looking at the `amd64` image, 
+so we read the blob associated with amd64 to get a list of layers in the image. This 
+is where we find the actual index.json for `amd64`. We then use the same logic as the
+local scanner to unpack the rootfs and use `trivy rootfs` to scan that image.
 
-We can take a remote ImageIndex and write it to a local filesystem using the package
-`github.com/google/go-containerregistry/pkg/v1/layout`.
+Thus, the remote and the local scan are remarkably similar, with only subtle differences
+in where the index is found.
 
-Unfortunately in this method the registry usually includes multiple architectures:
-usually `amd64` and `arm64`. This will mean that the `images/index.json` file will not be
-compatible with the method above. To remedy this, we will read through the manifests
-and select a single architecture, `amd64`, and find the layer that has the annotation
-`images/index.json`. We will replace the locally downloaded `images/index.json` with 
-these contents and then the process will be the same as above.
+
+### Note on SBOM support
+
+There is also support to scan only using the SBOM using command line flags. This yields
+lower quality results as the SBOMs at the time of writing this are not a complete
+representation of all dependencies in a package. The trivy rootfs scanner finds more
+vulnerabilities. We can possibly use this disparity in the future to increase the
+accuracy of our SBOM generation.
 
 ## Alternatives Considered
 
 - Trivy also has a oci layout scanner which could work with some tweaking on the results to separate out the individual image components.
+  This would allow us to avoid unpacking the tar files
 
 Example:
 
