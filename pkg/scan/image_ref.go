@@ -8,14 +8,6 @@ type ArtifactNameOverride interface {
 	ArtifactNameOverride() string
 }
 
-type remoteScannable struct {
-	ImageRef string
-}
-
-func (r *remoteScannable) TrivyCommand() []string {
-	return []string{"image", "--image-src=remote", r.ImageRef}
-}
-
 type cyclonedxSBOMScannable struct {
 	ArtifactName string
 	SBOMFile     string
