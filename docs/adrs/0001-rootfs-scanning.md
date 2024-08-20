@@ -108,17 +108,17 @@ for each image to a directory we can use this to get a complete scan of an image
 
 ### Remote Package Scanner
 
-The remote package scanner can use the same process if it's in the same format.
+The remote package scanner uses the same process if it's in the same format.
 
 We can take a remote ImageIndex and write it to a local filesystem using the package
 `github.com/google/go-containerregistry/pkg/v1/layout`.
 
 Unfortunately in this method the registry usually includes multiple architectures:
-usually `amd64` and `arm64`. This will mean that the `index.json` file will not be
+usually `amd64` and `arm64`. This will mean that the `images/index.json` file will not be
 compatible with the method above. To remedy this, we will read through the manifests
-and select a single architecture, `amd64`, and find the layer that holds that
-architecture's `index.json`. We will replace the local `index.json` with these contents,
-and then the process will be the same as above.
+and select a single architecture, `amd64`, and find the layer that has the annotation
+`images/index.json`. We will replace the locally downloaded `images/index.json` with 
+these contents and then the process will be the same as above.
 
 ## Alternatives Considered
 
