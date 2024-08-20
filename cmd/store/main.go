@@ -244,14 +244,15 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	}
 
 	parsedCreds := parseCredentials(registryCreds)
-
 	connector := sql.CreateDBConnector(dbType, dbPath, instanceConnectionName, dbUser, dbPassword, dbName)
 	dbConn, err := connector.Connect(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+	logger := log.NewLogger(context.Background())
 	// this is for local sqlite db path and we would need to initialize the db and tables
-	if dbPath != "" {
+	if dbType == "sqlite" {
+		logger.Info("Using local SQLite database")
 		dbConn, err = setupDBConnection(dbPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup database connection: %w", err)
