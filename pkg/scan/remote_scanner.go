@@ -10,7 +10,9 @@ import (
 	"path/filepath"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/oci"
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote"
@@ -186,12 +188,34 @@ func (s *Scanner) scanImageAndProcessResults(
 		},
 	}
 
-	_, err = oras.Copy(ctx, repo, ref.Reference, ociRoot, "", oras.DefaultCopyOptions)
+	desiredPlatform := "amd64"
+	_, err = oras.Copy(ctx, repo, ref.Reference, ociRoot, "", oras.CopyOptions{
+		MapRoot: func(ctx context.Context, src content.ReadOnlyStorage, root ocispec.Descriptor) (ocispec.Descriptor, error) {
+			rc, err := src.Fetch(ctx, root)
+			if err != nil {
+				return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to fetch root: %w", err)
+			}
+			defer rc.Close()
+
+			var idx ocispec.Index
+			err = json.NewDecoder(rc).Decode(&idx)
+			if err != nil {
+				return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to decode json: %w", err)
+			}
+
+			for _, manifest := range idx.Manifests {
+				if manifest.Platform != nil && manifest.Platform.Architecture == "amd64" {
+					return manifest, nil
+				}
+			}
+
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("did not find platform %s", platform)
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy remote repository: %w", err)
 	}
 
-	desiredPlatform := "amd64"
 	zarfOverrides, err := scanForZarfLayers(ociRootDir, desiredPlatform)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create local oci image directory: %w", err)
