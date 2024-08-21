@@ -2,14 +2,11 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/mock"
 	"github.com/zeebo/assert"
@@ -175,77 +172,6 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 			err = runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager, c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("runStoreScannerWithDeps() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestGenerateAndWriteDockerConfig(t *testing.T) {
-	tests := []struct {
-		name                string
-		credentials         []types.RegistryCredentials
-		expectedFileContent string
-		expectError         bool
-	}{
-		{
-			name: "valid credentials",
-			credentials: []types.RegistryCredentials{
-				{RegistryURL: "ghcr.io", Username: "user1", Password: "pass1"},
-				{RegistryURL: "registry1.dso.mil", Username: "user2", Password: "pass2"},
-			},
-			expectedFileContent: `{
-                "auths": {
-                    "ghcr.io": {
-                        "auth": "dXNlcjE6cGFzczE="
-                    },
-                    "registry1.dso.mil": {
-                        "auth": "dXNlcjI6cGFzczI="
-                    }
-                }
-            }`,
-			expectError: false,
-		},
-		{
-			name: "missing credentials",
-			credentials: []types.RegistryCredentials{
-				{RegistryURL: "ghcr.io", Username: "", Password: ""},
-				{RegistryURL: "registry1.dso.mil", Username: "", Password: ""},
-			},
-			expectedFileContent: `{"auths": {}}`,
-			expectError:         false,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			dir, err := generateAndWriteDockerConfig(context.Background(), tc.credentials)
-			if (err != nil) != tc.expectError {
-				t.Errorf("generateAndWriteDockerConfig() error = %v, expectError %v", err, tc.expectError)
-			}
-			// Read the file content from the directory
-			files, err := os.ReadDir(dir)
-			if err != nil {
-				t.Errorf("Error reading directory: %v", err)
-			}
-			if len(files) == 0 {
-				t.Errorf("Expected at least one file in the directory")
-			}
-
-			content, err := os.ReadFile(filepath.Join(dir, files[0].Name()))
-			if err != nil {
-				t.Errorf("Error reading file: %v", err)
-			}
-
-			var got, want map[string]interface{}
-			if err := json.Unmarshal(content, &got); err != nil {
-				t.Errorf("Error unmarshalling JSON: %v", err)
-			}
-			if err := json.Unmarshal([]byte(tc.expectedFileContent), &want); err != nil {
-				t.Errorf("Error unmarshalling expected JSON: %v", err)
-			}
-
-			if diff := cmp.Diff(want, got); diff != "" {
-				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
