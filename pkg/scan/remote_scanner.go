@@ -190,27 +190,7 @@ func (s *Scanner) scanImageAndProcessResults(
 
 	desiredPlatform := "amd64"
 	_, err = oras.Copy(ctx, repo, ref.Reference, ociRoot, "", oras.CopyOptions{
-		MapRoot: func(ctx context.Context, src content.ReadOnlyStorage, root ocispec.Descriptor) (ocispec.Descriptor, error) {
-			rc, err := src.Fetch(ctx, root)
-			if err != nil {
-				return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to fetch root: %w", err)
-			}
-			defer rc.Close()
-
-			var idx ocispec.Index
-			err = json.NewDecoder(rc).Decode(&idx)
-			if err != nil {
-				return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to decode json: %w", err)
-			}
-
-			for _, manifest := range idx.Manifests {
-				if manifest.Platform != nil && manifest.Platform.Architecture == "amd64" {
-					return manifest, nil
-				}
-			}
-
-			return ocispec.DescriptorEmptyJSON, fmt.Errorf("did not find platform %s", desiredPlatform)
-		},
+		MapRoot: restrictOrasCopyToPlatform(desiredPlatform),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy remote repository: %w", err)
@@ -289,6 +269,34 @@ func (s *Scanner) processRootfsScannables(
 type zarfOverrides struct {
 	indexJSONFilename string
 	sbomFilename      string
+}
+
+func restrictOrasCopyToPlatform(desiredPlatform string) func(
+	ctx context.Context, src content.ReadOnlyStorage, root ocispec.Descriptor,
+) (ocispec.Descriptor, error) {
+	return func(
+		ctx context.Context, src content.ReadOnlyStorage, root ocispec.Descriptor,
+	) (ocispec.Descriptor, error) {
+		rc, err := src.Fetch(ctx, root)
+		if err != nil {
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to fetch root: %w", err)
+		}
+		defer rc.Close()
+
+		var idx ocispec.Index
+		err = json.NewDecoder(rc).Decode(&idx)
+		if err != nil {
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("failed to decode json: %w", err)
+		}
+
+		for _, manifest := range idx.Manifests {
+			if manifest.Platform != nil && manifest.Platform.Architecture == "amd64" {
+				return manifest, nil
+			}
+		}
+
+		return ocispec.DescriptorEmptyJSON, fmt.Errorf("did not find platform %s", desiredPlatform)
+	}
 }
 
 // scanForZarfLayers takes in a local oci directory and finds the images/index.json and
