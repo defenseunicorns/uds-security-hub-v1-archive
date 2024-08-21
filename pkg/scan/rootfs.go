@@ -16,7 +16,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-// Sanitize archive file pathing from "G305: Zip Slip vulnerability"
+// Sanitize archive file pathing from "G305: Zip Slip vulnerability".
 func sanitizeArchivePath(dir, filename string) (v string, err error) {
 	v = filepath.Join(dir, filename)
 	if strings.HasPrefix(v, filepath.Clean(dir)) {
@@ -55,7 +55,8 @@ func extractTarToDir(outDir string, r io.Reader) error {
 				return fmt.Errorf("failed to file from tar: %w", err)
 			}
 
-			_, err = io.Copy(f, tarReader)
+			// G110: Potential DoS vulnerability via decompression bomb (gosec)
+			_, err = io.CopyN(f, tarReader, header.Size)
 			if err != nil {
 				return fmt.Errorf("failed to copy tar contents to file: %w", err)
 			}
