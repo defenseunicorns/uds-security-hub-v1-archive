@@ -102,7 +102,7 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 	}
 	var scanResults []types.PackageScannerResult
 	for _, result := range refs {
-		scanResult, err := scanWithTrivy(result, "", lps.offlineDBPath, commandExecutor)
+		scanResult, err := scanWithTrivy(result, lps.offlineDBPath, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan: %w", err)
 		}

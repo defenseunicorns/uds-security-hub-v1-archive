@@ -25,7 +25,6 @@ type Scanner struct {
 	logger              types.Logger
 	ctx                 context.Context
 	commandExecutor     types.CommandExecutor
-	dockerConfigPath    string
 	org                 string
 	packageName         string
 	tag                 string
@@ -38,7 +37,6 @@ type Scanner struct {
 func NewRemotePackageScanner(
 	ctx context.Context,
 	logger types.Logger,
-	dockerConfigPath,
 	org,
 	packageName,
 	tag,
@@ -49,7 +47,6 @@ func NewRemotePackageScanner(
 	return &Scanner{
 		logger:              logger,
 		commandExecutor:     executor.NewCommandExecutor(ctx),
-		dockerConfigPath:    dockerConfigPath,
 		registryCredentials: registryCredentials,
 		sbom:                sbom,
 		org:                 org,
@@ -121,7 +118,7 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 	commandExecutor := executor.NewCommandExecutor(ctx)
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
-	results, err := s.scanImageAndProcessResults(ctx, imageRef, s.dockerConfigPath, commandExecutor)
+	results, err := s.scanImageAndProcessResults(ctx, imageRef, commandExecutor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
 	}
@@ -143,7 +140,6 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 func (s *Scanner) scanImageAndProcessResults(
 	ctx context.Context,
 	imageRef string,
-	dockerConfigPath string,
 	commandExecutor types.CommandExecutor,
 ) ([]types.PackageScannerResult, error) {
 	ref, err := registry.ParseReference(imageRef)
@@ -223,7 +219,7 @@ func (s *Scanner) scanImageAndProcessResults(
 	var errs error
 	var results []types.PackageScannerResult
 	for _, image := range scannables {
-		result, err := scanWithTrivy(image, dockerConfigPath, s.offlineDBPath, commandExecutor)
+		result, err := scanWithTrivy(image, s.offlineDBPath, commandExecutor)
 		if err != nil {
 			errs = errors.Join(errs, fmt.Errorf("failed to scanWithTrivy: %w", err))
 			continue
@@ -342,18 +338,13 @@ func findLayerByTitle(layers []v1.Descriptor, title string) *v1.Hash {
 // Returns:
 //   - string: The file path of the Trivy scan result in JSON format.
 //   - error: An error if the operation fails.
-func scanWithTrivy(imageRef trivyScannable, dockerConfigPath string, offlineDBPath string,
-	commandExecutor types.CommandExecutor) (*types.PackageScannerResult, error) {
+func scanWithTrivy(
+	imageRef trivyScannable,
+	offlineDBPath string,
+	commandExecutor types.CommandExecutor,
+) (*types.PackageScannerResult, error) {
 	const trivyDBFileName = "db/trivy.db"
 	const metadataFileName = "db/metadata.json"
-
-	if dockerConfigPath != "" {
-		err := os.Setenv("DOCKER_CONFIG", dockerConfigPath)
-		if err != nil {
-			return nil, fmt.Errorf("error setting Docker config environment variable: %w", err)
-		}
-		defer os.Unsetenv("DOCKER_CONFIG")
-	}
 
 	if offlineDBPath != "" {
 		trivyDBPath := filepath.Join(offlineDBPath, trivyDBFileName)

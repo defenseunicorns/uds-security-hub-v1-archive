@@ -124,7 +124,7 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error getting registry credentials: %w", err)
 	}
 	parsedCreds := docker.ParseCredentials(registryCreds)
-	scanner := scan.NewRemotePackageScanner(ctx, logInstance, "", config.Org, config.PackageName,
+	scanner := scan.NewRemotePackageScanner(ctx, logInstance, config.Org, config.PackageName,
 		config.Tag, config.OfflineDBPath, parsedCreds, false)
 	manager, err := db.NewGormScanManager(config.DBConn)
 	if err != nil {
@@ -327,31 +327,6 @@ func Execute(args []string) {
 		fmt.Fprintln(os.Stderr, "Error executing command:", err)
 		os.Exit(1)
 	}
-}
-
-func generateAndWriteDockerConfig(_ context.Context, credentials []types.RegistryCredentials) (string, error) {
-	credentialsMap := make(map[string]docker.RegistryCredentials)
-
-	for _, cred := range credentials {
-		if cred.Username != "" && cred.Password != "" {
-			credentialsMap[cred.RegistryURL] = docker.RegistryCredentials{
-				Username: cred.Username,
-				Password: cred.Password,
-			}
-		}
-	}
-
-	configText, err := docker.GenerateConfigText(credentialsMap)
-	if err != nil {
-		return "", fmt.Errorf("error generating Docker config: %w", err)
-	}
-
-	dockerConfigPath, err := docker.WriteConfigToTempDir(configText)
-	if err != nil {
-		return "", fmt.Errorf("error writing Docker config to temp dir: %w", err)
-	}
-
-	return filepath.Dir(dockerConfigPath), nil
 }
 
 func GetPackageVersions(ctx context.Context, org, packageName, gitHubToken string) (*github.VersionTagDate, error) {
