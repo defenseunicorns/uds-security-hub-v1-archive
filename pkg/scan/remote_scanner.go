@@ -209,7 +209,7 @@ func (s *Scanner) scanImageAndProcessResults(
 				}
 			}
 
-			return ocispec.DescriptorEmptyJSON, fmt.Errorf("did not find platform %s", platform)
+			return ocispec.DescriptorEmptyJSON, fmt.Errorf("did not find platform %s", desiredPlatform)
 		},
 	})
 	if err != nil {
