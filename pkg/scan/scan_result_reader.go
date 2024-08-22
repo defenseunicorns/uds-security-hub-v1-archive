@@ -2,6 +2,7 @@ package scan
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -66,6 +67,38 @@ func (s *scanResultReader) WriteToCSV(w io.Writer, includeHeader bool) error {
 	}
 
 	csvWriter.Flush()
+
+	return nil
+}
+
+func WriteToJSON(w io.Writer, results []types.ScanResultReader) error {
+	var allResults []map[string]string
+
+	for _, r := range results {
+		vulnerabilities := r.GetVulnerabilities()
+		for _, vuln := range vulnerabilities {
+			record := map[string]string{
+				"ArtifactName":     r.GetArtifactName(),
+				"VulnerabilityID":  vuln.VulnerabilityID,
+				"PkgName":          vuln.PkgName,
+				"InstalledVersion": vuln.InstalledVersion,
+				"FixedVersion":     vuln.FixedVersion,
+				"Severity":         vuln.Severity,
+				"Description":      vuln.Description,
+			}
+			allResults = append(allResults, record)
+		}
+	}
+
+	jsonData, err := json.MarshalIndent(allResults, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshaling scan results to JSON: %w", err)
+	}
+
+	_, err = w.Write(jsonData)
+	if err != nil {
+		return fmt.Errorf("error writing JSON data: %w", err)
+	}
 
 	return nil
 }
