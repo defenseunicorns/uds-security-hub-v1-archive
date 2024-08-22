@@ -109,14 +109,13 @@ func TestScanImageE2E(t *testing.T) {
 		t.Fatalf("Expected non-empty vulnerabilities, got empty")
 	}
 	var buf bytes.Buffer
-	if err := reader.WriteToJSON(&buf); err != nil {
+	if err := WriteToJSON(&buf, []types.ScanResultReader{reader}); err != nil {
 		t.Fatalf("Error writing JSON: %v", err)
 	}
 	jsonOutput := buf.String()
 	if jsonOutput == "" {
 		t.Fatalf("Expected non-empty JSON, got empty")
 	}
-
 	buf.Reset() // Reset buffer for CSV writing
 
 	if err := reader.WriteToCSV(&buf, true); err != nil {

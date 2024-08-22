@@ -34,9 +34,6 @@ type ScanResultReader interface {
 
 	// WriteToCSV writes the results to the provided reader in CSV format.
 	WriteToCSV(w io.Writer, includeHeader bool) error
-
-	// WriteToJSON writes the results to the provided reader in JSON format.
-	WriteToJSON(w io.Writer) error
 }
 
 type PackageScannerResult struct {

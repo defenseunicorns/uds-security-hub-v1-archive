@@ -12,6 +12,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 // errFlagRetrieval is the error message for when a flag cannot be retrieved.
@@ -124,7 +125,9 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	for i, v := range results {
+	var allResults []types.ScanResultReader
+
+	for _, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
 			return fmt.Errorf("error reading scan result: %w", err)
@@ -132,15 +135,18 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 
 		switch outputFormat {
 		case "csv":
-			if err := r.WriteToCSV(output, i == 0); err != nil {
+			if err := r.WriteToCSV(output, len(allResults) == 0); err != nil {
 				return fmt.Errorf("failed to write to csv: %w", err)
 			}
 		case "json":
-			if err := r.WriteToJSON(output); err != nil {
-				return fmt.Errorf("failed to write to json: %w", err)
-			}
+			allResults = append(allResults, r)
 		default:
 			return fmt.Errorf("unsupported output format: %s", outputFormat)
+		}
+	}
+	if outputFormat == "json" {
+		if err := scan.WriteToJSON(output, allResults); err != nil {
+			return fmt.Errorf("failed to write to json: %w", err)
 		}
 	}
 
