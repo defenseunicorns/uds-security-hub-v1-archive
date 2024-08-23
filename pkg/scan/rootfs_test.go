@@ -1,18 +1,13 @@
 package scan
 
 import (
-	"context"
 	"testing"
-
-	"github.com/defenseunicorns/uds-security-hub/internal/executor"
 )
 
 func TestExtractRootFsFromTarFilePath(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
-	exe := executor.NewCommandExecutor(context.TODO())
-	l := &mockLogger{}
 
-	refs, cleanup, err := ExtractRootFsFromTarFilePath(l, filePath, exe)
+	refs, cleanup, err := ExtractRootFsFromTarFilePath(filePath)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}

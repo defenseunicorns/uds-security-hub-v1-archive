@@ -1,48 +1,74 @@
 package scan
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/klauspost/compress/zstd"
-	"go.uber.org/zap"
-
-	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-func extractZarfPackageToTmpDir(
-	tmpDir string,
-	tarBytes []byte,
-	command types.CommandExecutor,
-) (string, error) {
-	pkgOutDir := path.Join(tmpDir, "pkg")
-
-	tarPkgOnDisk := path.Join(tmpDir, "pkg.tar")
-	err := os.WriteFile(tarPkgOnDisk, tarBytes, 0o600)
-	if err != nil {
-		return "", fmt.Errorf("failed to write tar file: %w", err)
+// Sanitize archive file pathing from "G305: Zip Slip vulnerability".
+func sanitizeArchivePath(dir, filename string) (v string, err error) {
+	v = filepath.Join(dir, filename)
+	if strings.HasPrefix(v, filepath.Clean(dir)) {
+		return v, nil
 	}
 
-	err = os.Mkdir(pkgOutDir, 0o700)
-	if err != nil {
-		return "", fmt.Errorf("failed to create output pkg dir: %w", err)
+	return "", fmt.Errorf("%s: %s", "content filepath is tainted", filename)
+}
+
+func extractTarToDir(outDir string, r io.Reader) error {
+	tarReader := tar.NewReader(r)
+
+	for {
+		header, err := tarReader.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("error reading tar reader: %w", err)
+		}
+
+		p, err := sanitizeArchivePath(outDir, header.Name)
+		if err != nil {
+			return err
+		}
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			err := os.MkdirAll(p, 0o700)
+			if err != nil {
+				return fmt.Errorf("failed to create directory from tar: %w", err)
+			}
+		case tar.TypeReg:
+			f, err := os.OpenFile(p, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o600)
+			if err != nil {
+				return fmt.Errorf("failed to file from tar: %w", err)
+			}
+
+			// G110: Potential DoS vulnerability via decompression bomb (gosec)
+			_, err = io.CopyN(f, tarReader, header.Size)
+			if err != nil {
+				return fmt.Errorf("failed to copy tar contents to file: %w", err)
+			}
+
+			err = f.Close()
+			if err != nil {
+				return fmt.Errorf("failed to close file after writing: %w", err)
+			}
+		}
 	}
 
-	_, _, err = command.ExecuteCommand(
-		"tar",
-		[]string{"-xf", tarPkgOnDisk, "-C", pkgOutDir},
-		nil,
-	)
-	if err != nil {
-		return "", fmt.Errorf("failed to untar package: %w", err)
-	}
-
-	return pkgOutDir, nil
+	return nil
 }
 
 func unmarshalJSONFromFilename(filename string, out interface{}) error {
@@ -70,8 +96,6 @@ func extractAllImagesFromOCIDirectory(
 	outputDir string,
 	ociRoot string,
 	indexJSONFilename string,
-	logger types.Logger,
-	command types.CommandExecutor,
 ) ([]trivyScannable, error) {
 	var indexManifest v1.IndexManifest
 	err := unmarshalJSONFromFilename(indexJSONFilename, &indexManifest)
@@ -109,42 +133,33 @@ func extractAllImagesFromOCIDirectory(
 	var results []trivyScannable
 	for _, image := range imagesToScan {
 		imageRootFS := path.Join(outputDir, replacePathChars(image.Name))
-		if err := os.Mkdir(imageRootFS, 0o700); err != nil {
+
+		err := os.MkdirAll(imageRootFS, 0o700)
+		if err != nil {
 			return nil, fmt.Errorf("failed to create dir for image %s: %w", image.Name, err)
 		}
+
 		for i := range image.Manifest.Layers {
 			digest := image.Manifest.Layers[i].Digest
 			layerBlob := path.Join(ociRoot, "blobs", digest.Algorithm, digest.Hex)
-			_, stderr, err := command.ExecuteCommand(
-				"tar",
-				[]string{"--exclude=dev/*", "-zvxf", layerBlob, "-C", imageRootFS},
-				nil,
-			)
+
+			f, err := os.Open(layerBlob)
 			if err != nil {
-				logger.Warn(
-					"error occurred while extracting layer",
-					zap.String("imageName", image.Name),
-					zap.String("digest", digest.Hex),
-					zap.String("stderr", stderr),
-					zap.Error(err),
-				)
+				return nil, fmt.Errorf("failed to open %s: %w", layerBlob, err)
 			}
 
-			// add read and write permissions to the user or the subsequent layers, the trivy scan,
-			// and the cleanup will fail
-			_, _, err = command.ExecuteCommand(
-				"chmod",
-				[]string{"-R", "u+rw", imageRootFS},
-				nil,
-			)
+			zr, err := gzip.NewReader(f)
 			if err != nil {
-				logger.Warn(
-					"unable to ensure proper permissions on extracted files",
-					zap.String("imageName", image.Name),
-					zap.Error(err),
-				)
+				return nil, fmt.Errorf("failed to gunzip %s: %w", layerBlob, err)
+			}
+			defer zr.Close()
+
+			err = extractTarToDir(imageRootFS, zr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to extract tar layer %s: %w", layerBlob, err)
 			}
 		}
+
 		results = append(results, rootfsScannable{
 			ArtifactName: image.Name,
 			RootFSDir:    imageRootFS,
@@ -156,11 +171,7 @@ func extractAllImagesFromOCIDirectory(
 
 type cleanupFunc func()
 
-func ExtractRootFsFromTarFilePath(
-	logger types.Logger,
-	tarFilePath string,
-	command types.CommandExecutor,
-) ([]trivyScannable, cleanupFunc, error) {
+func ExtractRootFsFromTarFilePath(tarFilePath string) ([]trivyScannable, cleanupFunc, error) {
 	f, err := os.Open(tarFilePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open tar: %w", err)
@@ -171,17 +182,13 @@ func ExtractRootFsFromTarFilePath(
 		return nil, nil, fmt.Errorf("failed to unzstd tar: %w", err)
 	}
 
-	tarBytes, err := io.ReadAll(r)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read tar: %w", err)
-	}
-
 	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
 
-	pkgOutDir, err := extractZarfPackageToTmpDir(tmpDir, tarBytes, command)
+	pkgOutDir := path.Join(tmpDir, "oci")
+	err = extractTarToDir(pkgOutDir, r)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -190,8 +197,6 @@ func ExtractRootFsFromTarFilePath(
 		tmpDir,
 		path.Join(pkgOutDir, "images"),
 		path.Join(pkgOutDir, "images", "index.json"),
-		logger,
-		command,
 	)
 	if err != nil {
 		return nil, nil, err
