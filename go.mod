@@ -5,7 +5,7 @@ go 1.22.5
 require (
 	cloud.google.com/go/cloudsqlconn v1.12.0
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/anchore/syft v1.11.0
+	github.com/anchore/syft v1.11.1
 	github.com/docker/docker v27.1.2+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
@@ -136,7 +136,7 @@ require (
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
+	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/api v0.191.0 // indirect

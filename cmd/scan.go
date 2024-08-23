@@ -12,6 +12,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 // errFlagRetrieval is the error message for when a flag cannot be retrieved.
@@ -66,13 +67,14 @@ Example: 'registry1.dso.mil:myuser:mypassword'`)
 	rootCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
-	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for CSV results")
+	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for results")
 	rootCmd.PersistentFlags().StringP("package-path", "p", "", `Path to the local zarf package. 
 This is for local scanning and not fetching from a remote registry.`)
 	rootCmd.PersistentFlags().StringP("scanner-type", "s", "rootfs", "Trivy scanner type. options: sbom|rootfs")
 	rootCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
 This is for local scanning and not fetching from a remote registry.
 This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
+	rootCmd.PersistentFlags().StringP("output-format", "t", "csv", "Output format for results. options: csv|json")
 
 	return rootCmd
 }
@@ -89,6 +91,7 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 	packagePath, _ := cmd.Flags().GetString("package-path")          //nolint:errcheck
 	scannerType, _ := cmd.Flags().GetString("scanner-type")          //nolint:errcheck
 	offlineDBPath, _ := cmd.Flags().GetString("offline-db-path")     //nolint:errcheck
+	outputFormat, _ := cmd.Flags().GetString("output-format")        //nolint:errcheck
 
 	parsedCreds := docker.ParseCredentials(registryCreds)
 
@@ -118,18 +121,32 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		var err error
 		output, err = os.OpenFile(outputFile, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o600)
 		if err != nil {
-			return fmt.Errorf("error creating output csv: %w", err)
+			return fmt.Errorf("error creating output file: %w", err)
 		}
 	}
 
-	for i, v := range results {
+	var allResults []types.ScanResultReader
+
+	for _, v := range results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
 			return fmt.Errorf("error reading scan result: %w", err)
 		}
 
-		if err := r.WriteToCSV(output, i == 0); err != nil {
-			return fmt.Errorf("failed to write to csv: %w", err)
+		switch outputFormat {
+		case "csv":
+			if err := r.WriteToCSV(output, len(allResults) == 0); err != nil {
+				return fmt.Errorf("failed to write to csv: %w", err)
+			}
+		case "json":
+			allResults = append(allResults, r)
+		default:
+			return fmt.Errorf("unsupported output format: %s", outputFormat)
+		}
+	}
+	if outputFormat == "json" {
+		if err := scan.WriteToJSON(output, allResults); err != nil {
+			return fmt.Errorf("failed to write to json: %w", err)
 		}
 	}
 
