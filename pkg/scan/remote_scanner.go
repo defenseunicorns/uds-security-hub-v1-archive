@@ -208,7 +208,6 @@ func (s *Scanner) scanImageAndProcessResults(
 			return nil, fmt.Errorf("failed to process SBOM scannables: %w", err)
 		}
 		scannables = sbomScannables
-	} else if s.sbom {
 	} else {
 		rootfsScannables, err := s.processRootfsScannables(
 			tmpDir,
