@@ -52,9 +52,19 @@ if [ ! -f "$NAMES_FILE" ]; then
   exit 1
 fi
 
+# log in via crane
+registry=$(echo "$GHCR_CREDS" | cut -d ':' -f 1)
+username=$(echo "$GHCR_CREDS" | cut -d ':' -f 2)
+password=$(echo "$GHCR_CREDS" | cut -d ':' -f 3)
+echo $password | crane auth login $registry -u $username --password-stdin
+
 # Read names from the file and run the Go program for each name
 while IFS= read -r NAME; do
   version=$(crane ls ghcr.io/defenseunicorns/$NAME | tail -1)
+  if [[ -z "$version" ]]; then
+    echo "version not found for $NAME"
+    continue
+  fi
   echo "Scanning $NAME with version=$version..."
   go run . \
     -n "${NAME}" \
