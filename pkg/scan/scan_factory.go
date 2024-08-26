@@ -16,10 +16,10 @@ func (sf *ScannerFactoryImpl) CreateScanner(
 	logger types.Logger,
 	org, packageName, tag, packagePath, offlineDBPath string,
 	registryCredentials []types.RegistryCredentials,
-	sbom bool,
+	scannerType ScannerType,
 ) (types.PackageScanner, error) {
 	if packagePath != "" {
-		return NewLocalPackageScanner(logger, packagePath, offlineDBPath, sbom)
+		return NewLocalPackageScanner(logger, packagePath, offlineDBPath, scannerType)
 	}
 
 	if org == "" || packageName == "" || tag == "" {
@@ -34,6 +34,6 @@ func (sf *ScannerFactoryImpl) CreateScanner(
 		tag,
 		offlineDBPath,
 		registryCredentials,
-		sbom,
+		scannerType,
 	), nil
 }

@@ -21,6 +21,8 @@ var errFlagRetrieval = errors.New("error getting flag")
 // errRequiredFlagEmpty is the error message for a required flag that is empty.
 var errRequiredFlagEmpty = errors.New("is required and cannot be empty")
 
+var scannerType scan.ScannerType = scan.RootFSScannerType
+
 // Execute is the main entry point for the scanner.
 func Execute(args []string) {
 	rootCmd := newRootCmd()
@@ -32,7 +34,7 @@ func Execute(args []string) {
 
 // newRootCmd creates the root command for the scanner.
 func newRootCmd() *cobra.Command {
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan will scan a zarf package for vulnerabilities and generate a report with Trivy.",
 		Long:  "Scan is a tool for scanning zarf packages for vulnerabilities and generating a report with Trivy",
@@ -70,7 +72,7 @@ Example: 'registry1.dso.mil:myuser:mypassword'`)
 	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for results")
 	rootCmd.PersistentFlags().StringP("package-path", "p", "", `Path to the local zarf package. 
 This is for local scanning and not fetching from a remote registry.`)
-	rootCmd.PersistentFlags().StringP("scanner-type", "s", "rootfs", "Trivy scanner type. options: sbom|rootfs")
+	rootCmd.PersistentFlags().VarP(&scannerType, "scanner-type", "s", "Trivy scanner type. options: sbom|rootfs|image")
 	rootCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
 This is for local scanning and not fetching from a remote registry.
 This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
@@ -89,7 +91,6 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 	outputFile, _ := cmd.Flags().GetString("output-file")            //nolint:errcheck
 	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds") //nolint:errcheck
 	packagePath, _ := cmd.Flags().GetString("package-path")          //nolint:errcheck
-	scannerType, _ := cmd.Flags().GetString("scanner-type")          //nolint:errcheck
 	offlineDBPath, _ := cmd.Flags().GetString("offline-db-path")     //nolint:errcheck
 	outputFormat, _ := cmd.Flags().GetString("output-format")        //nolint:errcheck
 
@@ -105,7 +106,7 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		packagePath,
 		offlineDBPath,
 		parsedCreds,
-		scannerType == "sbom",
+		scannerType,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating scanner: %w", err)

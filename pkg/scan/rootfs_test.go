@@ -1,17 +1,23 @@
 package scan
 
 import (
+	"os"
 	"testing"
 )
 
 func TestExtractRootFsFromTarFilePath(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 
-	refs, cleanup, err := ExtractRootFsFromTarFilePath(filePath)
+	tmpDir, err := os.MkdirTemp("", "extract-rootfs-*")
+	if err != nil {
+		t.Fatalf("failed to create tmpdir: %s", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	refs, err := ExtractRootFsFromTarFilePath(tmpDir, filePath)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}
-	defer cleanup()
 
 	if len(refs) != 1 {
 		t.Errorf("did not extract correct number of refs; want %d, got %d", 1, len(refs))

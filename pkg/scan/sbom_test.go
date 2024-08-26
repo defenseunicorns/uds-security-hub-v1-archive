@@ -1,10 +1,20 @@
 package scan
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestExtractSBOMsFromTar(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
-	refs, err := ExtractSBOMsFromZarfTarFile(filePath)
+
+	tmpDir, err := os.MkdirTemp("", "extract-sbom-*")
+	if err != nil {
+		t.Fatalf("failed to create tmpdir: %s", tmpDir)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	refs, err := ExtractSBOMsFromZarfTarFile(tmpDir, filePath)
 	if err != nil {
 		t.Fatalf("Failed to extract images from tar: %v", err)
 	}
