@@ -44,7 +44,7 @@ type LocalPackageScanner struct {
 	logger        types.Logger
 	packagePath   string
 	offlineDBPath string // New field for offline DB path
-	sbom          bool
+	scannerType   ScannerType
 }
 
 // NewLocalPackageScanner creates a new LocalPackageScanner instance.
@@ -57,7 +57,8 @@ type LocalPackageScanner struct {
 // - *LocalPackageScanner: the LocalPackageScanner instance.
 // - error: an error if the instance cannot be created.
 func NewLocalPackageScanner(logger types.Logger,
-	packagePath, offlineDBPath string, sbom bool) (types.PackageScanner, error) {
+	packagePath, offlineDBPath string, scannerType ScannerType,
+) (types.PackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
@@ -68,7 +69,7 @@ func NewLocalPackageScanner(logger types.Logger,
 		logger:        logger,
 		packagePath:   packagePath,
 		offlineDBPath: offlineDBPath,
-		sbom:          sbom,
+		scannerType:   scannerType,
 	}, nil
 }
 
@@ -84,24 +85,30 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
 
-	var refs []trivyScannable
-	if lps.sbom {
+	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	var scannables []trivyScannable
+	switch lps.scannerType {
+	case SBOMScannerType:
 		var err error
-		refs, err = ExtractSBOMsFromZarfTarFile(lps.packagePath)
+		scannables, err = ExtractSBOMsFromZarfTarFile(tmpDir, lps.packagePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract sboms from tar: %w", err)
 		}
-	} else {
+	case RootFSScannerType:
 		var err error
-		rootRefs, cleanup, err := ExtractRootFsFromTarFilePath(lps.packagePath)
+		scannables, err = ExtractRootFsFromTarFilePath(tmpDir, lps.packagePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract rootfs from tar: %w", err)
 		}
-		defer cleanup()
-		refs = rootRefs
 	}
+
 	var scanResults []types.PackageScannerResult
-	for _, result := range refs {
+	for _, result := range scannables {
 		scanResult, err := scanWithTrivy(result, lps.offlineDBPath, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan: %w", err)
