@@ -1,4 +1,4 @@
-name: UDS Scan
+name: Test UDS Scan for Memory
 
 on:
   pull_request:
