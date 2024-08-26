@@ -52,18 +52,12 @@ jobs:
           curl -sL "https://github.com/google/go-containerregistry/releases/download/${VERSION}/go-containerregistry_${OS}_${ARCH}.tar.gz" > go-containerregistry.tar.gz
           tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane
 
-      - name: scan names.txt
+      - name: scan
         env:
           GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           ./scripts/scan-test.sh -f names.txt
-
-      - name: scan leapfrog.txt
-        env:
-          GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
           ./scripts/scan-test.sh -f leapfrog.txt
 
       - name: upload json artifacts
