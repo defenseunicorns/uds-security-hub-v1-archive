@@ -1,0 +1,73 @@
+name: UDS Scan
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        with:
+          egress-policy: audit
+
+      - name: debug disks
+        run: |
+          df -h
+
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v2
+
+      - uses: google-github-actions/auth@62cf5bd3e4211a0a0b51f2c6d6a37129d828611d # v2
+        with:
+          workload_identity_provider: "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}"
+          project_id: "${{ secrets.GCP_PROJECT }}"
+
+      - name: Set up Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v2
+        with:
+          go-version: '1.22.4'
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get install wget apt-transport-https gnupg -y
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy -y
+
+      - name: install crane
+        run: |
+          VERSION=$(curl -s "https://api.github.com/repos/google/go-containerregistry/releases/latest" | jq -r '.tag_name')
+          OS=Linux
+          ARCH=x86_64
+          curl -sL "https://github.com/google/go-containerregistry/releases/download/${VERSION}/go-containerregistry_${OS}_${ARCH}.tar.gz" > go-containerregistry.tar.gz
+          tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane
+
+      - name: scan names.txt
+        env:
+          GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          ./scripts/scan-test.sh -f names.txt
+
+      - name: scan leapfrog.txt
+        env:
+          GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          ./scripts/scan-test.sh -f leapfrog.txt
+
+      - name: upload json artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: '*.json'
