@@ -58,6 +58,9 @@ username=$(echo "$GHCR_CREDS" | cut -d ':' -f 2)
 password=$(echo "$GHCR_CREDS" | cut -d ':' -f 3)
 echo $password | crane auth login $registry -u $username --password-stdin
 
+SCAN_OUTPUT_DIR=build/scans/
+mkdir -p "${SCAN_OUTPUT_DIR}"
+
 # Read names from the file and run the Go program for each name
 while IFS= read -r NAME; do
   version=$(crane ls ghcr.io/defenseunicorns/$NAME | tail -1)
@@ -70,7 +73,7 @@ while IFS= read -r NAME; do
     -n "${NAME}" \
     -g "${version}" \
     --output-format "json" \
-    --output-file $(basename $NAME).json \
+    --output-file "${SCAN_OUTPUT_DIR}"$(basename $NAME).json \
     --registry-creds "${GHCR_CREDS}" \
   echo "Finished scanning $NAME"
 done < "$NAMES_FILE"
