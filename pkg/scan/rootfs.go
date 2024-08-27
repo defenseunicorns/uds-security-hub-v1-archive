@@ -177,7 +177,7 @@ func extractAllImagesFromOCIDirectory(
 	return results, nil
 }
 
-func ExtractRootFsFromTarFilePath(outputDir string, tarFilePath string) ([]trivyScannable, error) {
+func ExtractRootFsFromTarFilePath(outputDir, tarFilePath string) ([]trivyScannable, error) {
 	f, err := os.Open(tarFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open tar: %w", err)
