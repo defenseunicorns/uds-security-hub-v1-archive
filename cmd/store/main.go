@@ -291,6 +291,10 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 			return fmt.Errorf("failed to deserialize scan result: %w", err)
 		}
 
+		if result.ArtifactNameOverride != "" {
+			scanDTO.ArtifactName = result.ArtifactNameOverride
+		}
+
 		scanDTOs := external.MapScanResultToDTO(&scanDTO)
 		scans = append(scans, scanDTOs...)
 	}
