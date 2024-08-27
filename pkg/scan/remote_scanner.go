@@ -31,8 +31,8 @@ type Scanner struct {
 	packageName         string
 	tag                 string
 	offlineDBPath       string
-	registryCredentials []types.RegistryCredentials
 	scannerType         ScannerType
+	registryCredentials []types.RegistryCredentials
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.

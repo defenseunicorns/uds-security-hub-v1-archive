@@ -24,11 +24,11 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	packagePath := "/path/to/package"
 
 	tests := []struct {
-		name        string
 		logger      types.Logger
+		expected    *LocalPackageScanner
+		name        string
 		packagePath string
 		scannerType ScannerType
-		expected    *LocalPackageScanner
 		expectError bool
 	}{
 		{

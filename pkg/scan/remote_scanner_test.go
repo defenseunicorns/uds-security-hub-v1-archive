@@ -72,10 +72,10 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 		ghrcToken       string
 	}
 	type args struct {
+		commandExecutor types.CommandExecutor
 		imageRef        string
 		userName        string
 		password        string
-		commandExecutor types.CommandExecutor
 	}
 	tests := []struct {
 		name    string
