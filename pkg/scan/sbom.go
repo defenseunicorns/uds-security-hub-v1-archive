@@ -51,7 +51,7 @@ func extractSBOMImageRefsFromReader(outputDir string, r io.Reader) ([]trivyScann
 // Returns:
 // - []sbomImageRef: references to images and their sboms.
 // - error: an error if the extraction fails.
-func ExtractSBOMsFromZarfTarFile(outputDir string, tarFilePath string) ([]trivyScannable, error) {
+func ExtractSBOMsFromZarfTarFile(outputDir, tarFilePath string) ([]trivyScannable, error) {
 	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
 	if err != nil {
 		return nil, err
