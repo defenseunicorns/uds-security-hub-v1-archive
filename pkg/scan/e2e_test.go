@@ -17,11 +17,12 @@ func TestE2EScanFunctionality(t *testing.T) {
 		t.Skip("Skipping integration test")
 	}
 	testCases := []struct {
-		name string
-		sbom bool
+		name        string
+		scannerType ScannerType
 	}{
-		{name: "RootFS Scanner", sbom: false},
-		{name: "SBOM Scanner", sbom: true},
+		{name: "SBOM Scanner", scannerType: SBOMScannerType},
+		{name: "RootFS Scanner", scannerType: RootFSScannerType},
+		{name: "Image Scanner", scannerType: ImageScannerType},
 	}
 
 	for _, tt := range testCases {
@@ -40,7 +41,7 @@ func TestE2EScanFunctionality(t *testing.T) {
 			packageName := "packages/uds/sonarqube"
 			tag := "9.9.5-uds.1-upstream"
 			// Create the scanner
-			scanner := NewRemotePackageScanner(ctx, logger, org, packageName, tag, "", registryCreds, tt.sbom)
+			scanner := NewRemotePackageScanner(ctx, logger, org, packageName, tag, "", registryCreds, tt.scannerType)
 			// Perform the scan
 			results, err := scanner.Scan(ctx)
 			if err != nil {

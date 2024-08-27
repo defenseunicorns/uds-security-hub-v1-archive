@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"slices"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/executor"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
+	"github.com/klauspost/compress/zstd"
 )
 
 func extractFilesFromTar(r io.Reader, filenames ...string) (map[string][]byte, error) {
@@ -44,7 +46,7 @@ type LocalPackageScanner struct {
 	logger        types.Logger
 	packagePath   string
 	offlineDBPath string // New field for offline DB path
-	sbom          bool
+	scannerType   ScannerType
 }
 
 // NewLocalPackageScanner creates a new LocalPackageScanner instance.
@@ -57,7 +59,8 @@ type LocalPackageScanner struct {
 // - *LocalPackageScanner: the LocalPackageScanner instance.
 // - error: an error if the instance cannot be created.
 func NewLocalPackageScanner(logger types.Logger,
-	packagePath, offlineDBPath string, sbom bool) (types.PackageScanner, error) {
+	packagePath, offlineDBPath string, scannerType ScannerType,
+) (types.PackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
@@ -68,7 +71,7 @@ func NewLocalPackageScanner(logger types.Logger,
 		logger:        logger,
 		packagePath:   packagePath,
 		offlineDBPath: offlineDBPath,
-		sbom:          sbom,
+		scannerType:   scannerType,
 	}, nil
 }
 
@@ -84,24 +87,54 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 	}
 	commandExecutor := executor.NewCommandExecutor(ctx)
 
-	var refs []trivyScannable
-	if lps.sbom {
+	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
+	}
+
+	// cleanup tmpdir when done
+	defer os.RemoveAll(tmpDir)
+
+	var scannables []trivyScannable
+	switch lps.scannerType {
+	case SBOMScannerType:
 		var err error
-		refs, err = ExtractSBOMsFromZarfTarFile(lps.packagePath)
+		scannables, err = ExtractSBOMsFromZarfTarFile(tmpDir, lps.packagePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract sboms from tar: %w", err)
 		}
-	} else {
+	case RootFSScannerType:
 		var err error
-		rootRefs, cleanup, err := ExtractRootFsFromTarFilePath(lps.packagePath)
+		scannables, err = ExtractRootFsFromTarFilePath(tmpDir, lps.packagePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to extract rootfs from tar: %w", err)
 		}
-		defer cleanup()
-		refs = rootRefs
+	case ImageScannerType:
+		f, err := os.Open(lps.packagePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open tar: %w", err)
+		}
+
+		r, err := zstd.NewReader(f)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unzstd tar: %w", err)
+		}
+
+		extractDir := path.Join(tmpDir, "oci")
+		err = extractTarToDir(extractDir, r)
+		if err != nil {
+			return nil, err
+		}
+
+		// the oci root dir for a zarf package is in "./images"
+		ociRootDir := path.Join(extractDir, "images")
+		scannables, err = findImageIndexScannables(ociRootDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find image scannables: %w", err)
+		}
 	}
 	var scanResults []types.PackageScannerResult
-	for _, result := range refs {
+	for _, result := range scannables {
 		scanResult, err := scanWithTrivy(result, lps.offlineDBPath, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan: %w", err)

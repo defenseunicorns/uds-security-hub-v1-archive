@@ -29,6 +29,14 @@ func sanitizeArchivePath(dir, filename string) (v string, err error) {
 func extractTarToDir(outDir string, r io.Reader) error {
 	tarReader := tar.NewReader(r)
 
+	_, err := os.Stat(outDir)
+	if errors.Is(err, os.ErrNotExist) {
+		err := os.MkdirAll(outDir, 0o700)
+		if err != nil {
+			return fmt.Errorf("failed to create output dir and it did not exist beforehand: %w", err)
+		}
+	}
+
 	for {
 		header, err := tarReader.Next()
 		if errors.Is(err, io.EOF) {
@@ -169,44 +177,33 @@ func extractAllImagesFromOCIDirectory(
 	return results, nil
 }
 
-type cleanupFunc func()
-
-func ExtractRootFsFromTarFilePath(tarFilePath string) ([]trivyScannable, cleanupFunc, error) {
+func ExtractRootFsFromTarFilePath(outputDir string, tarFilePath string) ([]trivyScannable, error) {
 	f, err := os.Open(tarFilePath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open tar: %w", err)
+		return nil, fmt.Errorf("failed to open tar: %w", err)
 	}
 
 	r, err := zstd.NewReader(f)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to unzstd tar: %w", err)
+		return nil, fmt.Errorf("failed to unzstd tar: %w", err)
 	}
 
-	tmpDir, err := os.MkdirTemp("", "uds-local-scan-*")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create tmp dir: %w", err)
-	}
-
-	pkgOutDir := path.Join(tmpDir, "oci")
+	pkgOutDir := path.Join(outputDir, "oci")
 	err = extractTarToDir(pkgOutDir, r)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	results, err := extractAllImagesFromOCIDirectory(
-		tmpDir,
+		outputDir,
 		path.Join(pkgOutDir, "images"),
 		path.Join(pkgOutDir, "images", "index.json"),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	cleanup := func() {
-		_ = os.RemoveAll(tmpDir)
-	}
-
-	return results, cleanup, nil
+	return results, nil
 }
 
 // replacePathChars replaces characters in a image name that will cause issues in filesystems.
