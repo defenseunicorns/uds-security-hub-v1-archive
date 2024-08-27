@@ -145,7 +145,6 @@ func TestScanImageE2E(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func checkError(t *testing.T, err error, expectError bool) {
