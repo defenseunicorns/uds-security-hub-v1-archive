@@ -74,6 +74,7 @@ while IFS= read -r NAME; do
     -g "${version}" \
     --output-format "json" \
     --output-file "${SCAN_OUTPUT_DIR}"$(basename $NAME).json \
+    --scanner-type image \
     --registry-creds "${GHCR_CREDS}" \
   echo "Finished scanning $NAME"
 done < "$NAMES_FILE"
