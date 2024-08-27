@@ -60,17 +60,3 @@ func (r rootfsScannable) TrivyCommand() []string {
 func (r rootfsScannable) ArtifactNameOverride() string {
 	return r.ArtifactName
 }
-
-type imageInputScannable struct {
-	ArtifactName string
-	ociDir       string
-	hash         string
-}
-
-func (t imageInputScannable) TrivyCommand() []string {
-	return []string{"image", "--input", fmt.Sprintf("%s@%s", t.ociDir, t.hash)}
-}
-
-func (t imageInputScannable) ArtifactNameOverride() string {
-	return t.ArtifactName
-}
