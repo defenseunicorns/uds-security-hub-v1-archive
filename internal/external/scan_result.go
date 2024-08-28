@@ -7,7 +7,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 )
 
-// go:bui
 // ScanResult is a struct that represents the scan result.
 type ScanResult struct {
 	Metadata     model.Metadata `json:"Metadata"`
