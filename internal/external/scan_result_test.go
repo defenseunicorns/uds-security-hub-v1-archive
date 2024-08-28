@@ -74,15 +74,12 @@ func TestMapScanResultToDTO(t *testing.T) {
 		},
 		DiffIDs: []string{"test-diff-id"},
 	}
+
 	metadataJSON, err := json.Marshal(metadata)
 	if err != nil {
 		t.Fatalf("Failed to marshal metadata: %s", err)
 	}
-	vulnerabilities := []model.Vulnerability{
-		{
-			PkgName: "test-pkg-name",
-		},
-	}
+
 	createdAt := time.Now()
 
 	scanResult := &ScanResult{
@@ -97,25 +94,67 @@ func TestMapScanResultToDTO(t *testing.T) {
 			Vulnerabilities []model.Vulnerability `json:"Vulnerabilities"`
 		}{
 			{
-				Target:          "test-target",
-				Class:           "test-class",
-				Type:            "test-type",
-				Vulnerabilities: vulnerabilities,
+				Target: "/some/long/filename",
+				Class:  "os-pkg",
+				Type:   "chainguard",
+				Vulnerabilities: []model.Vulnerability{
+					{
+						PkgName: "os-pkg-result-1",
+					},
+					{
+						PkgName: "os-pkg-result-2",
+					},
+				},
 			},
+			{
+				Target: "NodeJS",
+				Class:  "lang-pkgs",
+				Type:   "node-pkg",
+				Vulnerabilities: []model.Vulnerability{
+					{
+						PkgName: "lang-pkg-result-1",
+					},
+					{
+						PkgName: "lang-pkg-result-2",
+					},
+				}},
 		},
 		SchemaVersion: 1,
 		ID:            123,
 	}
 
-	expectedDTOs := []ScanDTO{
-		{
-			ID:              123,
-			SchemaVersion:   1,
-			CreatedAt:       createdAt,
-			ArtifactName:    "test-artifact",
-			ArtifactType:    "test-type",
-			Metadata:        json.RawMessage(metadataJSON),
-			Vulnerabilities: vulnerabilities,
+	expectedDTO := ScanDTO{
+		ID:            123,
+		SchemaVersion: 1,
+		CreatedAt:     createdAt,
+		ArtifactName:  "test-artifact",
+		ArtifactType:  "test-type",
+		Metadata:      json.RawMessage(metadataJSON),
+		Vulnerabilities: []model.Vulnerability{
+			{
+				Target:  "/some/long/filename",
+				Class:   "os-pkg",
+				Type:    "chainguard",
+				PkgName: "os-pkg-result-1",
+			},
+			{
+				Target:  "/some/long/filename",
+				Class:   "os-pkg",
+				Type:    "chainguard",
+				PkgName: "os-pkg-result-2",
+			},
+			{
+				Target:  "NodeJS",
+				Class:   "lang-pkgs",
+				Type:    "node-pkg",
+				PkgName: "lang-pkg-result-1",
+			},
+			{
+				Target:  "NodeJS",
+				Class:   "lang-pkgs",
+				Type:    "node-pkg",
+				PkgName: "lang-pkg-result-2",
+			},
 		},
 	}
 
@@ -123,7 +162,7 @@ func TestMapScanResultToDTO(t *testing.T) {
 	actualDTOs := MapScanResultToDTO(scanResult)
 
 	// Compare the expected and actual DTOs
-	if diff := cmp.Diff(expectedDTOs, actualDTOs, cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(expectedDTO, actualDTOs); diff != "" {
 		t.Errorf("MapScanResultToDTO() mismatch (-want +got):\n%s", diff)
 	}
 }

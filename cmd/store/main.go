@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
@@ -252,7 +253,7 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	logger := log.NewLogger(context.Background())
 	// this is for local sqlite db path and we would need to initialize the db and tables
 	if dbType == "sqlite" {
-		logger.Info("Using local SQLite database")
+		logger.Info("Using local SQLite database", zap.String("dbPath", dbPath))
 		dbConn, err = setupDBConnection(dbPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup database connection: %w", err)
@@ -291,8 +292,12 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 			return fmt.Errorf("failed to deserialize scan result: %w", err)
 		}
 
-		scanDTOs := external.MapScanResultToDTO(&scanDTO)
-		scans = append(scans, scanDTOs...)
+		if result.ArtifactNameOverride != "" {
+			scanDTO.ArtifactName = result.ArtifactNameOverride
+		}
+
+		mappedScanDTO := external.MapScanResultToDTO(&scanDTO)
+		scans = append(scans, mappedScanDTO)
 	}
 
 	packageDTO := external.PackageDTO{
