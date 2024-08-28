@@ -2,20 +2,26 @@ package pprof
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 )
 
 func TestStartPprofServer(t *testing.T) {
 	t.Run("Valid_address", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		addr := "127.0.0.1:6060"
+		var wg sync.WaitGroup
+		wg.Add(1)
+
 		go func() {
-			if err := StartPprofServer(ctx, addr); err != nil {
+			defer wg.Done()
+			if err := StartPprofServer(ctx, addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				t.Logf("expected no error, got %v", err)
 			}
 		}()
@@ -40,5 +46,11 @@ func TestStartPprofServer(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 		}
+
+		// Cancel the context to shut down the server
+		cancel()
+
+		// Wait for all goroutines to complete
+		wg.Wait()
 	})
 }

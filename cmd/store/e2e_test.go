@@ -2,7 +2,9 @@ package main
 
 import (
 	"os"
+	"slices"
 	"testing"
+	"time"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 )
@@ -18,6 +20,8 @@ func TestStore(t *testing.T) {
 	if github == "" || ghcrCreds == "" {
 		t.Fatalf("GITHUB_TOKEN and GHCR_CREDS are required")
 	}
+
+	startTime := time.Now()
 
 	os.Args = []string{
 		"program",
@@ -47,19 +51,26 @@ func TestStore(t *testing.T) {
 	}
 
 	main()
-	// Check the number of rows in the scans table
+
+	// check the scans for ArtifactName and correct count
+	var scans []model.Scan
+	if result := db.Where("created_at > ?", startTime).Find(&scans); result.Error != nil {
+		t.Fatalf("failed to find scans, got %v", result.Error)
+	}
+
+	if len(scans) != 2 {
+		t.Fatalf("Expected 2 rows in scan table, got %d", len(scans))
+	}
+
+	expectedArtifactNames := []string{"docker.io/curlimages/curl:8.9.1", "docker.io/mattermost/mattermost-enterprise-edition:9.11.0"}
+	for _, scan := range scans {
+		if !slices.Contains(expectedArtifactNames, scan.ArtifactName) {
+			t.Fatalf("got unexpected ArtifactName, wanted one of %v, got %s", expectedArtifactNames, scan.ArtifactName)
+		}
+	}
+
 	var count int64
-	row := db.Model(&model.Scan{}).Count(&count)
-	if err := row.Error; err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	if count <= 1 {
-		t.Fatalf("Expected more than 1 row in scans table, got %d", count)
-	}
-	t.Logf("Scan %d rows", count)
-
-	row = db.Model(&model.Package{}).Count(&count)
+	row := db.Model(&model.Package{}).Count(&count)
 	if err := row.Error; err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}

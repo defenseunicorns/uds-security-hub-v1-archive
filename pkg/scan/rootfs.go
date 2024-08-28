@@ -29,6 +29,14 @@ func sanitizeArchivePath(dir, filename string) (v string, err error) {
 func extractTarToDir(outDir string, r io.Reader) error {
 	tarReader := tar.NewReader(r)
 
+	_, err := os.Stat(outDir)
+	if errors.Is(err, os.ErrNotExist) {
+		err := os.MkdirAll(outDir, 0o700)
+		if err != nil {
+			return fmt.Errorf("failed to create output dir and it was not created beforehand: %w", err)
+		}
+	}
+
 	for {
 		header, err := tarReader.Next()
 		if errors.Is(err, io.EOF) {
