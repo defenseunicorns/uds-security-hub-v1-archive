@@ -24,22 +24,22 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	packagePath := "/path/to/package"
 
 	tests := []struct {
-		name        string
 		logger      types.Logger
-		packagePath string
-		sbom        bool
 		expected    *LocalPackageScanner
+		name        string
+		packagePath string
+		scannerType ScannerType
 		expectError bool
 	}{
 		{
 			name:        "valid inputs",
 			logger:      logger,
 			packagePath: packagePath,
-			sbom:        true,
+			scannerType: SBOMScannerType,
 			expected: &LocalPackageScanner{
 				logger:      logger,
 				packagePath: packagePath,
-				sbom:        true,
+				scannerType: SBOMScannerType,
 			},
 			expectError: false,
 		},
@@ -47,11 +47,11 @@ func TestNewLocalPackageScanner(t *testing.T) {
 			name:        "valid inputs for rootfs",
 			logger:      logger,
 			packagePath: packagePath,
-			sbom:        false,
+			scannerType: SBOMScannerType,
 			expected: &LocalPackageScanner{
 				logger:      logger,
 				packagePath: packagePath,
-				sbom:        false,
+				scannerType: SBOMScannerType,
 			},
 			expectError: false,
 		},
@@ -72,7 +72,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "", tt.sbom)
+			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "", tt.scannerType)
 			checkError(t, err, tt.expectError)
 			if !tt.expectError {
 				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
@@ -89,24 +89,24 @@ func TestScanImageE2E(t *testing.T) {
 	logger := log.NewLogger(ctx)
 
 	type testCase struct {
-		name string
-		sbom bool
+		name        string
+		scannerType ScannerType
 	}
 
 	testCases := []testCase{
 		{
-			name: "sbom",
-			sbom: true,
+			name:        "SBOM",
+			scannerType: SBOMScannerType,
 		},
 		{
-			name: "rootfs",
-			sbom: false,
+			name:        "RootFS",
+			scannerType: RootFSScannerType,
 		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "", tt.sbom)
+			lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "", tt.scannerType)
 			if err != nil {
 				t.Fatalf("Failed to create local package scanner: %v", err)
 			}

@@ -45,7 +45,7 @@ var errFlagRetrieval = errors.New("error getting flag")
 var errRequiredFlagEmpty = errors.New("is required and cannot be empty")
 
 func newStoreCmd() *cobra.Command {
-	var storeCmd = &cobra.Command{
+	storeCmd := &cobra.Command{
 		Use:   "store",
 		Short: "Scan a Zarf package and store the results in the database",
 		Long:  "Scan a Zarf package for vulnerabilities and store the results in the database using GormScanManager",
@@ -126,7 +126,7 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	}
 	parsedCreds := docker.ParseCredentials(registryCreds)
 	scanner := scan.NewRemotePackageScanner(ctx, logInstance, config.Org, config.PackageName,
-		config.Tag, config.OfflineDBPath, parsedCreds, false)
+		config.Tag, config.OfflineDBPath, parsedCreds, scan.RootFSScannerType)
 	manager, err := db.NewGormScanManager(config.DBConn)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)

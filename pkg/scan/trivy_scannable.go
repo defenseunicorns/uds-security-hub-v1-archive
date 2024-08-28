@@ -1,5 +1,32 @@
 package scan
 
+import "fmt"
+
+type ScannerType string
+
+const (
+	SBOMScannerType   ScannerType = "sbom"
+	RootFSScannerType ScannerType = "rootfs"
+)
+
+func (s *ScannerType) String() string {
+	return string(*s)
+}
+
+func (s *ScannerType) Set(v string) error {
+	switch v {
+	case string(SBOMScannerType), string(RootFSScannerType):
+		*s = ScannerType(v)
+		return nil
+	default:
+		return fmt.Errorf("must be one of %v", []ScannerType{SBOMScannerType, RootFSScannerType})
+	}
+}
+
+func (s *ScannerType) Type() string {
+	return "ScannerType"
+}
+
 type trivyScannable interface {
 	TrivyCommand() []string
 }

@@ -31,8 +31,8 @@ type Scanner struct {
 	packageName         string
 	tag                 string
 	offlineDBPath       string
+	scannerType         ScannerType
 	registryCredentials []types.RegistryCredentials
-	sbom                bool
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.
@@ -44,17 +44,17 @@ func NewRemotePackageScanner(
 	tag,
 	offlineDBPath string, // New parameter for offline DB path
 	registryCredentials []types.RegistryCredentials,
-	sbom bool,
+	scannerType ScannerType,
 ) types.PackageScanner {
 	return &Scanner{
 		logger:              logger,
 		commandExecutor:     executor.NewCommandExecutor(ctx),
 		registryCredentials: registryCredentials,
-		sbom:                sbom,
 		org:                 org,
 		packageName:         packageName,
 		tag:                 tag,
 		offlineDBPath:       offlineDBPath,
+		scannerType:         scannerType,
 	}
 }
 
@@ -158,8 +158,6 @@ func (s *Scanner) scanImageAndProcessResults(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
-
-	// cleanup the tmpdir when done
 	defer os.RemoveAll(tmpDir)
 
 	ociRootDir := path.Join(tmpDir, "oci")
@@ -202,13 +200,14 @@ func (s *Scanner) scanImageAndProcessResults(
 	}
 
 	var scannables []trivyScannable
-	if s.sbom {
-		sbomScannables, err := s.processSBOMScannables(zarfOverrides.sbomFilename)
+	switch s.scannerType {
+	case SBOMScannerType:
+		sbomScannables, err := s.processSBOMScannables(tmpDir, zarfOverrides.sbomFilename)
 		if err != nil {
 			return nil, fmt.Errorf("failed to process SBOM scannables: %w", err)
 		}
 		scannables = sbomScannables
-	} else {
+	case RootFSScannerType:
 		rootfsScannables, err := s.processRootfsScannables(
 			tmpDir,
 			ociRootDir,
@@ -240,14 +239,14 @@ func (s *Scanner) scanImageAndProcessResults(
 
 // processSBOMScannables reads from an ImageIndex and returns a list of
 // scannable sbom files.
-func (s *Scanner) processSBOMScannables(sbomsTarFilename string) ([]trivyScannable, error) {
+func (s *Scanner) processSBOMScannables(outputDir, sbomsTarFilename string) ([]trivyScannable, error) {
 	f, err := os.Open(sbomsTarFilename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open sboms.tar file: %w", err)
 	}
 	defer f.Close()
 
-	return extractSBOMImageRefsFromReader(f)
+	return extractSBOMImageRefsFromReader(outputDir, f)
 }
 
 // processRootfsScannables reads an ImageIndex, extracts those layers to disk,

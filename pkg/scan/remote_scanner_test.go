@@ -28,7 +28,7 @@ func TestNewScanResultReader(t *testing.T) {
 			wantErr:      false,
 		},
 	}
-	s := NewRemotePackageScanner(context.Background(), nil, "test", "test", "test", "test", nil, false)
+	s := NewRemotePackageScanner(context.Background(), nil, "test", "test", "test", "test", nil, RootFSScannerType)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.ScanResultReader(types.PackageScannerResult{JSONFilePath: tt.jsonFilePath})
@@ -72,10 +72,10 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 		ghrcToken       string
 	}
 	type args struct {
+		commandExecutor types.CommandExecutor
 		imageRef        string
 		userName        string
 		password        string
-		commandExecutor types.CommandExecutor
 	}
 	tests := []struct {
 		name    string

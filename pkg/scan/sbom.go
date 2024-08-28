@@ -20,12 +20,7 @@ const (
 	SbomFilename = "sboms.tar"
 )
 
-func extractSBOMImageRefsFromReader(r io.Reader) ([]trivyScannable, error) {
-	tmp, err := os.MkdirTemp("", "zarf-sbom-files-*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
-	}
-
+func extractSBOMImageRefsFromReader(outputDir string, r io.Reader) ([]trivyScannable, error) {
 	var results []trivyScannable
 
 	sbomTarReader := tar.NewReader(r)
@@ -39,7 +34,7 @@ func extractSBOMImageRefsFromReader(r io.Reader) ([]trivyScannable, error) {
 		}
 
 		if strings.HasSuffix(header.Name, ".json") {
-			sbomImageRef, err := convertToCyclonedxFormat(header, sbomTarReader, tmp)
+			sbomImageRef, err := convertToCyclonedxFormat(header, sbomTarReader, outputDir)
 			if err != nil {
 				return nil, err
 			}
@@ -56,13 +51,13 @@ func extractSBOMImageRefsFromReader(r io.Reader) ([]trivyScannable, error) {
 // Returns:
 // - []sbomImageRef: references to images and their sboms.
 // - error: an error if the extraction fails.
-func ExtractSBOMsFromZarfTarFile(tarFilePath string) ([]trivyScannable, error) {
+func ExtractSBOMsFromZarfTarFile(outputDir, tarFilePath string) ([]trivyScannable, error) {
 	sbomTar, err := extractSBOMTarFromZarfPackage(tarFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	return extractSBOMImageRefsFromReader(bytes.NewReader(sbomTar))
+	return extractSBOMImageRefsFromReader(outputDir, bytes.NewReader(sbomTar))
 }
 
 func extractSBOMTarFromZarfPackage(tarFilePath string) ([]byte, error) {
