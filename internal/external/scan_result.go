@@ -7,7 +7,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 )
 
-// go:bui
 // ScanResult is a struct that represents the scan result.
 type ScanResult struct {
 	Metadata     model.Metadata `json:"Metadata"`
@@ -48,26 +47,36 @@ type PackageDTO struct {
 }
 
 // MapScanResultToDTO maps the ScanResult to a slice of ScanDTO.
-func MapScanResultToDTO(result *ScanResult) []ScanDTO {
-	var dtos []ScanDTO
-	for _, res := range result.Results {
-		metadataJSON, err := json.Marshal(result.Metadata)
-		if err != nil {
-			// Handle error appropriately
-			continue
-		}
-		dto := ScanDTO{
-			ID:              result.ID,
-			SchemaVersion:   result.SchemaVersion,
-			CreatedAt:       result.CreatedAt,
-			ArtifactName:    result.ArtifactName,
-			ArtifactType:    result.ArtifactType,
-			Metadata:        json.RawMessage(metadataJSON),
-			Vulnerabilities: res.Vulnerabilities,
-		}
-		dtos = append(dtos, dto)
+func MapScanResultToDTO(result *ScanResult) ScanDTO {
+	dto := ScanDTO{
+		ID:            result.ID,
+		SchemaVersion: result.SchemaVersion,
+		ArtifactName:  result.ArtifactName,
+		ArtifactType:  result.ArtifactType,
+		CreatedAt:     result.CreatedAt,
 	}
-	return dtos
+	metadata, err := json.Marshal(result.Metadata)
+	if err == nil {
+		dto.Metadata = metadata
+	}
+
+	// there can be multiple results per scan, we want to take all of the vulns
+	// and map them to a single ScanDTO
+	for _, res := range result.Results {
+		for i := range res.Vulnerabilities {
+			vuln := res.Vulnerabilities[i]
+
+			// copy these fields over, they are not in the vulnerability
+			// and exist in the result
+			vuln.Target = res.Target
+			vuln.Type = res.Type
+			vuln.Class = res.Class
+
+			dto.Vulnerabilities = append(dto.Vulnerabilities, vuln)
+		}
+	}
+
+	return dto
 }
 
 // MapPackageToDTO maps the Package to a PackageDTO.
