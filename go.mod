@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.12.0
-	github.com/Masterminds/semver/v3 v3.2.1
+	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/anchore/syft v1.11.1
 	github.com/docker/docker v27.1.2+incompatible
 	github.com/google/go-cmp v0.6.0
