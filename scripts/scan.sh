@@ -67,7 +67,7 @@ fi
 # Read names from the file and run the Go program for each name
 while IFS= read -r NAME; do
   echo "Scanning $NAME with $NUMBER_OF_VERSIONS versions..."
-  go run cmd/store/main.go \
+  OUTPUT=$(go run cmd/store/main.go \
     -n "${NAME}" \
     -v "${NUMBER_OF_VERSIONS}" \
     -t "${GITHUB_TOKEN}" \
@@ -79,6 +79,12 @@ while IFS= read -r NAME; do
     --db-name "${DB_NAME}" \
     --db-user "${DB_USER}" \
     --db-password "${DB_PASSWORD}" \
-    --db-type "postgres" \
-  echo "Finished scanning $NAME"
+    --db-type "postgres" 2>&1)
+  
+  if [ $? -eq 0 ]; then
+    echo "Successfully finished scanning $NAME"
+  else
+    echo "Failed to scan $NAME"
+    echo "Error output: $OUTPUT"
+  fi
 done < "$NAMES_FILE"
