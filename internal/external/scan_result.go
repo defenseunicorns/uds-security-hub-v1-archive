@@ -55,7 +55,7 @@ func MapScanResultToDTO(result *ScanResult) ScanDTO {
 		ArtifactType:  result.ArtifactType,
 		CreatedAt:     result.CreatedAt,
 	}
-	dto.Metadata, _ = json.Marshal(result.Metadata) //nolint:errcheckjson
+	dto.Metadata, _ = json.Marshal(result.Metadata) //nolint:errcheck
 
 	// there can be multiple results per scan, we want to take all of the vulns
 	// and map them to a single ScanDTO
