@@ -41,8 +41,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
-        REGISTRY1_CREDS: ${{ secrets.REGISTRY1_CREDS }}
-        DOCKER_IO_CREDS: ${{ secrets.DOCKER_IO_CREDS }}
       run: make test
 
     - name: Upload coverage reports to Codecov
