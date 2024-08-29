@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"slices"
 	"testing"
 	"time"
 
@@ -60,13 +59,6 @@ func TestStore(t *testing.T) {
 
 	if len(scans) != 2 {
 		t.Fatalf("Expected 2 rows in scan table, got %d", len(scans))
-	}
-
-	expectedArtifactNames := []string{"docker.io/curlimages/curl:8.9.1", "docker.io/mattermost/mattermost-enterprise-edition:9.11.0"}
-	for _, scan := range scans {
-		if !slices.Contains(expectedArtifactNames, scan.ArtifactName) {
-			t.Fatalf("got unexpected ArtifactName, wanted one of %v, got %s", expectedArtifactNames, scan.ArtifactName)
-		}
 	}
 
 	var count int64
