@@ -25,6 +25,7 @@ func extractSBOMImageRefsFromReader(r io.Reader) ([]trivyScannable, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
 	}
+	defer os.RemoveAll(tmp) // Ensure the temporary directory is cleaned up
 
 	var results []trivyScannable
 
