@@ -42,8 +42,3 @@ jobs:
 
     - name: Clean
       run: make clean
-
-    - name: Test Egress Policy
-      run: curl -I test.test
-      continue-on-error: true
-
