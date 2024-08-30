@@ -41,9 +41,7 @@ jobs:
       - name: Run Leapfrog Scan
         env:
           GHCR_CREDS: ${{ secrets.GHCR_CREDS }}
-          REGISTRY1_CREDS: ${{ secrets.REGISTRY1_CREDS }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCKER_IO_CREDS: ${{ secrets.DOCKER_IO_CREDS }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
