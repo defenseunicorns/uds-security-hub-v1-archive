@@ -33,6 +33,7 @@ jobs:
             sum.golang.org:443
             registry-1.docker.io:443
             auth.docker.io:443
+            ghcr.io:443
 
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v3
