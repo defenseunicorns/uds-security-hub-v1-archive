@@ -56,3 +56,7 @@ jobs:
           docker run ghcr.io/defenseunicorns/uds-security-hub-store:latest --help
           echo "verifying image:$TAG is built"
           docker run ghcr.io/defenseunicorns/uds-security-hub-store:$TAG --help
+
+      - name: Test Egress Policy
+        run: curl -I test.test
+        continue-on-error: true
