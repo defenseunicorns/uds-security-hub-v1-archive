@@ -67,7 +67,3 @@ jobs:
     - name: Delete temporary Git tag
       run: |
         git tag -d v0.0.0-temp-tag
-    
-    - name: Test Egress Policy
-      run: curl -I test.test
-      continue-on-error: true 
