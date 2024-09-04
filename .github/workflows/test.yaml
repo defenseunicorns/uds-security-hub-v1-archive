@@ -33,6 +33,7 @@ jobs:
           azure.archive.ubuntu.com:80
           motd.ubuntu.com:443
           esm.ubuntu.com:443
+          sts.googleapis.com:443
           ghcr.io:443
           pkg-containers.githubusercontent.com:443
           api.codecov.io:443

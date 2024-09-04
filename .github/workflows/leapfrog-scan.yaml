@@ -68,7 +68,3 @@ jobs:
         run: |
           chmod +x scripts/scan.sh
           ./scripts/scan.sh -f leapfrog_names.txt -v 1
-
-      - name: Test Egress Policy
-        run: curl -I test.test
-        continue-on-error: true 

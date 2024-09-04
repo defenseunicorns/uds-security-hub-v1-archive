@@ -33,8 +33,10 @@ jobs:
           azure.archive.ubuntu.com:80
           motd.ubuntu.com:443
           esm.ubuntu.com:443
+          sts.googleapis.com:443
           ghcr.io:443
           pkg-containers.githubusercontent.com:443
+
 
     - name: Checkout code
       uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
