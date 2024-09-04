@@ -70,7 +70,3 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: coverage.out
         verbose: true
-
-    - name: Test Egress Policy
-      run: curl -I test.test
-      continue-on-error: true     
