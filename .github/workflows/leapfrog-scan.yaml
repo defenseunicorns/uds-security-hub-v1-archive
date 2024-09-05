@@ -36,6 +36,7 @@ jobs:
             motd.ubuntu.com:443
             esm.ubuntu.com:443
             sqladmin.googleapis.com:443
+            34.42.78.208:3307
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
 
