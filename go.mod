@@ -1,6 +1,6 @@
 module github.com/defenseunicorns/uds-security-hub
 
-go 1.22.5
+go 1.23
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.12.0
