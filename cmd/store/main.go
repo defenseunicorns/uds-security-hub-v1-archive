@@ -287,7 +287,7 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 		}
 
 		var scanDTO external.ScanResult
-		err = json.Unmarshal(data, &scanDTO)
+		err = json.Unmarshal(data, &scanDTO) //nolint:musttag
 		if err != nil {
 			return fmt.Errorf("failed to deserialize scan result: %w", err)
 		}
