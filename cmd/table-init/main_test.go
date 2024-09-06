@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jaekwon/testify/require"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
@@ -74,7 +75,7 @@ func TestRun(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	mockConnector.AssertExpectations(t)
 }
 
@@ -95,8 +96,8 @@ func TestRunWithConnectError(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to connect to database")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to connect to database")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -118,7 +119,7 @@ func TestRunWithMigrateError(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to migrate database")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to migrate database")
 	mockConnector.AssertExpectations(t)
 }
