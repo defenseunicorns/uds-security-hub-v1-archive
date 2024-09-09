@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"io"
 )
 
 // VulnerabilityInfo represents information about a vulnerability found in a scanned artifact.
@@ -31,9 +30,6 @@ type ScanResultReader interface {
 	// GetVulnerabilities returns a slice of VulnerabilityInfo representing the vulnerabilities
 	// found in the scanned artifact.
 	GetVulnerabilities() []VulnerabilityInfo
-
-	// WriteToCSV writes the results to the provided reader in CSV format.
-	WriteToCSV(w io.Writer, includeHeader bool) error
 }
 
 type PackageScannerResult struct {

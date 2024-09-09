@@ -32,37 +32,37 @@ func (s *scanResultReader) GetVulnerabilities() []types.VulnerabilityInfo {
 	return s.scanResult.Results[0].Vulnerabilities
 }
 
-func (s *scanResultReader) WriteToCSV(w io.Writer, includeHeader bool) error {
+func WriteToCSV(w io.Writer, results []types.ScanResultReader) error {
 	csvWriter := csv.NewWriter(w)
 
-	if includeHeader {
-		err := csvWriter.Write([]string{
-			"ArtifactName",
-			"VulnerabilityID",
-			"PkgName",
-			"InstalledVersion",
-			"FixedVersion",
-			"Severity",
-			"Description",
-		})
-		if err != nil {
-			return fmt.Errorf("error writing csv header: %w", err)
-		}
+	err := csvWriter.Write([]string{
+		"ArtifactName",
+		"VulnerabilityID",
+		"PkgName",
+		"InstalledVersion",
+		"FixedVersion",
+		"Severity",
+		"Description",
+	})
+	if err != nil {
+		return fmt.Errorf("error writing csv header: %w", err)
 	}
 
-	vulnerabilities := s.GetVulnerabilities()
-	for _, vuln := range vulnerabilities {
-		err := csvWriter.Write([]string{
-			s.GetArtifactName(),
-			vuln.VulnerabilityID,
-			vuln.PkgName,
-			vuln.InstalledVersion,
-			vuln.FixedVersion,
-			vuln.Severity,
-			vuln.Description,
-		})
-		if err != nil {
-			return fmt.Errorf("error writing csv record: %w", err)
+	for _, r := range results {
+		vulnerabilities := r.GetVulnerabilities()
+		for _, vuln := range vulnerabilities {
+			err := csvWriter.Write([]string{
+				r.GetArtifactName(),
+				vuln.VulnerabilityID,
+				vuln.PkgName,
+				vuln.InstalledVersion,
+				vuln.FixedVersion,
+				vuln.Severity,
+				vuln.Description,
+			})
+			if err != nil {
+				return fmt.Errorf("error writing csv record: %w", err)
+			}
 		}
 	}
 
@@ -71,20 +71,30 @@ func (s *scanResultReader) WriteToCSV(w io.Writer, includeHeader bool) error {
 	return nil
 }
 
+type JSONOutputEntry struct {
+	ArtifactName     string
+	VulnerabilityID  string
+	PkgName          string
+	InstalledVersion string
+	FixedVersion     string
+	Severity         string
+	Description      string
+}
+
 func WriteToJSON(w io.Writer, results []types.ScanResultReader) error {
-	var allResults []map[string]string
+	var allResults []JSONOutputEntry
 
 	for _, r := range results {
 		vulnerabilities := r.GetVulnerabilities()
 		for _, vuln := range vulnerabilities {
-			record := map[string]string{
-				"ArtifactName":     r.GetArtifactName(),
-				"VulnerabilityID":  vuln.VulnerabilityID,
-				"PkgName":          vuln.PkgName,
-				"InstalledVersion": vuln.InstalledVersion,
-				"FixedVersion":     vuln.FixedVersion,
-				"Severity":         vuln.Severity,
-				"Description":      vuln.Description,
+			record := JSONOutputEntry{
+				ArtifactName:     r.GetArtifactName(),
+				VulnerabilityID:  vuln.VulnerabilityID,
+				PkgName:          vuln.PkgName,
+				InstalledVersion: vuln.InstalledVersion,
+				FixedVersion:     vuln.FixedVersion,
+				Severity:         vuln.Severity,
+				Description:      vuln.Description,
 			}
 			allResults = append(allResults, record)
 		}

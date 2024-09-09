@@ -10,6 +10,7 @@ import (
 
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 func TestE2EScanFunctionality(t *testing.T) {
@@ -47,19 +48,20 @@ func TestE2EScanFunctionality(t *testing.T) {
 				t.Fatalf("Error scanning package: %v", err)
 			}
 
-			// Process the results
-			var buf bytes.Buffer
-			for i, v := range results {
+			var allResults []types.ScanResultReader
+
+			for _, v := range results {
 				r, err := scanner.ScanResultReader(v)
 				if err != nil {
 					t.Fatalf("Error reading scan result: %v", err)
 				}
 
-				if err := r.WriteToCSV(&buf, i == 0); err != nil {
-					t.Fatalf("Error creating csv: %v", err)
-				}
+				allResults = append(allResults, r)
 			}
 
+			// Process the results
+			var buf bytes.Buffer
+			WriteToCSV(&buf, allResults)
 			combinedCSV := buf.String()
 
 			// Verify the combined CSV output

@@ -134,21 +134,20 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 			return fmt.Errorf("error reading scan result: %w", err)
 		}
 
-		switch outputFormat {
-		case "csv":
-			if err := r.WriteToCSV(output, len(allResults) == 0); err != nil {
-				return fmt.Errorf("failed to write to csv: %w", err)
-			}
-		case "json":
-			allResults = append(allResults, r)
-		default:
-			return fmt.Errorf("unsupported output format: %s", outputFormat)
-		}
+		allResults = append(allResults, r)
 	}
-	if outputFormat == "json" {
+
+	switch outputFormat {
+	case "csv":
+		if err := scan.WriteToCSV(output, allResults); err != nil {
+			return fmt.Errorf("failed to write to csv: %w", err)
+		}
+	case "json":
 		if err := scan.WriteToJSON(output, allResults); err != nil {
 			return fmt.Errorf("failed to write to json: %w", err)
 		}
+	default:
+		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
 
 	return nil
