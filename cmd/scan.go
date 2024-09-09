@@ -155,15 +155,3 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 
 	return nil
 }
-
-func main() {
-	rootCmd := newRootCmd()
-
-	rootCmd.Version = fmt.Sprintf("%s (commit %s)", version.Version, version.CommitSHA)
-	rootCmd.SetVersionTemplate("{{.Version}}\n")
-
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error executing command:", err)
-		os.Exit(1)
-	}
-}
