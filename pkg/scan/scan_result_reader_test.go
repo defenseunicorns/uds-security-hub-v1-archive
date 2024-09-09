@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -304,5 +305,18 @@ func TestWriteToCSV(t *testing.T) {
 				t.Errorf("WriteToCSV() mismatch (-got +want):\n%s", diff)
 			}
 		})
+	}
+}
+
+type failedWriter struct{}
+
+func (f *failedWriter) Write([]byte) (int, error) {
+	return -1, fmt.Errorf("failed to write")
+}
+
+func TestWriteToCSVError(t *testing.T) {
+	err := WriteToCSV(&failedWriter{}, []types.ScanResultReader{})
+	if err == nil {
+		t.Fatal("expected an err writing to a bad writer")
 	}
 }
