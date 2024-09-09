@@ -69,4 +69,4 @@ jobs:
         run: |
           chmod +x scripts/scan.sh
           ./scripts/scan.sh -f names.txt -v 2 
-          ./scripts/scan.sh -f leapfrog.txt -v 1
+          ./scripts/scan.sh -f leapfrog_names.txt -v 1
