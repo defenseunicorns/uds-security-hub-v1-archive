@@ -28,7 +28,10 @@ pipeline:
     runs: >
       set -x
 
-      CGO_ENABLED=1 go build -o "${{targets.destdir}}/usr/sbin/uds-security-hub" main.go
+      VERSION=$(git describe --tags --abbrev=0)
+      COMMIT=$(git rev-parse HEAD)
+      CGO_ENABLED=1 go build -ldflags "-X main.Version=${VERSION} -X main.Commit=${COMMIT}" -o "${{targets.destdir}}/usr/sbin/uds-security-hub" main.go
+
   - name: Create dummy Docker config for Google Cloud
     runs: >
       set -x
