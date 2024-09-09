@@ -14,19 +14,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-// scanResultReaderImpl is a test type that implements the ScanResultReader interface
-type scanResultReaderImpl struct {
-	scanResult types.ScanResult
-}
-
-func (r *scanResultReaderImpl) GetArtifactName() string {
-	return r.scanResult.ArtifactName
-}
-
-func (r *scanResultReaderImpl) GetVulnerabilities() []types.VulnerabilityInfo {
-	return r.scanResult.Results[0].Vulnerabilities
-}
-
 func TestWriteToJSON(t *testing.T) {
 	scanResult := types.ScanResult{
 		ArtifactName: "test-artifact",
@@ -48,12 +35,8 @@ func TestWriteToJSON(t *testing.T) {
 		},
 	}
 
-	reader := &scanResultReaderImpl{
-		scanResult: scanResult,
-	}
-
 	var buf bytes.Buffer
-	err := WriteToJSON(&buf, []types.ScanResultReader{reader}) // Call method on reader
+	err := WriteToJSON(&buf, []types.ScanResultReader{scanResult}) // Call method on reader
 	require.NoError(t, err)
 
 	var output []JSONOutputEntry

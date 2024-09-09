@@ -22,6 +22,18 @@ type ScanResult struct {
 	} `json:"Results"`
 }
 
+func (s ScanResult) GetArtifactName() string {
+	return s.ArtifactName
+}
+
+func (s ScanResult) GetVulnerabilities() []VulnerabilityInfo {
+	var allVulns []VulnerabilityInfo
+	for _, r := range s.Results {
+		allVulns = append(allVulns, r.Vulnerabilities...)
+	}
+	return allVulns
+}
+
 // ScanResultReader is an interface for reading scan results.
 type ScanResultReader interface {
 	// GetArtifactName returns the name of the scanned artifact.
