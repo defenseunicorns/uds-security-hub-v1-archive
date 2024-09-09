@@ -68,7 +68,7 @@ func WriteToCSV(w io.Writer, results []types.ScanResultReader) error {
 
 	csvWriter.Flush()
 
-	return csvWriter.Error()
+	return fmt.Errorf("failed to write csv: %w", csvWriter.Error())
 }
 
 type JSONOutputEntry struct {
