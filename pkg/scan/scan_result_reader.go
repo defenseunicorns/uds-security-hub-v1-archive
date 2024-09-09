@@ -72,13 +72,13 @@ func WriteToCSV(w io.Writer, results []types.ScanResultReader) error {
 }
 
 type JSONOutputEntry struct {
-	ArtifactName     string
-	VulnerabilityID  string
-	PkgName          string
-	InstalledVersion string
-	FixedVersion     string
-	Severity         string
-	Description      string
+	ArtifactName     string `json:"ArtifactName"`
+	VulnerabilityID  string `json:"VulnerabilityID"`
+	PkgName          string `json:"PkgName"`
+	InstalledVersion string `json:"InstalledVersion"`
+	FixedVersion     string `json:"FixedVersion"`
+	Severity         string `json:"Severity"`
+	Description      string `json:"Description"`
 }
 
 func WriteToJSON(w io.Writer, results []types.ScanResultReader) error {
