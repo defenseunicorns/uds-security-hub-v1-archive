@@ -61,7 +61,9 @@ func TestE2EScanFunctionality(t *testing.T) {
 
 			// Process the results
 			var buf bytes.Buffer
-			WriteToCSV(&buf, allResults)
+			if err := WriteToCSV(&buf, allResults); err != nil {
+				t.Fatalf("failed to WriteToCSV: %v", err)
+			}
 			combinedCSV := buf.String()
 
 			// Verify the combined CSV output
