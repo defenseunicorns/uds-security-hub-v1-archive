@@ -35,4 +35,14 @@ test-integration:
 	fi
 	integration=true go test -timeout 160s ./... -v -coverprofile=coverage.out
 
-.PHONY: all build test lint run clean e2e table-init
+verify-version:
+	@for binary in uds-security-hub store; do \
+		VERSION_OUTPUT=$$(./bin/$$binary --version); \
+		echo "Version output for $$binary: $$VERSION_OUTPUT"; \
+		if [[ $$VERSION_OUTPUT != *\"version\"* || $$VERSION_OUTPUT != *\"commit\"* ]]; then \
+			echo "Version information not embedded correctly in $$binary"; \
+			exit 1; \
+		fi; \
+	done
+
+.PHONY: all build test lint run clean e2e table-init verify-version
