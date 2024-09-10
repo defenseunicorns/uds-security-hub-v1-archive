@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"io"
 )
 
 // VulnerabilityInfo represents information about a vulnerability found in a scanned artifact.
@@ -23,6 +22,18 @@ type ScanResult struct {
 	} `json:"Results"`
 }
 
+func (s ScanResult) GetArtifactName() string {
+	return s.ArtifactName
+}
+
+func (s ScanResult) GetVulnerabilities() []VulnerabilityInfo {
+	var allVulns []VulnerabilityInfo
+	for _, r := range s.Results {
+		allVulns = append(allVulns, r.Vulnerabilities...)
+	}
+	return allVulns
+}
+
 // ScanResultReader is an interface for reading scan results.
 type ScanResultReader interface {
 	// GetArtifactName returns the name of the scanned artifact.
@@ -31,9 +42,6 @@ type ScanResultReader interface {
 	// GetVulnerabilities returns a slice of VulnerabilityInfo representing the vulnerabilities
 	// found in the scanned artifact.
 	GetVulnerabilities() []VulnerabilityInfo
-
-	// WriteToCSV writes the results to the provided reader in CSV format.
-	WriteToCSV(w io.Writer, includeHeader bool) error
 }
 
 type PackageScannerResult struct {
