@@ -423,7 +423,7 @@ func TestScanResultDeserialization(t *testing.T) {
 
 	// Deserialize the JSON data into the ScanResult struct
 	var result external.ScanDTO
-	err = json.Unmarshal(data, &result)
+	err = json.Unmarshal(data, &result) //nolint:musttag
 	if err != nil {
 		t.Fatalf("Failed to deserialize JSON data: %s", err)
 	}

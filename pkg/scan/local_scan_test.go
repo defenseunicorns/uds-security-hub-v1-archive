@@ -136,7 +136,7 @@ func TestScanImageE2E(t *testing.T) {
 			}
 			buf.Reset() // Reset buffer for CSV writing
 
-			if err := reader.WriteToCSV(&buf, true); err != nil {
+			if err := WriteToCSV(&buf, []types.ScanResultReader{reader}); err != nil {
 				t.Fatalf("Error writing CSV: %v", err)
 			}
 			csvOutput := buf.String()

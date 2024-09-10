@@ -33,16 +33,18 @@ The UDS Security Hub is a tool designed to manage and scan `zarf` packages for v
 To run the scanner via the command line and generate a CSV output, use the `scan` command with the necessary flags:
 
 ```bash
-scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -f [output-file] -r [registry-creds] -p [package-path] -o [offline-db-path]
+scan -o [organization] -n [package-name] -g [tag] -r [registry-creds] -f [output-file] -p [package-path] -d [offline-db-path] -s [scanner-type] -t [output-format]
 ```
 
-- `-o, --org`: Organization
+- `-o, --org`: Organization (default: "defenseunicorns")
 - `-n, --package-name`: Package Name
 - `-g, --tag`: Tag
 - `-r, --registry-creds`: (Optional) Registry credentials in the format 'registry:username:password'. Example: 'ghcr.io:user:password'
 - `-f, --output-file`: Output file for CSV results
 - `-p, --package-path`: Path to the zarf package. This is for local scanning and not fetching from a remote registry.
-- `-o, --offline-db-path`: Path to the offline DB to use for the scan. This should have all the files extracted from the trivy-db image and ran once before running the scan.
+- `-d, --offline-db-path`: Path to the offline DB to use for the scan. This should have all the files extracted from the trivy-db image and ran once before running the scan.
+- `-s, --scanner-type`: Scanner type RootFS or SBOM. (default: "RootFS")
+- `-t, --output-format`: Output format (e.g., "csv" or "json")
 
 **Example Command for Remote Scanning:**
 ```bash
@@ -73,7 +75,7 @@ To effectively run the scanner using the Makefile, follow these improved and det
 
 4. **Run the Scanner**: Execute the scanner with the necessary parameters. Assuming the executable is named `uds-security-hub`, you would run:
    ```bash
-   ./bin/uds-security-hub scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -f [output-file]
+   ./bin/uds-security-hub scan -o [organization] -n [package-name] -g [tag] -u [docker-username] -p [docker-password] -f [output-file] -r [registry-creds] -p [package-path] -o [offline-db-path]
    ```
    Replace the placeholders (e.g., `[organization]`, `[package-name]`) with actual values relevant to your scan.
 
