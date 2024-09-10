@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-// Test for GetArtifactName method
 func TestGetArtifactName(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -39,7 +38,6 @@ func TestGetArtifactName(t *testing.T) {
 	}
 }
 
-// Test for GetVulnerabilities method
 func TestGetVulnerabilities(t *testing.T) {
 	testCases := []struct {
 		name          string
