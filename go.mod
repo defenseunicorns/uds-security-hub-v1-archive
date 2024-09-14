@@ -21,7 +21,7 @@ require (
 	golang.org/x/oauth2 v0.23.0
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/driver/sqlite v1.5.6
-	gorm.io/gorm v1.25.11
+	gorm.io/gorm v1.25.12
 	oras.land/oras-go/v2 v2.5.0
 )
 
