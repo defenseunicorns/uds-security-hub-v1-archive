@@ -1,8 +1,9 @@
 package types
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestGetArtifactName(t *testing.T) {
@@ -143,8 +144,8 @@ func TestGetVulnerabilities(t *testing.T) {
 			if len(vulnerabilities) == 0 && len(tc.expectedValue) == 0 {
 				return
 			}
-			if !reflect.DeepEqual(vulnerabilities, tc.expectedValue) {
-				t.Errorf("expected %v, got %v", tc.expectedValue, vulnerabilities)
+			if diff := cmp.Diff(tc.expectedValue, vulnerabilities); diff != "" {
+				t.Errorf("Mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}
