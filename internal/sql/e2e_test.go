@@ -61,7 +61,7 @@ func TestCreateDBConnector(t *testing.T) {
 func TestSQLiteConnector(t *testing.T) {
 	t.Run("Successful connection", func(t *testing.T) {
 		tempFile, err := os.CreateTemp("", "testdb_*.db")
-		assert.NoError(t, err, "Should create a temporary SQLite file successfully")
+		require.NoError(t, err, "Should create a temporary SQLite file successfully")
 		defer os.Remove(tempFile.Name())
 
 		connector := SQLiteConnector{
