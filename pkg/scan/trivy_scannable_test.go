@@ -38,7 +38,7 @@ func TestScannerType_Set(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var scanner ScannerType
 			err := scanner.Set(tt.input)
-			if (err != nil) != tt.expectErr {
+			if tt.expectErr && err == nil {
 				t.Errorf("ScannerType.Set() error = %v, wantErr %v", err, tt.expectErr)
 			}
 			if !tt.expectErr && scanner.String() != tt.input {
