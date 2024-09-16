@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.12.0
 	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/anchore/syft v1.11.1
-	github.com/docker/docker v27.2.0+incompatible
+	github.com/docker/docker v27.2.1+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
 	github.com/jackc/pgx/v4 v4.18.3
@@ -21,7 +21,7 @@ require (
 	golang.org/x/oauth2 v0.23.0
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/driver/sqlite v1.5.6
-	gorm.io/gorm v1.25.11
+	gorm.io/gorm v1.25.12
 	oras.land/oras-go/v2 v2.5.0
 )
 

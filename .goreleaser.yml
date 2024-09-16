@@ -17,6 +17,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    ldflags:
+      - "-X main.Version={{.Version}} -X main.Commit={{.Commit}}"
 
 archives:
   - format: binary
