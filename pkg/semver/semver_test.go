@@ -1,6 +1,7 @@
 package semver
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -56,9 +57,8 @@ func TestGetNMinusTwoSemversInvalidN(t *testing.T) {
 		t.Fatal("Expected an error but got none")
 	}
 
-	expectedError := "n must be at least 2"
-	if err.Error() != expectedError {
-		t.Fatalf("Expected error message '%s', got '%s'", expectedError, err.Error())
+	if !errors.Is(err, ErrInvalidN) {
+		t.Fatalf("Expected error %v, got %v", ErrInvalidN, err)
 	}
 }
 
@@ -71,9 +71,8 @@ func TestGetNMinusTwoSemversNotEnoughVersions(t *testing.T) {
 		t.Fatal("Expected an error but got none")
 	}
 
-	expectedError := "not enough versions to get n-2"
-	if err.Error() != expectedError {
-		t.Fatalf("Expected error message '%s', got '%s'", expectedError, err.Error())
+	if !errors.Is(err, ErrNotEnoughVersions) {
+		t.Fatalf("Expected error %v, got %v", ErrNotEnoughVersions, err)
 	}
 }
 
@@ -86,8 +85,7 @@ func TestGetNMinusTwoSemversInvalidVersion(t *testing.T) {
 		t.Fatal("Expected an error but got none")
 	}
 
-	expectedError := "invalid semver: invalid_version"
-	if err.Error() != expectedError {
-		t.Fatalf("Expected error message '%s', got '%s'", expectedError, err.Error())
+	if !errors.Is(err, ErrInvalidSemver) {
+		t.Fatalf("Expected error %v, got %v", ErrInvalidSemver, err)
 	}
 }
