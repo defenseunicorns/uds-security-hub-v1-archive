@@ -40,5 +40,8 @@ jobs:
     - name: Build
       run: make build
 
+    - name: Verify Version
+      run: make verify-version
+
     - name: Clean
       run: make clean

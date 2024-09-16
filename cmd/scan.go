@@ -13,6 +13,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
+	"github.com/defenseunicorns/uds-security-hub/pkg/version"
 )
 
 // errFlagRetrieval is the error message for when a flag cannot be retrieved.
@@ -26,6 +27,8 @@ var scannerType scan.ScannerType = scan.RootFSScannerType
 // Execute is the main entry point for the scanner.
 func Execute(args []string) {
 	rootCmd := newRootCmd()
+	rootCmd.Version = fmt.Sprintf(`{"version": "%s", "commit": "%s"}`, version.Version, version.CommitSHA)
+	rootCmd.SetVersionTemplate("{{.Version}}\n")
 	rootCmd.SetArgs(args) // Set the arguments
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

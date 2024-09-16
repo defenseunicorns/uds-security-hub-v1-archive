@@ -25,6 +25,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
+	"github.com/defenseunicorns/uds-security-hub/pkg/version"
 )
 
 // Scanner is the interface for the scanner.
@@ -327,7 +328,9 @@ func main() {
 // Execute executes the store command.
 func Execute(args []string) {
 	rootCmd := newStoreCmd()
-	rootCmd.SetArgs(args) // Set the arguments
+	rootCmd.Version = fmt.Sprintf(`{"version": "%s", "commit": "%s"}`, version.Version, version.CommitSHA)
+	rootCmd.SetVersionTemplate("{{.Version}}\n")
+	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error executing command:", err)
 		os.Exit(1)
