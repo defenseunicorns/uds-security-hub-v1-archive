@@ -62,6 +62,15 @@ func TestImageBuildTime(t *testing.T) {
 			expectedErr:  "failed to parse image creation time: parsing time \"invalid-time\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"invalid-time\" as \"2006\"",
 			expectedTime: nil,
 		},
+		{
+			name:     "Image creation time is zero",
+			imageRef: "image-with-zero-creation-time",
+			setupMocks: func() {
+				mockClient.On("ImageInspectWithRaw", ctx, "image-with-zero-creation-time").Return(types.ImageInspect{Created: ""}, []byte{}, nil)
+			},
+			expectedErr:  "image creation time is zero",
+			expectedTime: nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -82,7 +91,7 @@ func TestImageBuildTime(t *testing.T) {
 	}
 }
 
-// TestImageInspectWithRaw tests the ImageInspectWithRaw function.
+// TestNewRealClient tests the NewRealClient function.
 func TestNewRealClient(t *testing.T) {
 	// Call the function to test
 	rc, err := NewRealClient()
