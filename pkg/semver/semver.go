@@ -1,10 +1,17 @@
 package semver
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/Masterminds/semver/v3"
+)
+
+var (
+	ErrInvalidN          = errors.New("n must be at least the exclude count")
+	ErrNotEnoughVersions = errors.New("not enough versions to get the required number")
+	ErrInvalidSemver     = errors.New("invalid semver")
 )
 
 // GetNMinusTwoSemvers returns the n-exclude semantic versions from a list of versions.
@@ -16,14 +23,14 @@ func GetNMinusTwoSemvers(versions []string, n int, exclude ...int) ([]string, er
 	}
 
 	if n < excludeCount {
-		return nil, fmt.Errorf("n must be at least %d", excludeCount)
+		return nil, ErrInvalidN
 	}
 
 	semvers := make(semver.Collection, 0, len(versions))
 	for _, v := range versions {
 		sv, err := semver.NewVersion(v)
 		if err != nil {
-			return nil, fmt.Errorf("invalid semver: %s", v)
+			return nil, fmt.Errorf("%w: %s", ErrInvalidSemver, v)
 		}
 		semvers = append(semvers, sv)
 	}
@@ -31,7 +38,7 @@ func GetNMinusTwoSemvers(versions []string, n int, exclude ...int) ([]string, er
 	sort.Sort(semvers)
 
 	if len(semvers) < n {
-		return nil, fmt.Errorf("not enough versions to get n-%d", excludeCount)
+		return nil, ErrNotEnoughVersions
 	}
 
 	// Correctly slice the versions to exclude the last excludeCount versions
