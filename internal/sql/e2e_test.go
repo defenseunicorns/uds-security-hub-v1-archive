@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
@@ -70,25 +71,25 @@ func TestSQLiteConnector(t *testing.T) {
 		ctx := context.Background()
 		db, err := connector.Connect(ctx)
 
-		assert.NoError(t, err, "Should connect to SQLite database without error")
+		require.NoError(t, err, "Should connect to SQLite database without error")
 		assert.NotNil(t, db, "Database connection should not be nil")
 		assert.IsType(t, &gorm.DB{}, db, "Should return a Gorm DB instance")
 
 		sqlDB, err := db.DB()
-		assert.NoError(t, err, "Should get underlying SQL DB from Gorm instance")
-		assert.NoError(t, sqlDB.Ping(), "SQLite database should be reachable")
+		require.NoError(t, err, "Should get underlying SQL DB from Gorm instance")
+		require.NoError(t, sqlDB.Ping(), "SQLite database should be reachable")
 	})
 
 	t.Run("Failed connection", func(t *testing.T) {
-		invalidDbPath := "/invalid_path/test.db" // Pass an invalid database path to trigger an error
+		invalidDBPath := "/invalid_path/test.db" // Pass an invalid database path to trigger an error
 		connector := SQLiteConnector{
-			dbPath: invalidDbPath,
+			dbPath: invalidDBPath,
 		}
 
 		ctx := context.Background()
 		db, err := connector.Connect(ctx)
 
-		assert.Error(t, err, "Should fail to connect to SQLite database")
+		require.Error(t, err, "Should fail to connect to SQLite database")
 		assert.Nil(t, db, "Database connection should be nil when there is an error")
 		assert.Contains(t, err.Error(), "failed to connect to SQLite database")
 	})
