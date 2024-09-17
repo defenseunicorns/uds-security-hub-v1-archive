@@ -314,7 +314,7 @@ func main() {
 // Execute executes the store command.
 func Execute(args []string) {
 	rootCmd := newStoreCmd()
-	rootCmd.Version = fmt.Sprintf(`{"version": "%s"}`, cmd.Version)
+	rootCmd.Version = cmd.VersionJSON()
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
