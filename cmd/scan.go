@@ -9,7 +9,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -65,9 +64,6 @@ func newRootCmd() *cobra.Command {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringSliceP("registry-creds", "r", []string{},
-		`List of registry credentials in the format 'registry:username:password'.
-Example: 'registry1.dso.mil:myuser:mypassword'`)
 	rootCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
@@ -87,16 +83,13 @@ This should have all the files extracted from the trivy-db image and ran once be
 func runScanner(cmd *cobra.Command, _ []string) error {
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
-	org, _ := cmd.Flags().GetString("org")                           //nolint:errcheck
-	packageName, _ := cmd.Flags().GetString("package-name")          //nolint:errcheck
-	tag, _ := cmd.Flags().GetString("tag")                           //nolint:errcheck
-	outputFile, _ := cmd.Flags().GetString("output-file")            //nolint:errcheck
-	registryCreds, _ := cmd.Flags().GetStringSlice("registry-creds") //nolint:errcheck
-	packagePath, _ := cmd.Flags().GetString("package-path")          //nolint:errcheck
-	offlineDBPath, _ := cmd.Flags().GetString("offline-db-path")     //nolint:errcheck
-	outputFormat, _ := cmd.Flags().GetString("output-format")        //nolint:errcheck
-
-	parsedCreds := docker.ParseCredentials(registryCreds)
+	org, _ := cmd.Flags().GetString("org")                       //nolint:errcheck
+	packageName, _ := cmd.Flags().GetString("package-name")      //nolint:errcheck
+	tag, _ := cmd.Flags().GetString("tag")                       //nolint:errcheck
+	outputFile, _ := cmd.Flags().GetString("output-file")        //nolint:errcheck
+	packagePath, _ := cmd.Flags().GetString("package-path")      //nolint:errcheck
+	offlineDBPath, _ := cmd.Flags().GetString("offline-db-path") //nolint:errcheck
+	outputFormat, _ := cmd.Flags().GetString("output-format")    //nolint:errcheck
 
 	factory := &scan.ScannerFactoryImpl{}
 	scanner, err := factory.CreateScanner(
@@ -107,7 +100,6 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		tag,
 		packagePath,
 		offlineDBPath,
-		parsedCreds,
 		scannerType,
 	)
 	if err != nil {

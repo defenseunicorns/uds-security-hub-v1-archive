@@ -22,7 +22,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/cmd"
 	"github.com/defenseunicorns/uds-security-hub/internal/data/db"
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
-	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
@@ -79,8 +78,6 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().StringP("db-path", "", "uds_security_hub.db", "SQLite database file path")
 	storeCmd.PersistentFlags().StringP("github-token", "t", "", "GitHub token")
 	storeCmd.PersistentFlags().IntP("number-of-versions-to-scan", "v", 1, "Number of versions to scan")
-	storeCmd.PersistentFlags().StringSlice("registry-creds", []string{},
-		"List of registry credentials in the format 'registryURL,username,password'")
 	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan.
 	This is for local scanning and not fetching from a remote registry.
 	This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
@@ -123,13 +120,8 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("error getting config from flags: %w", err)
 	}
-	registryCreds, err := cmd.Flags().GetStringSlice("registry-creds")
-	if err != nil {
-		return fmt.Errorf("error getting registry credentials: %w", err)
-	}
-	parsedCreds := docker.ParseCredentials(registryCreds)
 	scanner := scan.NewRemotePackageScanner(ctx, logInstance, config.Org, config.PackageName,
-		config.Tag, config.OfflineDBPath, parsedCreds, scan.RootFSScannerType)
+		config.Tag, config.OfflineDBPath, scan.RootFSScannerType)
 	manager, err := db.NewGormScanManager(config.DBConn)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)

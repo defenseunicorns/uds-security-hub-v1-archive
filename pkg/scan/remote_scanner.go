@@ -21,15 +21,14 @@ import (
 
 // Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
-	logger              types.Logger
-	ctx                 context.Context
-	commandExecutor     types.CommandExecutor
-	org                 string
-	packageName         string
-	tag                 string
-	offlineDBPath       string
-	scannerType         ScannerType
-	registryCredentials []types.RegistryCredentials
+	logger          types.Logger
+	ctx             context.Context
+	commandExecutor types.CommandExecutor
+	org             string
+	packageName     string
+	tag             string
+	offlineDBPath   string
+	scannerType     ScannerType
 }
 
 // NewRemotePackageScanner creates a new Scanner for remote packages.
@@ -40,18 +39,16 @@ func NewRemotePackageScanner(
 	packageName,
 	tag,
 	offlineDBPath string, // New parameter for offline DB path
-	registryCredentials []types.RegistryCredentials,
 	scannerType ScannerType,
 ) types.PackageScanner {
 	return &Scanner{
-		logger:              logger,
-		commandExecutor:     executor.NewCommandExecutor(ctx),
-		registryCredentials: registryCredentials,
-		org:                 org,
-		packageName:         packageName,
-		tag:                 tag,
-		offlineDBPath:       offlineDBPath,
-		scannerType:         scannerType,
+		logger:          logger,
+		commandExecutor: executor.NewCommandExecutor(ctx),
+		org:             org,
+		packageName:     packageName,
+		tag:             tag,
+		offlineDBPath:   offlineDBPath,
+		scannerType:     scannerType,
 	}
 }
 
