@@ -4,18 +4,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/zarf-dev/zarf/src/api/v1beta1"
 	"gorm.io/gorm"
 )
 
 // Package represents a collection of scans.
 type Package struct {
-	CreatedAt  time.Time `json:"CreatedAt" gorm:"autoCreateTime"`
-	UpdatedAt  time.Time `json:"UpdatedAt" gorm:"autoUpdateTime"`
-	Name       string    `json:"Name"`
-	Repository string    `json:"Repository"`
-	Tag        string    `json:"Tag"`
-	Scans      []Scan    `json:"Scans" gorm:"foreignKey:PackageID;constraint:OnDelete:CASCADE"`
-	ID         uint      `json:"ID" gorm:"primaryKey;autoIncrement"`
+	CreatedAt  time.Time           `json:"CreatedAt" gorm:"autoCreateTime"`
+	UpdatedAt  time.Time           `json:"UpdatedAt" gorm:"autoUpdateTime"`
+	Name       string              `json:"Name"`
+	Repository string              `json:"Repository"`
+	Tag        string              `json:"Tag"`
+	Scans      []Scan              `json:"Scans" gorm:"foreignKey:PackageID;constraint:OnDelete:CASCADE"`
+	ID         uint                `json:"ID" gorm:"primaryKey;autoIncrement"`
+	Config     v1beta1.ZarfPackage `json:"Config" gorm:"serializer:json"`
 }
 
 // DeletePackagesByNameExceptTags deletes all packages with the given name except those with specified tags.

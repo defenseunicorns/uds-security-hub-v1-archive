@@ -268,6 +268,7 @@ func (s *Scanner) processRootfsScannables(
 type zarfOverrides struct {
 	indexJSONFilename string
 	sbomFilename      string
+	zarfYamlFilename  string
 }
 
 func restrictOrasCopyToPlatform(desiredPlatform string) func(
@@ -323,6 +324,11 @@ func scanForZarfLayers(imagesDir, platform string) (*zarfOverrides, error) {
 		return nil, fmt.Errorf("failed to find images/index.json in platform %s", platform)
 	}
 
+	zarfYaml := findLayerByTitle(manifest.Layers, "zarf.yaml")
+	if zarfYaml == nil {
+		return nil, fmt.Errorf("failed to find zarf.yaml layer in platform %s: %w", platform, err)
+	}
+
 	sbomsTarDigest := findLayerByTitle(manifest.Layers, "sboms.tar")
 	if sbomsTarDigest == nil {
 		return nil, fmt.Errorf("failed to find sboms.tar layer in platform %s: %w", platform, err)
@@ -331,6 +337,7 @@ func scanForZarfLayers(imagesDir, platform string) (*zarfOverrides, error) {
 	return &zarfOverrides{
 		indexJSONFilename: path.Join(imagesDir, "blobs", indexJSONDigest.Algorithm, indexJSONDigest.Hex),
 		sbomFilename:      path.Join(imagesDir, "blobs", sbomsTarDigest.Algorithm, sbomsTarDigest.Hex),
+		zarfYamlFilename:  path.Join(imagesDir, "blobs", zarfYaml.Algorithm, zarfYaml.Hex),
 	}, nil
 }
 
