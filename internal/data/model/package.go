@@ -17,7 +17,7 @@ type Package struct {
 	Tag        string              `json:"Tag"`
 	Scans      []Scan              `json:"Scans" gorm:"foreignKey:PackageID;constraint:OnDelete:CASCADE"`
 	ID         uint                `json:"ID" gorm:"primaryKey;autoIncrement"`
-	Config     v1beta1.ZarfPackage `json:"Config" gorm:"serializer:json"`
+	Config     v1beta1.ZarfPackage `json:"Config" gorm:"serializer:json;type:jsonb"`
 }
 
 // DeletePackagesByNameExceptTags deletes all packages with the given name except those with specified tags.
