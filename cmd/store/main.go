@@ -76,7 +76,6 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	storeCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
 	storeCmd.PersistentFlags().StringP("db-path", "", "uds_security_hub.db", "SQLite database file path")
-	storeCmd.PersistentFlags().StringP("github-token", "t", "", "GitHub token")
 	storeCmd.PersistentFlags().IntP("number-of-versions-to-scan", "v", 1, "Number of versions to scan")
 	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan.
 	This is for local scanning and not fetching from a remote registry.
@@ -174,7 +173,6 @@ func runStoreScannerWithDeps(
 // Config is the configuration for the store command.
 type Config struct {
 	DBConn                 *gorm.DB
-	GitHubToken            string
 	Org                    string
 	PackageName            string
 	Tag                    string
@@ -221,10 +219,6 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get 'db-name' flag: %w", err)
 	}
-	githubToken, err := cmd.Flags().GetString("github-token")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get 'github-token' flag: %w", err)
-	}
 	numberOfVersionsToScan, err := cmd.Flags().GetInt("number-of-versions-to-scan")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get 'number-of-versions-to-scan' flag: %w", err)
@@ -259,7 +253,6 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 		PackageName:            packageName,
 		Tag:                    tag,
 		DBConn:                 dbConn,
-		GitHubToken:            githubToken,
 		NumberOfVersionsToScan: numberOfVersionsToScan,
 		RegistryCreds:          parsedCreds,
 		OfflineDBPath:          offlineDBPath,
