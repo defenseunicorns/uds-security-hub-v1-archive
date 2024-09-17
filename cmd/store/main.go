@@ -19,6 +19,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/defenseunicorns/uds-security-hub/cmd"
 	"github.com/defenseunicorns/uds-security-hub/internal/data/db"
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
@@ -27,7 +28,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
-	"github.com/defenseunicorns/uds-security-hub/pkg/version"
 )
 
 // Scanner is the interface for the scanner.
@@ -329,7 +329,7 @@ func main() {
 // Execute executes the store command.
 func Execute(args []string) {
 	rootCmd := newStoreCmd()
-	rootCmd.Version = fmt.Sprintf(`{"version": "%s", "commit": "%s"}`, version.Version, version.CommitSHA)
+	rootCmd.Version = fmt.Sprintf(`{"version": "%s"}`, cmd.Version)
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
