@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
@@ -20,7 +23,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
-	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
@@ -79,7 +81,7 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().IntP("number-of-versions-to-scan", "v", 1, "Number of versions to scan")
 	storeCmd.PersistentFlags().StringSlice("registry-creds", []string{},
 		"List of registry credentials in the format 'registryURL,username,password'")
-	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
+	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan.
 	This is for local scanning and not fetching from a remote registry.
 	This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
 
@@ -162,15 +164,14 @@ func runStoreScannerWithDeps(
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
-	versionTagDate, err := getVersionTagDate(ctx, types.NewRealHTTPClient(),
-		config.GitHubToken, config.Org, "container", url.PathEscape(config.PackageName))
+	tags, err := GetPackageVersions(ctx, config.Org, config.PackageName)
 	if err != nil {
 		return fmt.Errorf("error getting package versions: %w", err)
 	}
 
 	var combinedErrors error
-	for _, version := range versionTagDate[:min(len(versionTagDate), config.NumberOfVersionsToScan)] {
-		config.Tag = version.Tags[0]
+	for _, version := range tags[:min(len(tags), config.NumberOfVersionsToScan)] {
+		config.Tag = version.String()
 		if err := storeScanResults(ctx, scanner, manager, config); err != nil {
 			combinedErrors = errors.Join(combinedErrors, err)
 		}
@@ -337,33 +338,32 @@ func Execute(args []string) {
 	}
 }
 
-func GetPackageVersions(ctx context.Context, org, packageName, gitHubToken string) (*github.VersionTagDate, error) {
-	const packageType = "container"
-	if org == "" || packageName == "" || gitHubToken == "" {
-		return nil, fmt.Errorf("invalid parameters: org, packageName, and gitHubToken must be provided")
+func GetPackageVersions(ctx context.Context, org, packageName string) ([]*version.Version, error) {
+	repo, err := name.NewRepository(strings.Join([]string{"ghcr.io", org, packageName}, "/"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to remote repository: %w", err)
 	}
 
-	client := types.NewRealHTTPClient()
-	versions, err := github.GetPackageVersions(ctx, client, gitHubToken, org, packageType, packageName)
+	tags, err := remote.List(repo)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get version tags and dates: %w", err)
+		return nil, fmt.Errorf("failed to fetch repository tags: %w", err)
 	}
-	if len(versions) == 0 {
+
+	if len(tags) == 0 {
 		return nil, fmt.Errorf("no versions found for package %s in organization %s", packageName, org)
 	}
 
-	// Assuming we want the latest version
-	latestVersion := versions[0]
-	for _, version := range versions {
-		if version.Date.After(latestVersion.Date) {
-			latestVersion = version
-		}
+	versions := make([]*version.Version, len(tags))
+	for i, tag := range tags {
+		v, _ := version.NewVersion(tag)
+		versions[i] = v
 	}
 
-	return &latestVersion, nil
-}
+	collection := version.Collection(versions)
+	sort.Sort(sort.Reverse(collection))
 
-var getVersionTagDate = github.GetPackageVersions
+	return collection, nil
+}
 
 func setupDBConnection(dbPath string) (*gorm.DB, error) {
 	// Ensure the directory exists
