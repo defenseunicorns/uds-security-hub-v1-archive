@@ -58,39 +58,37 @@ func TestCreateDBConnector(t *testing.T) {
 	}
 }
 
-func TestSQLiteConnector(t *testing.T) {
-	t.Run("Successful connection", func(t *testing.T) {
-		tempFile, err := os.CreateTemp("", "testdb_*.db")
-		require.NoError(t, err, "Should create a temporary SQLite file successfully")
-		defer os.Remove(tempFile.Name())
+func TestSQLiteConnector_Success(t *testing.T) {
+	tempFile, err := os.CreateTemp("", "testdb_*.db")
+	require.NoError(t, err, "Should create a temporary SQLite file successfully")
+	defer os.Remove(tempFile.Name())
 
-		connector := SQLiteConnector{
-			dbPath: tempFile.Name(),
-		}
+	connector := SQLiteConnector{
+		dbPath: tempFile.Name(),
+	}
 
-		ctx := context.Background()
-		db, err := connector.Connect(ctx)
+	ctx := context.Background()
+	db, err := connector.Connect(ctx)
 
-		require.NoError(t, err, "Should connect to SQLite database without error")
-		assert.NotNil(t, db, "Database connection should not be nil")
-		assert.IsType(t, &gorm.DB{}, db, "Should return a Gorm DB instance")
+	require.NoError(t, err, "Should connect to SQLite database without error")
+	assert.NotNil(t, db, "Database connection should not be nil")
+	assert.IsType(t, &gorm.DB{}, db, "Should return a Gorm DB instance")
 
-		sqlDB, err := db.DB()
-		require.NoError(t, err, "Should get underlying SQL DB from Gorm instance")
-		require.NoError(t, sqlDB.Ping(), "SQLite database should be reachable")
-	})
+	sqlDB, err := db.DB()
+	require.NoError(t, err, "Should get underlying SQL DB from Gorm instance")
+	require.NoError(t, sqlDB.Ping(), "SQLite database should be reachable")
+}
 
-	t.Run("Failed connection", func(t *testing.T) {
-		invalidDBPath := "/invalid_path/test.db" // Pass an invalid database path to trigger an error
-		connector := SQLiteConnector{
-			dbPath: invalidDBPath,
-		}
+func TestSQLiteConnector_Failed(t *testing.T) {
+	invalidDBPath := "/invalid_path/test.db" // Pass an invalid database path to trigger an error
+	connector := SQLiteConnector{
+		dbPath: invalidDBPath,
+	}
 
-		ctx := context.Background()
-		db, err := connector.Connect(ctx)
+	ctx := context.Background()
+	db, err := connector.Connect(ctx)
 
-		require.Error(t, err, "Should fail to connect to SQLite database")
-		assert.Nil(t, db, "Database connection should be nil when there is an error")
-		assert.Contains(t, err.Error(), "failed to connect to SQLite database")
-	})
+	require.Error(t, err, "Should fail to connect to SQLite database")
+	assert.Nil(t, db, "Database connection should be nil when there is an error")
+	assert.Contains(t, err.Error(), "failed to connect to SQLite database")
 }
