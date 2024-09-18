@@ -57,6 +57,9 @@ erDiagram
 ### 1. `packages` (Internal)
 Stores information about software packages.
 
+NOTE: `packages` is slight misnomer - a new package entry is inserted on every scan, and the table has no unique keys.
+The same package name-repository-tag can exist multiple times in the table.
+
 **Columns:**
 - `id` (uint, Primary Key): Unique identifier for the package.
 - `name` (string): Name of the package.
