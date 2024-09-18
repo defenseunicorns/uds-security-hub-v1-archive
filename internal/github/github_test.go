@@ -103,6 +103,36 @@ func TestGetPackageVersions(t *testing.T) {
 			want:       nil,
 			wantErr:    true,
 		},
+		{
+			name: "empty token",
+			args: args{
+				ctx:         context.Background(),
+				client:      nil,
+				token:       "",
+				org:         "test-org",
+				packageType: "test-package-type",
+				packageName: "test-package-name",
+			},
+			mockResp:   ``,
+			mockStatus: http.StatusOK,
+			want:       nil,
+			wantErr:    true,
+		},
+		{
+			name: "malformed JSON response",
+			args: args{
+				ctx:         context.Background(),
+				client:      nil,
+				token:       "test-token",
+				org:         "test-org",
+				packageType: "test-package-type",
+				packageName: "test-package-name",
+			},
+			mockResp:   `invalid JSON`,
+			mockStatus: http.StatusOK,
+			want:       nil,
+			wantErr:    true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
