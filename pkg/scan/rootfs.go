@@ -11,10 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v3"
-
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/klauspost/compress/zstd"
+	"gopkg.in/yaml.v3"
 )
 
 // Sanitize archive file pathing from "G305: Zip Slip vulnerability".

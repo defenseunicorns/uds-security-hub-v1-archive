@@ -123,14 +123,13 @@ func (s *Scanner) Scan(ctx context.Context) (*types.PackageScan, error) {
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
 	tmpDir, err := s.downloadImage(ctx, imageRef)
+	defer os.RemoveAll(tmpDir)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// defer os.RemoveAll(tmpDir)
-
-	scan, err := s.scanImageAndProcessResults(ctx, commandExecutor, tmpDir)
+	scan, err := s.scanImageAndProcessResults(commandExecutor, tmpDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
 	}
@@ -150,7 +149,6 @@ func (s *Scanner) Scan(ctx context.Context) (*types.PackageScan, error) {
 //   - types.PackageScan: A struct containing Zarf package config and scan results.
 //   - error: An error if the scan operation fails.
 func (s *Scanner) scanImageAndProcessResults(
-	ctx context.Context,
 	commandExecutor types.CommandExecutor,
 	ociRootDir string,
 ) (*types.PackageScan, error) {

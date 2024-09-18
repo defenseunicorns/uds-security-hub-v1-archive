@@ -168,8 +168,8 @@ require (
 )
 
 // TODO: `zarf` has an indirect dependency on go-sqlite3 via OTEL SDK
-// 	 We should be able to import API types without inheriting so many dependencies
-//   See: https://github.com/zarf-dev/zarf/pull/2861
+// We should be able to import API types without inheriting so many dependencies
+// See: https://github.com/zarf-dev/zarf/pull/2861
 replace github.com/mattn/go-sqlite3 => github.com/mattn/go-sqlite3 v1.14.22
 
 // this is because the uds-cli has indirect dependency on prometheus/client_golang v1.18.0

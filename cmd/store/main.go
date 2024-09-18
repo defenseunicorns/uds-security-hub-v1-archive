@@ -275,13 +275,13 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 
 // storeScanResults stores the scan results in the database.
 func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager, config *Config) error {
-	scan, err := scanner.ScanZarfPackage(config.Org, config.PackageName, config.Tag)
+	result, err := scanner.ScanZarfPackage(config.Org, config.PackageName, config.Tag)
 	if err != nil {
 		return fmt.Errorf("error scanning package: %w", err)
 	}
 
 	var scans []external.ScanDTO
-	for _, result := range scan.Results {
+	for _, result := range result.Results {
 		data, err := os.ReadFile(result.JSONFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to read scan result file: %w", err)
@@ -306,7 +306,7 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 		Repository: config.Org,
 		Tag:        config.Tag,
 		Scans:      scans,
-		Config:     scan.ZarfPackage,
+		Config:     result.ZarfPackage,
 	}
 	report := external.MapPackageDTOToReport(&packageDTO, []byte{})
 	err = manager.InsertPackageScans(ctx, &packageDTO)
