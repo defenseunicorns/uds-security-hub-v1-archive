@@ -43,8 +43,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
       with:
-        go-version: '1.22.4'
-        check-latest: true
+        go-version-file: 'go.mod'
 
     - name: Install syft
       uses: anchore/sbom-action/download-syft@61119d458adab75f756bc0b9e4bde25725f86a7a # v0
