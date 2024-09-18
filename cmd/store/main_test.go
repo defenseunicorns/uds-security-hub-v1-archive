@@ -97,9 +97,9 @@ type MockScanner struct {
 }
 
 // ScanZarfPackage is a mock implementation of the ScanZarfPackage method.
-func (m *MockScanner) ScanZarfPackage(org, packageName, tag string) ([]types.PackageScannerResult, error) {
+func (m *MockScanner) ScanZarfPackage(org, packageName, tag string) (*types.PackageScan, error) {
 	args := m.Called(org, packageName, tag)
-	return args.Get(0).([]types.PackageScannerResult), args.Error(1)
+	return args.Get(0).(*types.PackageScan), args.Error(1)
 }
 
 // Mock for the ScanManager interface.

@@ -30,7 +30,7 @@ import (
 
 // Scanner is the interface for the scanner.
 type Scanner interface {
-	ScanZarfPackage(org, packageName, tag string) ([]types.PackageScannerResult, error)
+	ScanZarfPackage(org, packageName, tag string) (*types.PackageScan, error)
 }
 
 // ScanManager is the interface for the scan manager.
@@ -79,7 +79,7 @@ func newStoreCmd() *cobra.Command {
 	storeCmd.PersistentFlags().IntP("number-of-versions-to-scan", "v", 1, "Number of versions to scan")
 	storeCmd.PersistentFlags().StringSlice("registry-creds", []string{},
 		"List of registry credentials in the format 'registryURL,username,password'")
-	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
+	storeCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan.
 	This is for local scanning and not fetching from a remote registry.
 	This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
 
@@ -275,13 +275,13 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 
 // storeScanResults stores the scan results in the database.
 func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager, config *Config) error {
-	results, err := scanner.ScanZarfPackage(config.Org, config.PackageName, config.Tag)
+	scan, err := scanner.ScanZarfPackage(config.Org, config.PackageName, config.Tag)
 	if err != nil {
 		return fmt.Errorf("error scanning package: %w", err)
 	}
 
 	var scans []external.ScanDTO
-	for _, result := range results {
+	for _, result := range scan.Results {
 		data, err := os.ReadFile(result.JSONFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to read scan result file: %w", err)
@@ -306,6 +306,7 @@ func storeScanResults(ctx context.Context, scanner Scanner, manager ScanManager,
 		Repository: config.Org,
 		Tag:        config.Tag,
 		Scans:      scans,
+		Config:     scan.ZarfPackage,
 	}
 	report := external.MapPackageDTOToReport(&packageDTO, []byte{})
 	err = manager.InsertPackageScans(ctx, &packageDTO)
