@@ -7,9 +7,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 func TestNewLocalPackageScanner(t *testing.T) {
