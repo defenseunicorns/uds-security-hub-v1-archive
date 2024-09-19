@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestNewLocalPackageScanner(t *testing.T) {
@@ -67,10 +67,8 @@ func TestNewLocalPackageScanner(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "", tt.scannerType)
 			checkError(t, err, tt.expectError)
-			if !tt.expectError {
-				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
-					t.Errorf("scanner mismatch (-expected +got):\n%s", diff)
-				}
+			if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{}), cmpopts.IgnoreUnexported(slog.Logger{})); diff != "" {
+				t.Errorf("scanner mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}

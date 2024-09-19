@@ -46,7 +46,7 @@ func NewRemotePackageScanner(
 	offlineDBPath string, // New parameter for offline DB path
 	registryCredentials []types.RegistryCredentials,
 	scannerType ScannerType,
-) types.PackageScanner {
+) *Scanner {
 	return &Scanner{
 		logger:              logger,
 		commandExecutor:     executor.NewCommandExecutor(ctx),

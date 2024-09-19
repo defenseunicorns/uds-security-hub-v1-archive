@@ -59,7 +59,7 @@ type LocalPackageScanner struct {
 // - error: an error if the instance cannot be created.
 func NewLocalPackageScanner(logger *slog.Logger,
 	packagePath, offlineDBPath string, scannerType ScannerType,
-) (types.PackageScanner, error) {
+) (*LocalPackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
