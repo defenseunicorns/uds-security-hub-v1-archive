@@ -3,28 +3,21 @@ package scan
 import (
 	"bytes"
 	"context"
+	"log/slog"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-type mockLogger struct{}
-
-func (m *mockLogger) Debug(msg string, fields ...interface{})  {}
-func (m *mockLogger) Info(msg string, fields ...interface{})   {}
-func (m *mockLogger) Warn(msg string, fields ...interface{})   {}
-func (m *mockLogger) Error(msg string, fields ...interface{})  {}
-func (m *mockLogger) Fatalf(msg string, fields ...interface{}) {}
-
 func TestNewLocalPackageScanner(t *testing.T) {
-	logger := &mockLogger{}
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	packagePath := "/path/to/package"
 
 	tests := []struct {
-		logger      types.Logger
+		logger      *slog.Logger
 		expected    *LocalPackageScanner
 		name        string
 		packagePath string
@@ -86,7 +79,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 func TestScanImageE2E(t *testing.T) {
 	const zarfPackagePath = "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	ctx := context.Background()
-	logger := log.NewLogger(ctx)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	type testCase struct {
 		name        string

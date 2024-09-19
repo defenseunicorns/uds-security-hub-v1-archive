@@ -1,6 +1,7 @@
 module github.com/defenseunicorns/uds-security-hub
 
 go 1.23
+
 toolchain go1.23.0
 
 require (
@@ -18,7 +19,6 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	github.com/zeebo/assert v1.3.1
-	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.23.0
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/driver/sqlite v1.5.6

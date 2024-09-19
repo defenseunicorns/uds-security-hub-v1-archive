@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
@@ -169,7 +169,8 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 				}
 			}
 
-			err = runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager, c)
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+			err = runStoreScannerWithDeps(context.Background(), tt.cmd, logger, tt.scanner, tt.manager, c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("runStoreScannerWithDeps() error = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -2,11 +2,11 @@ package scan
 
 import (
 	"context"
+	"log/slog"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 )
 
 // MockPackageScanner is a mock implementation of the PackageScanner interface.
@@ -18,7 +18,7 @@ func NewMockPackageScanner() *MockPackageScanner {
 
 func TestCreateScanner_LocalPackage(t *testing.T) {
 	sf := &ScannerFactoryImpl{}
-	logger := log.NewLogger(context.Background())
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	packagePath := "/path/to/package"
 
 	scanner, err := sf.CreateScanner(context.Background(), logger, "", "", "", packagePath, "", nil, RootFSScannerType)

@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"log/slog"
 )
 
 // VulnerabilityInfo represents information about a vulnerability found in a scanned artifact.
@@ -81,7 +82,7 @@ type ScannerFactory interface {
 	//   - error: An error if the scanner cannot be created.
 	CreateScanner(
 		ctx context.Context,
-		logger Logger,
+		logger *slog.Logger,
 		dockerConfigPath,
 		org,
 		packageName,

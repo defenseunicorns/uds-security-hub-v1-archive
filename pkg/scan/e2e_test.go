@@ -3,13 +3,13 @@ package scan
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"os"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
@@ -29,7 +29,7 @@ func TestE2EScanFunctionality(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set up the context and logger
 			ctx := context.Background()
-			logger := log.NewLogger(ctx)
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 			ghcrCreds := os.Getenv("GHCR_CREDS")
 			if ghcrCreds == "" {
 				t.Fatalf("GHCR_CREDS must be set")

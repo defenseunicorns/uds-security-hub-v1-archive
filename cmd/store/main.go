@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 	"os/exec"
@@ -12,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
@@ -21,7 +21,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -116,7 +115,6 @@ func parseCredentials(creds []string) []types.RegistryCredentials {
 // runStoreScanner runs the store scanner.
 func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	ctx := context.Background()
-	logInstance := log.NewLogger(ctx)
 	config, err := getConfigFromFlags(cmd)
 	if err != nil {
 		return fmt.Errorf("error getting config from flags: %w", err)
@@ -125,10 +123,11 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("error getting registry credentials: %w", err)
 	}
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	parsedCreds := docker.ParseCredentials(registryCreds)
-	scanner := scan.NewRemotePackageScanner(ctx, logInstance, config.Org, config.PackageName,
+	scanner := scan.NewRemotePackageScanner(ctx, logger, config.Org, config.PackageName,
 		config.Tag, config.OfflineDBPath, parsedCreds, scan.RootFSScannerType)
-	manager, err := db.NewGormScanManager(config.DBConn)
+	manager, err := db.NewGormScanManager(config.DBConn, logger)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
@@ -136,14 +135,14 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	if !ok {
 		return fmt.Errorf("error creating remote package scanner")
 	}
-	return runStoreScannerWithDeps(ctx, cmd, logInstance, remoteScanner, manager, config)
+	return runStoreScannerWithDeps(ctx, cmd, logger, remoteScanner, manager, config)
 }
 
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.
 func runStoreScannerWithDeps(
 	ctx context.Context,
 	cmd *cobra.Command,
-	_ types.Logger,
+	logger *slog.Logger,
 	scanner Scanner,
 	manager ScanManager,
 	config *Config,
@@ -158,7 +157,7 @@ func runStoreScannerWithDeps(
 		return fmt.Errorf("command cannot be nil")
 	}
 
-	manager, err := db.NewGormScanManager(config.DBConn)
+	manager, err := db.NewGormScanManager(config.DBConn, logger)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
@@ -251,10 +250,10 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	logger := log.NewLogger(context.Background())
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	// this is for local sqlite db path and we would need to initialize the db and tables
 	if dbType == "sqlite" {
-		logger.Info("Using local SQLite database", zap.String("dbPath", dbPath))
+		logger.Info("Using local SQLite database", "dbPath", dbPath)
 		dbConn, err = setupDBConnection(dbPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup database connection: %w", err)
