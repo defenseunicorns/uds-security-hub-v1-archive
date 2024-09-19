@@ -19,6 +19,13 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	return m.Response, m.Err
 }
 
+// errorTransport is a mock transport that always returns an error.
+type errorTransport struct{}
+
+func (e *errorTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return nil, fmt.Errorf("mock transport error")
+}
+
 func TestRealHTTPClient_Do(t *testing.T) {
 	// Create a test server that returns a predefined response
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +47,33 @@ func TestRealHTTPClient_Do(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+}
+
+func TestRealHTTPClient_Do_Error(t *testing.T) {
+	client := &RealHTTPClient{
+		Client: &http.Client{
+			Transport: &errorTransport{},
+		},
+	}
+
+	req, err := http.NewRequest(http.MethodGet, "http://example.com", nil) //nolint:noctx
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := client.Do(req)
+	if err == nil {
+		t.Fatalf("Expected error, got none")
+	}
+
+	expectedErrMsg := "failed to do request"
+	if !strings.Contains(err.Error(), expectedErrMsg) {
+		t.Fatalf("Expected error message to contain %q, got %q", expectedErrMsg, err.Error())
+	}
+
+	if resp != nil {
+		t.Fatalf("Expected no response, got %v", resp)
 	}
 }
 
