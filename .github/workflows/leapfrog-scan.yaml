@@ -2,7 +2,8 @@ name: Leapfrog Scan
 
 on:
   schedule:
-    - cron: '0 23 * * *'
+    # Scheduled to run everyday at 2:00 AM UTC/ 8:00 PM MT
+    - cron: '0 2 * * *'
   workflow_dispatch:
 
 permissions:
