@@ -66,7 +66,9 @@ func TestRealHTTPClient_Do_Error(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected error, got none")
 	}
-	defer resp.Body.Close()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 
 	expectedErrMsg := "failed to do request"
 	if !strings.Contains(err.Error(), expectedErrMsg) {
