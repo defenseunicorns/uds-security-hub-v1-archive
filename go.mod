@@ -1,13 +1,14 @@
 module github.com/defenseunicorns/uds-security-hub
 
 go 1.23
+
 toolchain go1.23.0
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.12.0
 	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/anchore/syft v1.11.1
-	github.com/docker/docker v27.2.1+incompatible
+	github.com/docker/docker v27.3.1+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
 	github.com/jackc/pgx/v4 v4.18.3
