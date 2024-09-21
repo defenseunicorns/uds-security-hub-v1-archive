@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/mock"
+	"github.com/zarf-dev/zarf/src/api/v1beta1"
 	"github.com/zeebo/assert"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
@@ -69,11 +70,21 @@ func Test_storeScanResults(t *testing.T) {
 	}
 
 	// Mock scan results
-	scanResults := []types.PackageScannerResult{{JSONFilePath: "result1.json"}, {JSONFilePath: "result2.json"}}
+	scanResults := &types.PackageScan{
+		ZarfPackage: types.ZarfPackage{
+			Metadata: v1beta1.ZarfMetadata{
+				Name:    config.PackageName,
+				Version: config.Tag,
+			},
+		},
+		Results: []types.PackageScannerResult{
+			{JSONFilePath: "result1.json"},
+			{JSONFilePath: "result2.json"}},
+	}
 	mockScanner.On("ScanZarfPackage", config.Org, config.PackageName, config.Tag).Return(scanResults, nil)
 
 	// Mock reading files and unmarshalling JSON
-	for _, result := range scanResults {
+	for _, result := range scanResults.Results {
 		data := `{"some": "data"}`
 		os.WriteFile(result.JSONFilePath, []byte(data), 0o600) //nolint:errcheck
 		defer os.Remove(result.JSONFilePath)
@@ -97,9 +108,9 @@ type MockScanner struct {
 }
 
 // ScanZarfPackage is a mock implementation of the ScanZarfPackage method.
-func (m *MockScanner) ScanZarfPackage(org, packageName, tag string) ([]types.PackageScannerResult, error) {
+func (m *MockScanner) ScanZarfPackage(org, packageName, tag string) (*types.PackageScan, error) {
 	args := m.Called(org, packageName, tag)
-	return args.Get(0).([]types.PackageScannerResult), args.Error(1)
+	return args.Get(0).(*types.PackageScan), args.Error(1)
 }
 
 // Mock for the ScanManager interface.

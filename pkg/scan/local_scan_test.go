@@ -114,7 +114,7 @@ func TestScanImageE2E(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to scan image: %v", err)
 			}
-			reader, err := lps.ScanResultReader(result[0])
+			reader, err := lps.ScanResultReader(result.Results[0])
 			if err != nil {
 				t.Fatalf("Failed to get scan result reader: %v", err)
 			}

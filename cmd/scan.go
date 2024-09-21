@@ -67,16 +67,16 @@ func newRootCmd() *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().StringSliceP("registry-creds", "r", []string{},
-		`List of registry credentials in the format 'registry:username:password'. 
+		`List of registry credentials in the format 'registry:username:password'.
 Example: 'registry1.dso.mil:myuser:mypassword'`)
 	rootCmd.PersistentFlags().StringP("org", "o", "defenseunicorns", "Organization name")
 	rootCmd.PersistentFlags().StringP("package-name", "n", "", "Package Name: packages/uds/gitlab-runner")
 	rootCmd.PersistentFlags().StringP("tag", "g", "", "Tag name (e.g.  16.10.0-uds.0-upstream)")
 	rootCmd.PersistentFlags().StringP("output-file", "f", "", "Output file for results")
-	rootCmd.PersistentFlags().StringP("package-path", "p", "", `Path to the local zarf package. 
+	rootCmd.PersistentFlags().StringP("package-path", "p", "", `Path to the local zarf package.
 This is for local scanning and not fetching from a remote registry.`)
 	rootCmd.PersistentFlags().VarP(&scannerType, "scanner-type", "s", "Trivy scanner type. options: sbom|rootfs|image")
-	rootCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan. 
+	rootCmd.PersistentFlags().StringP("offline-db-path", "d", "", `Path to the offline DB to use for the scan.
 This is for local scanning and not fetching from a remote registry.
 This should have all the files extracted from the trivy-db image and ran once before running the scan.`)
 	rootCmd.PersistentFlags().StringP("output-format", "t", "csv", "Output format for results. options: csv|json")
@@ -115,7 +115,7 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error creating scanner: %w", err)
 	}
 
-	results, err := scanner.Scan(ctx)
+	result, err := scanner.Scan(ctx)
 	if err != nil {
 		return fmt.Errorf("error scanning: %w", err)
 	}
@@ -131,7 +131,7 @@ func runScanner(cmd *cobra.Command, _ []string) error {
 
 	var allResults []types.ScanResultReader
 
-	for _, v := range results {
+	for _, v := range result.Results {
 		r, err := scanner.ScanResultReader(v)
 		if err != nil {
 			return fmt.Errorf("error reading scan result: %w", err)
