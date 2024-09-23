@@ -51,7 +51,12 @@ type DatabaseMigrator interface {
 type autoMigratingMigrator struct{}
 
 func (d *autoMigratingMigrator) Migrate(dbConn *gorm.DB) error {
-	return dbConn.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}, &model.Report{})
+	err := dbConn.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}, &model.Report{})
+	if err != nil {
+		return fmt.Errorf("failed to migrate: %w", err)
+	}
+
+	return nil
 }
 
 type migratingDatabaseInitializer struct {
