@@ -127,7 +127,7 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error creating remote package scanner")
 	}
 
-	return runStoreScannerWithDeps(ctx, logger, remoteScanner, config, &migratingDatabaseInitializer{})
+	return runStoreScannerWithDeps(ctx, logger, remoteScanner, config, DefaultDatabaseInitializer)
 }
 
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.

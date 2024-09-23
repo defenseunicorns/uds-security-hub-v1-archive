@@ -58,6 +58,11 @@ type migratingDatabaseInitializer struct {
 	migrator    DatabaseMigrator
 }
 
+var DefaultDatabaseInitializer = &migratingDatabaseInitializer{
+	initializer: &defaultDatabaseInitializer{},
+	migrator:    &autoMigratingMigrator{},
+}
+
 func (d *migratingDatabaseInitializer) Initialize(config *Config, logger types.Logger) (*gorm.DB, error) {
 	if d.initializer == nil {
 		d.initializer = &defaultDatabaseInitializer{}
