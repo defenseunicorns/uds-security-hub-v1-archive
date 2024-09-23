@@ -6,42 +6,60 @@ import (
 	"os"
 	"path/filepath"
 
-	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
-	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 type DatabaseInitializer interface {
-	Initialize(config *DatabaseConfig, logger types.Logger) (*gorm.DB, error)
+	Initialize(config *DatabaseConfig) (*gorm.DB, error)
 }
 
 type defaultDatabaseInitializer struct{}
 
-func (d *defaultDatabaseInitializer) Initialize(config *DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
+func (d *defaultDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
+	initializer := getInitializer(config)
+
+	return initializer.Initialize(config)
+}
+
+type sqliteDatabaseInitializer struct{}
+
+func (s *sqliteDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
+	if err := os.MkdirAll(filepath.Dir(config.DBPath), os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create directory for database: %w", err)
+	}
+
+	dbConn, err := gorm.Open(sqlite.Open(config.DBPath), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	return dbConn, nil
+}
+
+type postgresDatabaseInitializer struct{}
+
+func (p *postgresDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
 	connector := sql.CreateDBConnector(
 		config.DBType, config.DBPath, config.DBInstanceConnectionName,
 		config.DBUser, config.DBPassword, config.DBName,
 	)
-
-	// this is for local sqlite db path and we would need to initialize the db and tables
-	if config.DBType == "sqlite" {
-		logger.Info("Using local SQLite database", zap.String("dbPath", config.DBPath))
-		dbConn, err := setupDBConnection(config.DBPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to setup database connection: %w", err)
-		}
-		return dbConn, nil
-	} else {
-		dbConn, err := connector.Connect(context.Background())
-		if err != nil {
-			return nil, fmt.Errorf("failed to connect to database: %w", err)
-		}
-		return dbConn, nil
+	dbConn, err := connector.Connect(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+	return dbConn, nil
+}
+
+func getInitializer(config *DatabaseConfig) DatabaseInitializer {
+	if config.DBType == "sqlite" {
+		return &sqliteDatabaseInitializer{}
+	}
+
+	return &postgresDatabaseInitializer{}
 }
 
 type DatabaseMigrator interface {
@@ -63,18 +81,18 @@ func (d *autoMigratingMigrator) Migrate(dbConn gormMigrator) error {
 	return nil
 }
 
-type migratingDatabaseInitializer struct {
-	initializer DatabaseInitializer
-	migrator    DatabaseMigrator
-}
-
 var DefaultDatabaseInitializer DatabaseInitializer = &migratingDatabaseInitializer{
 	initializer: &defaultDatabaseInitializer{},
 	migrator:    &autoMigratingMigrator{},
 }
 
-func (d *migratingDatabaseInitializer) Initialize(config *DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
-	dbConn, err := d.initializer.Initialize(config, logger)
+type migratingDatabaseInitializer struct {
+	initializer DatabaseInitializer
+	migrator    DatabaseMigrator
+}
+
+func (d *migratingDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
+	dbConn, err := d.initializer.Initialize(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize: %w", err)
 	}
@@ -84,18 +102,4 @@ func (d *migratingDatabaseInitializer) Initialize(config *DatabaseConfig, logger
 	}
 
 	return dbConn, nil
-}
-
-func setupDBConnection(dbPath string) (*gorm.DB, error) {
-	// Ensure the directory exists
-	if err := os.MkdirAll(filepath.Dir(dbPath), os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create directory for database: %w", err)
-	}
-
-	database, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
-
-	return database, nil
 }

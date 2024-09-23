@@ -12,14 +12,13 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
-	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 type InitializerStub struct {
 	err error
 }
 
-func (f *InitializerStub) Initialize(config *DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
+func (f *InitializerStub) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
 	return nil, f.err
 }
 
@@ -60,7 +59,7 @@ func TestDatabaseMigrator(t *testing.T) {
 				migrator:    tt.migrator,
 			}
 
-			_, err := testObj.Initialize(nil, nil)
+			_, err := testObj.Initialize(nil)
 
 			if err == nil || !strings.Contains(err.Error(), tt.errSubstring) {
 				t.Errorf("unexpected error; want %q, got %v", tt.errSubstring, err)
@@ -103,7 +102,7 @@ func TestMigrationFailure(t *testing.T) {
 	}
 }
 
-func TestSetupDBConnection_Success(t *testing.T) {
+func TestSqliteDatabaseInitializer_Success(t *testing.T) {
 	tmp, err := os.MkdirTemp("", "uds-security-hub-db-conn-*")
 	if err != nil {
 		t.Fatalf("failed to create tmpdir: %v", err)
@@ -112,7 +111,9 @@ func TestSetupDBConnection_Success(t *testing.T) {
 
 	connStr := path.Join(tmp, "uds_security_hub.db")
 
-	db, err := setupDBConnection(connStr)
+	initializer := &sqliteDatabaseInitializer{}
+
+	db, err := initializer.Initialize(&DatabaseConfig{DBPath: connStr})
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -129,7 +130,7 @@ func TestSetupDBConnection_Success(t *testing.T) {
 	}
 }
 
-func TestSetupDBConnection_Failure_Create_Dir(t *testing.T) {
+func TestSqliteDatabaseInitializer_Failure_Create_Dir(t *testing.T) {
 	tmp, err := os.MkdirTemp("", "uds-security-hub-db-conn-*")
 	if err != nil {
 		t.Fatalf("failed to create tmpdir: %v", err)
@@ -143,7 +144,9 @@ func TestSetupDBConnection_Failure_Create_Dir(t *testing.T) {
 		t.Fatalf("failed to create file for testing: %v", err)
 	}
 
-	_, err = setupDBConnection(path.Join(p, "uds.db"))
+	initializer := &sqliteDatabaseInitializer{}
+
+	_, err = initializer.Initialize(&DatabaseConfig{DBPath: path.Join(p, "uds.db")})
 	if err == nil {
 		t.Fatal("exptected error, got nil")
 	}
@@ -154,7 +157,7 @@ func TestSetupDBConnection_Failure_Create_Dir(t *testing.T) {
 	}
 }
 
-func TestSetupDBConnection_Failure_Bad_Sqlite_DB(t *testing.T) {
+func TestSqliteDatabaseInitializer_Failure_Bad_Sqlite_DB(t *testing.T) {
 	tmp, err := os.MkdirTemp("", "uds-security-hub-db-conn-*")
 	if err != nil {
 		t.Fatalf("failed to create tmpdir: %v", err)
@@ -168,7 +171,9 @@ func TestSetupDBConnection_Failure_Bad_Sqlite_DB(t *testing.T) {
 		t.Fatalf("failed to create file for testing: %v", err)
 	}
 
-	_, err = setupDBConnection(dbFile)
+	initializer := &sqliteDatabaseInitializer{}
+
+	_, err = initializer.Initialize(&DatabaseConfig{DBPath: dbFile})
 	if err == nil {
 		t.Fatal("exptected error, got nil")
 	}

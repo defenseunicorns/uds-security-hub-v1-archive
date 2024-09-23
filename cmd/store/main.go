@@ -133,7 +133,7 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.
 func runStoreScannerWithDeps(
 	ctx context.Context,
-	logger types.Logger,
+	_ types.Logger,
 	scanner Scanner,
 	config *Config,
 	dbInitializer DatabaseInitializer,
@@ -145,7 +145,7 @@ func runStoreScannerWithDeps(
 		return fmt.Errorf("dbInitializer cannot be nil")
 	}
 
-	dbConn, err := dbInitializer.Initialize(&config.DatabaseConfig, logger)
+	dbConn, err := dbInitializer.Initialize(&config.DatabaseConfig)
 	if err != nil {
 		return fmt.Errorf("failed to setup database: %w", err)
 	}
@@ -334,32 +334,6 @@ func Execute(args []string) {
 		fmt.Fprintln(os.Stderr, "Error executing command:", err)
 		os.Exit(1)
 	}
-}
-
-func GetPackageVersions(ctx context.Context, org, packageName, gitHubToken string) (*github.VersionTagDate, error) {
-	const packageType = "container"
-	if org == "" || packageName == "" || gitHubToken == "" {
-		return nil, fmt.Errorf("invalid parameters: org, packageName, and gitHubToken must be provided")
-	}
-
-	client := types.NewRealHTTPClient()
-	versions, err := github.GetPackageVersions(ctx, client, gitHubToken, org, packageType, packageName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get version tags and dates: %w", err)
-	}
-	if len(versions) == 0 {
-		return nil, fmt.Errorf("no versions found for package %s in organization %s", packageName, org)
-	}
-
-	// Assuming we want the latest version
-	latestVersion := versions[0]
-	for _, version := range versions {
-		if version.Date.After(latestVersion.Date) {
-			latestVersion = version
-		}
-	}
-
-	return &latestVersion, nil
 }
 
 var getVersionTagDate = github.GetPackageVersions
