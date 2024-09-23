@@ -101,7 +101,7 @@ func TestSetupDBConnection_Failure_Create_Dir(t *testing.T) {
 
 	p := path.Join(tmp, "file")
 
-	err = os.WriteFile(p, nil, 0o644)
+	err = os.WriteFile(p, nil, 0o600)
 	if err != nil {
 		t.Fatalf("failed to create file for testing: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestSetupDBConnection_Failure_Bad_Sqlite_DB(t *testing.T) {
 
 	dbFile := path.Join(tmp, "uds.db")
 
-	err = os.WriteFile(dbFile, []byte("this is not the sqlite database you are looking for"), 0o644)
+	err = os.WriteFile(dbFile, []byte("this is not the sqlite database you are looking for"), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create file for testing: %v", err)
 	}
