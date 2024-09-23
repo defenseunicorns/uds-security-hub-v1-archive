@@ -6,12 +6,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
-	"github.com/defenseunicorns/uds-security-hub/internal/sql"
-	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
+	"github.com/defenseunicorns/uds-security-hub/internal/sql"
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 type DatabaseInitializer interface {
