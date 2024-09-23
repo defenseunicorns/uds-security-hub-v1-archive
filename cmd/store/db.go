@@ -26,21 +26,21 @@ func (d *defaultDatabaseInitializer) Initialize(config *Config, logger types.Log
 		config.DBUser, config.DBPassword, config.DBName,
 	)
 
-	dbConn, err := connector.Connect(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
-
 	// this is for local sqlite db path and we would need to initialize the db and tables
 	if config.DBType == "sqlite" {
-		logger.Info("Using local SQLite database", zap.String("dbPath", config.DBPassword))
-		dbConn, err = setupDBConnection(config.DBPassword)
+		logger.Info("Using local SQLite database", zap.String("dbPath", config.DBPath))
+		dbConn, err := setupDBConnection(config.DBPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup database connection: %w", err)
 		}
+		return dbConn, nil
+	} else {
+		dbConn, err := connector.Connect(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to database: %w", err)
+		}
+		return dbConn, nil
 	}
-
-	return dbConn, nil
 }
 
 type DatabaseMigrator interface {
@@ -58,7 +58,7 @@ type migratingDatabaseInitializer struct {
 	migrator    DatabaseMigrator
 }
 
-var DefaultDatabaseInitializer = &migratingDatabaseInitializer{
+var DefaultDatabaseInitializer DatabaseInitializer = &migratingDatabaseInitializer{
 	initializer: &defaultDatabaseInitializer{},
 	migrator:    &autoMigratingMigrator{},
 }

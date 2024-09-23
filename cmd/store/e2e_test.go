@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 // TestStore is a test for the store command e2e.
@@ -31,9 +32,8 @@ func TestStore(t *testing.T) {
 		"-t", github,
 	}
 
-	// Use a connection string for a test database
-
-	db, err := setupDBConnection(testDBPath)
+	initializer := DefaultDatabaseInitializer
+	db, err := initializer.Initialize(&Config{DatabaseConfig: DatabaseConfig{DBType: "sqlite", DBPath: testDBPath}}, &types.MockLogger{})
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
