@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 	"gorm.io/gorm"
+
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 type InitializerStub struct {
