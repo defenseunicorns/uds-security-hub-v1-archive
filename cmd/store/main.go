@@ -260,12 +260,14 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 		RegistryCreds:          parsedCreds,
 		OfflineDBPath:          offlineDBPath,
 
-		DBType:                   dbType,
-		DBName:                   dbName,
-		DBPath:                   dbPath,
-		DBUser:                   dbUser,
-		DBPassword:               dbPassword,
-		DBInstanceConnectionName: instanceConnectionName,
+		DatabaseConfig: DatabaseConfig{
+			DBType:                   dbType,
+			DBName:                   dbName,
+			DBPath:                   dbPath,
+			DBUser:                   dbUser,
+			DBPassword:               dbPassword,
+			DBInstanceConnectionName: instanceConnectionName,
+		},
 	}, nil
 }
 
