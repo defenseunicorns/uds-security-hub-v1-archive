@@ -1,14 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gorm.io/gorm"
 
+	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
@@ -24,7 +27,7 @@ type MigratorStub struct {
 	err error
 }
 
-func (f *MigratorStub) Migrate(dbConn *gorm.DB) error {
+func (f *MigratorStub) Migrate(dbConn gormMigrator) error {
 	return f.err
 }
 
@@ -63,6 +66,40 @@ func TestDatabaseMigrator(t *testing.T) {
 				t.Errorf("unexpected error; want %q, got %v", tt.errSubstring, err)
 			}
 		})
+	}
+}
+
+type stubGormMigrator struct {
+	err        error
+	calledWith []interface{}
+}
+
+func (m *stubGormMigrator) AutoMigrate(models ...interface{}) error {
+	m.calledWith = append([]interface{}{}, models...)
+	return m.err
+}
+
+func TestMigrationFailure(t *testing.T) {
+	expectedErr := "failed to automigrate $$mock$$"
+
+	gormMigrator := &stubGormMigrator{
+		err: errors.New(expectedErr),
+	}
+
+	migrator := &autoMigratingMigrator{}
+
+	err := migrator.Migrate(gormMigrator)
+	if err == nil {
+		t.Fatal("expected err and got nil")
+	}
+
+	if !strings.Contains(err.Error(), expectedErr) {
+		t.Fatalf("unexpected err; want: %q, got: %v", expectedErr, err)
+	}
+
+	expectedModels := []interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}, &model.Report{}}
+	if diff := cmp.Diff(expectedModels, gormMigrator.calledWith); diff != "" {
+		t.Fatalf("called with unexpected models: %s", diff)
 	}
 }
 
