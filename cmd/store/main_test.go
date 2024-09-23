@@ -136,7 +136,7 @@ type MockDatabaseInitilizer struct {
 	mock.Mock
 }
 
-func (m *MockDatabaseInitilizer) Initialize(config *Config, logger types.Logger) (*gorm.DB, error) {
+func (m *MockDatabaseInitilizer) Initialize(config DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
 	args := m.Called(config, logger)
 	return args.Get(0).(*gorm.DB), args.Error(1)
 }
@@ -190,9 +190,9 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 				tt.setup(&tt)
 			}
 
-			var c *Config
+			var c Config
 
-			err := runStoreScannerWithDeps(context.Background(), log.NewLogger(context.Background()), tt.scanner, c, tt.dbInitializer)
+			err := runStoreScannerWithDeps(context.Background(), log.NewLogger(context.Background()), tt.scanner, &c, tt.dbInitializer)
 
 			if tt.errSubstring == "" && err != nil {
 				t.Errorf("unexpected error; want nil, got %v", err)

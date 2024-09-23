@@ -14,7 +14,7 @@ type InitializerStub struct {
 	err error
 }
 
-func (f *InitializerStub) Initialize(config *Config, logger types.Logger) (*gorm.DB, error) {
+func (f *InitializerStub) Initialize(config DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
 	return nil, f.err
 }
 
@@ -55,7 +55,7 @@ func TestDatabaseMigrator(t *testing.T) {
 				migrator:    tt.migrator,
 			}
 
-			_, err := testObj.Initialize(nil, nil)
+			_, err := testObj.Initialize(DatabaseConfig{}, nil)
 
 			if err == nil || !strings.Contains(err.Error(), tt.errSubstring) {
 				t.Errorf("unexpected error; want %q, got %v", tt.errSubstring, err)

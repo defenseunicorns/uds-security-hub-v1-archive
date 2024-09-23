@@ -145,7 +145,7 @@ func runStoreScannerWithDeps(
 		return fmt.Errorf("dbInitializer cannot be nil")
 	}
 
-	dbConn, err := dbInitializer.Initialize(config, logger)
+	dbConn, err := dbInitializer.Initialize(config.DatabaseConfig, logger)
 	if err != nil {
 		return fmt.Errorf("failed to setup database: %w", err)
 	}
