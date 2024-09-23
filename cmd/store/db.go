@@ -70,13 +70,6 @@ var DefaultDatabaseInitializer DatabaseInitializer = &migratingDatabaseInitializ
 }
 
 func (d *migratingDatabaseInitializer) Initialize(config *DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
-	if d.initializer == nil {
-		d.initializer = &defaultDatabaseInitializer{}
-	}
-	if d.migrator == nil {
-		d.migrator = &autoMigratingMigrator{}
-	}
-
 	dbConn, err := d.initializer.Initialize(config, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize: %w", err)
