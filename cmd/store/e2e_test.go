@@ -41,7 +41,7 @@ func TestStore(t *testing.T) {
 	}
 
 	initializer := DefaultDatabaseInitializer
-	db, err := initializer.Initialize(DatabaseConfig{DBType: "sqlite", DBPath: testDBPath}, &types.MockLogger{})
+	db, err := initializer.Initialize(&DatabaseConfig{DBType: "sqlite", DBPath: testDBPath}, &types.MockLogger{})
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}

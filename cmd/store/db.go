@@ -16,12 +16,12 @@ import (
 )
 
 type DatabaseInitializer interface {
-	Initialize(config DatabaseConfig, logger types.Logger) (*gorm.DB, error)
+	Initialize(config *DatabaseConfig, logger types.Logger) (*gorm.DB, error)
 }
 
 type defaultDatabaseInitializer struct{}
 
-func (d *defaultDatabaseInitializer) Initialize(config DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
+func (d *defaultDatabaseInitializer) Initialize(config *DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
 	connector := sql.CreateDBConnector(
 		config.DBType, config.DBPath, config.DBInstanceConnectionName,
 		config.DBUser, config.DBPassword, config.DBName,
@@ -69,7 +69,7 @@ var DefaultDatabaseInitializer DatabaseInitializer = &migratingDatabaseInitializ
 	migrator:    &autoMigratingMigrator{},
 }
 
-func (d *migratingDatabaseInitializer) Initialize(config DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
+func (d *migratingDatabaseInitializer) Initialize(config *DatabaseConfig, logger types.Logger) (*gorm.DB, error) {
 	if d.initializer == nil {
 		d.initializer = &defaultDatabaseInitializer{}
 	}
