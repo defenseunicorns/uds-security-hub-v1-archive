@@ -182,6 +182,10 @@ type Config struct {
 	RegistryCreds          []types.RegistryCredentials
 	NumberOfVersionsToScan int
 
+	DatabaseConfig
+}
+
+type DatabaseConfig struct {
 	DBType                   string
 	DBName                   string
 	DBPath                   string
