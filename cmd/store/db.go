@@ -22,7 +22,12 @@ type defaultDatabaseInitializer struct{}
 func (d *defaultDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
 	initializer := getInitializer(config)
 
-	return initializer.Initialize(config)
+	dbConn, err := initializer.Initialize(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize db: %w", err)
+	}
+
+	return dbConn, nil
 }
 
 type sqliteDatabaseInitializer struct{}
