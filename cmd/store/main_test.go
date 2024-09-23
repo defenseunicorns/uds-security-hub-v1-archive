@@ -176,9 +176,9 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 			dbInitializer: new(MockDatabaseInitilizer),
 			cmd:           &cobra.Command{},
 			setup: func(tt *testCase) {
-				mockDb, _ := tt.dbInitializer.(*MockDatabaseInitilizer) //nolint:errcheck
+				mockDB, _ := tt.dbInitializer.(*MockDatabaseInitilizer) //nolint:errcheck
 				var db *gorm.DB
-				mockDb.On("Initialize", mock.Anything, mock.Anything).Once().ReturnArguments = []interface{}{db, fmt.Errorf("failed to initialize $$mock$$")}
+				mockDB.On("Initialize", mock.Anything, mock.Anything).Once().ReturnArguments = []interface{}{db, fmt.Errorf("failed to initialize $$mock$$")}
 			},
 			errSubstring: "failed to initialize $$mock$$",
 		},
