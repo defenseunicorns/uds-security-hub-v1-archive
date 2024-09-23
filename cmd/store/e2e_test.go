@@ -89,33 +89,3 @@ func TestStore(t *testing.T) {
 	}
 	t.Logf("Report %d rows", count)
 }
-
-func TestSetupDBConnection_Success(t *testing.T) {
-	if os.Getenv("integration") != "true" {
-		t.Skip("Skipping integration test")
-	}
-
-	tmp, err := os.MkdirTemp("", "uds-security-hub-db-conn-*")
-	if err != nil {
-		t.Fatalf("failed to create tmpdir: %v", err)
-	}
-	defer os.RemoveAll(tmp)
-
-	connStr := path.Join(tmp, "uds_security_hub.db")
-
-	db, err := setupDBConnection(connStr)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	// Check if the connection is valid
-	sqlDB, err := db.DB()
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	defer sqlDB.Close()
-
-	if err := sqlDB.Ping(); err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-}
