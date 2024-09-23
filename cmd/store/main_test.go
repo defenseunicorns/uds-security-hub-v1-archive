@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/zarf-dev/zarf/src/api/v1beta1"
 	"github.com/zeebo/assert"
+	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
@@ -130,52 +132,74 @@ func (m *MockScanManager) InsertReport(ctx context.Context, report *model.Report
 	return args.Error(0)
 }
 
+type MockDatabaseInitilizer struct {
+	mock.Mock
+}
+
+func (m *MockDatabaseInitilizer) Initialize(config *Config, logger types.Logger) (*gorm.DB, error) {
+	args := m.Called(config, logger)
+	return args.Get(0).(*gorm.DB), args.Error(1)
+}
+
 // Test_runStoreScannerWithDeps tests the runStoreScannerWithDeps function.
 func Test_runStoreScannerWithDeps(t *testing.T) {
-	tests := []struct {
-		name    string
-		scanner Scanner
-		manager ScanManager
-		cmd     *cobra.Command
-		wantErr bool
-	}{
+	type testCase struct {
+		name          string
+		scanner       Scanner
+		manager       ScanManager
+		dbInitializer DatabaseInitializer
+		cmd           *cobra.Command
+		errSubstring  string
+		setup         func(*testCase)
+	}
+	tests := []testCase{
 		{
-			name:    "Nil scanner",
-			scanner: nil,
-			manager: new(MockScanManager),
-			cmd:     &cobra.Command{},
-			wantErr: true,
+			name:          "Nil scanner",
+			scanner:       nil,
+			manager:       new(MockScanManager),
+			dbInitializer: new(MockDatabaseInitilizer),
+			cmd:           &cobra.Command{},
+			errSubstring:  "scanner cannot be nil",
 		},
 		{
-			name:    "Nil command",
-			scanner: new(MockScanner),
-			manager: new(MockScanManager),
-			cmd:     nil,
-			wantErr: true,
+			name:          "Nil db initializer",
+			scanner:       new(MockScanner),
+			manager:       new(MockScanManager),
+			dbInitializer: nil,
+			cmd:           &cobra.Command{},
+			errSubstring:  "dbInitializer cannot be nil",
+		},
+		{
+			name:          "database fails to initialize",
+			scanner:       new(MockScanner),
+			manager:       new(MockScanManager),
+			dbInitializer: new(MockDatabaseInitilizer),
+			cmd:           &cobra.Command{},
+			setup: func(tt *testCase) {
+				mockDb := tt.dbInitializer.(*MockDatabaseInitilizer)
+				var db *gorm.DB
+				mockDb.On("Initialize", mock.Anything, mock.Anything).Once().ReturnArguments = []interface{}{db, fmt.Errorf("failed to initialize $$mock$$")}
+			},
+			errSubstring: "failed to initialize $$mock$$",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var c *Config
-			var err error
-			if tt.name == "Valid inputs" {
-				// Create mock scan result files
-				os.WriteFile("result1.json", []byte(`{"some": "data"}`), 0o600) //nolint:errcheck
-				os.WriteFile("result2.json", []byte(`{"some": "data"}`), 0o600) //nolint:errcheck
-				defer os.Remove("result1.json")
-				defer os.Remove("result2.json")
-
-				c, err = getConfigFromFlags(tt.cmd, &types.MockLogger{})
-				c.Tag = "testtag"
-				if err != nil {
-					t.Fatalf("getConfigFromFlags() error = %v", err)
-				}
+			if tt.setup != nil {
+				tt.setup(&tt)
 			}
 
-			err = runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, c)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("runStoreScannerWithDeps() error = %v, wantErr %v", err, tt.wantErr)
+			var c *Config
+
+			err := runStoreScannerWithDeps(context.Background(), log.NewLogger(context.Background()), tt.scanner, c, tt.dbInitializer)
+
+			if tt.errSubstring == "" && err != nil {
+				t.Errorf("unexpected error; want nil, got %v", err)
+			}
+
+			if tt.errSubstring != "" && (err == nil || !strings.Contains(err.Error(), tt.errSubstring)) {
+				t.Errorf("unexpected error substring; want %q, got err %v", tt.errSubstring, err)
 			}
 		})
 	}

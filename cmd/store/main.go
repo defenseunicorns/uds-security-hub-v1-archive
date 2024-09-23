@@ -8,21 +8,15 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/db"
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
-	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
-	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 	"github.com/defenseunicorns/uds-security-hub/pkg/version"
@@ -118,21 +112,14 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	ctx := context.Background()
 	logger := log.NewLogger(ctx)
 
-	config, err := getConfigFromFlags(cmd, logger)
+	config, err := getConfigFromFlags(cmd)
 	if err != nil {
 		return fmt.Errorf("error getting config from flags: %w", err)
 	}
 
-	registryCreds, err := cmd.Flags().GetStringSlice("registry-creds")
-	if err != nil {
-		return fmt.Errorf("error getting registry credentials: %w", err)
-	}
-
-	parsedCreds := docker.ParseCredentials(registryCreds)
-
 	scanner := scan.NewRemotePackageScanner(ctx,
 		logger, config.Org, config.PackageName,
-		config.Tag, config.OfflineDBPath, parsedCreds, scan.RootFSScannerType,
+		config.Tag, config.OfflineDBPath, config.RegistryCreds, scan.RootFSScannerType,
 	)
 
 	remoteScanner, ok := scanner.(*scan.Scanner)
@@ -140,25 +127,30 @@ func runStoreScanner(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("error creating remote package scanner")
 	}
 
-	return runStoreScannerWithDeps(ctx, cmd, logger, remoteScanner, config)
+	return runStoreScannerWithDeps(ctx, logger, remoteScanner, config, &migratingDatabaseInitializer{})
 }
 
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.
 func runStoreScannerWithDeps(
 	ctx context.Context,
-	cmd *cobra.Command,
-	_ types.Logger,
+	logger types.Logger,
 	scanner Scanner,
 	config *Config,
+	dbInitializer DatabaseInitializer,
 ) error {
 	if scanner == nil {
 		return fmt.Errorf("scanner cannot be nil")
 	}
-	if cmd == nil {
-		return fmt.Errorf("command cannot be nil")
+	if dbInitializer == nil {
+		return fmt.Errorf("dbInitializer cannot be nil")
 	}
 
-	manager, err := db.NewGormScanManager(config.DBConn)
+	dbConn, err := dbInitializer.Initialize(config, logger)
+	if err != nil {
+		return fmt.Errorf("failed to setup database: %w", err)
+	}
+
+	manager, err := db.NewGormScanManager(dbConn)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
@@ -182,7 +174,6 @@ func runStoreScannerWithDeps(
 
 // Config is the configuration for the store command.
 type Config struct {
-	DBConn                 *gorm.DB
 	GitHubToken            string
 	Org                    string
 	PackageName            string
@@ -190,10 +181,17 @@ type Config struct {
 	OfflineDBPath          string
 	RegistryCreds          []types.RegistryCredentials
 	NumberOfVersionsToScan int
+
+	DBType                   string
+	DBName                   string
+	DBPath                   string
+	DBUser                   string
+	DBPassword               string
+	DBInstanceConnectionName string
 }
 
 // getConfigFromFlags gets the configuration from the command line flags.
-func getConfigFromFlags(cmd *cobra.Command, logger types.Logger) (*Config, error) {
+func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	org, err := cmd.Flags().GetString("org")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get 'org' flag: %w", err)
@@ -249,36 +247,21 @@ func getConfigFromFlags(cmd *cobra.Command, logger types.Logger) (*Config, error
 
 	parsedCreds := parseCredentials(registryCreds)
 
-	connector := sql.CreateDBConnector(dbType, dbPath, instanceConnectionName, dbUser, dbPassword, dbName)
-	dbConn, err := connector.Connect(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
-
-	// this is for local sqlite db path and we would need to initialize the db and tables
-	if dbType == "sqlite" {
-		logger.Info("Using local SQLite database", zap.String("dbPath", dbPath))
-		dbConn, err = setupDBConnection(dbPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to setup database connection: %w", err)
-		}
-	}
-
-	// all databases types need to be automigrated
-	// Auto Migrate the schema
-	if err := dbConn.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}, &model.Report{}); err != nil {
-		return nil, fmt.Errorf("failed to auto migrate schema: %w", err)
-	}
-
 	return &Config{
 		Org:                    org,
 		PackageName:            packageName,
 		Tag:                    tag,
-		DBConn:                 dbConn,
 		GitHubToken:            githubToken,
 		NumberOfVersionsToScan: numberOfVersionsToScan,
 		RegistryCreds:          parsedCreds,
 		OfflineDBPath:          offlineDBPath,
+
+		DBType:                   dbType,
+		DBName:                   dbName,
+		DBPath:                   dbPath,
+		DBUser:                   dbUser,
+		DBPassword:               dbPassword,
+		DBInstanceConnectionName: instanceConnectionName,
 	}, nil
 }
 
@@ -374,17 +357,3 @@ func GetPackageVersions(ctx context.Context, org, packageName, gitHubToken strin
 }
 
 var getVersionTagDate = github.GetPackageVersions
-
-func setupDBConnection(dbPath string) (*gorm.DB, error) {
-	// Ensure the directory exists
-	if err := os.MkdirAll(filepath.Dir(dbPath), os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create directory for database: %w", err)
-	}
-
-	database, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
-
-	return database, nil
-}
