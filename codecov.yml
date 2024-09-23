@@ -1,5 +1,6 @@
 coverage:
   ignore:
+    # ignore anything with the `mock_` pattern so we can use mocks across packages
     - '**/mock_*.go'
   status:
     project:
