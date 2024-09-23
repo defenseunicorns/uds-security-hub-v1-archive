@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -86,8 +87,14 @@ func TestSetupDBConnection_Success(t *testing.T) {
 	if os.Getenv("integration") != "true" {
 		t.Skip("Skipping integration test")
 	}
-	// Use a connection string for a test database
-	connStr := "uds_security_hub.db"
+
+	tmp, err := os.MkdirTemp("", "uds-security-hub-db-conn-*")
+	if err != nil {
+		t.Fatalf("failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmp)
+
+	connStr := path.Join(tmp, "uds_security_hub.db")
 
 	db, err := setupDBConnection(connStr)
 	if err != nil {
