@@ -174,6 +174,8 @@ func runStoreScannerWithDeps(
 
 // Config is the configuration for the store command.
 type Config struct {
+	DatabaseConfig
+
 	GitHubToken            string
 	Org                    string
 	PackageName            string
@@ -181,8 +183,6 @@ type Config struct {
 	OfflineDBPath          string
 	RegistryCreds          []types.RegistryCredentials
 	NumberOfVersionsToScan int
-
-	DatabaseConfig
 }
 
 type DatabaseConfig struct {
