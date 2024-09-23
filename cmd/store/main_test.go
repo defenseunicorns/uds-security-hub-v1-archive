@@ -147,13 +147,6 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "Nil manager",
-			scanner: new(MockScanner),
-			manager: nil,
-			cmd:     &cobra.Command{},
-			wantErr: true,
-		},
-		{
 			name:    "Nil command",
 			scanner: new(MockScanner),
 			manager: new(MockScanManager),
@@ -173,14 +166,14 @@ func Test_runStoreScannerWithDeps(t *testing.T) {
 				defer os.Remove("result1.json")
 				defer os.Remove("result2.json")
 
-				c, err = getConfigFromFlags(tt.cmd)
+				c, err = getConfigFromFlags(tt.cmd, &types.MockLogger{})
 				c.Tag = "testtag"
 				if err != nil {
 					t.Fatalf("getConfigFromFlags() error = %v", err)
 				}
 			}
 
-			err = runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, tt.manager, c)
+			err = runStoreScannerWithDeps(context.Background(), tt.cmd, log.NewLogger(context.Background()), tt.scanner, c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("runStoreScannerWithDeps() error = %v, wantErr %v", err, tt.wantErr)
 			}

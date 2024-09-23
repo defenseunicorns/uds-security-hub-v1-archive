@@ -11,16 +11,8 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-type mockLogger struct{}
-
-func (m *mockLogger) Debug(msg string, fields ...interface{})  {}
-func (m *mockLogger) Info(msg string, fields ...interface{})   {}
-func (m *mockLogger) Warn(msg string, fields ...interface{})   {}
-func (m *mockLogger) Error(msg string, fields ...interface{})  {}
-func (m *mockLogger) Fatalf(msg string, fields ...interface{}) {}
-
 func TestNewLocalPackageScanner(t *testing.T) {
-	logger := &mockLogger{}
+	logger := &types.MockLogger{}
 	packagePath := "/path/to/package"
 
 	tests := []struct {

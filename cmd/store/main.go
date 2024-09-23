@@ -116,27 +116,31 @@ func parseCredentials(creds []string) []types.RegistryCredentials {
 // runStoreScanner runs the store scanner.
 func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	ctx := context.Background()
-	logInstance := log.NewLogger(ctx)
-	config, err := getConfigFromFlags(cmd)
+	logger := log.NewLogger(ctx)
+
+	config, err := getConfigFromFlags(cmd, logger)
 	if err != nil {
 		return fmt.Errorf("error getting config from flags: %w", err)
 	}
+
 	registryCreds, err := cmd.Flags().GetStringSlice("registry-creds")
 	if err != nil {
 		return fmt.Errorf("error getting registry credentials: %w", err)
 	}
+
 	parsedCreds := docker.ParseCredentials(registryCreds)
-	scanner := scan.NewRemotePackageScanner(ctx, logInstance, config.Org, config.PackageName,
-		config.Tag, config.OfflineDBPath, parsedCreds, scan.RootFSScannerType)
-	manager, err := db.NewGormScanManager(config.DBConn)
-	if err != nil {
-		return fmt.Errorf("error initializing GormScanManager: %w", err)
-	}
+
+	scanner := scan.NewRemotePackageScanner(ctx,
+		logger, config.Org, config.PackageName,
+		config.Tag, config.OfflineDBPath, parsedCreds, scan.RootFSScannerType,
+	)
+
 	remoteScanner, ok := scanner.(*scan.Scanner)
 	if !ok {
 		return fmt.Errorf("error creating remote package scanner")
 	}
-	return runStoreScannerWithDeps(ctx, cmd, logInstance, remoteScanner, manager, config)
+
+	return runStoreScannerWithDeps(ctx, cmd, logger, remoteScanner, config)
 }
 
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.
@@ -145,14 +149,10 @@ func runStoreScannerWithDeps(
 	cmd *cobra.Command,
 	_ types.Logger,
 	scanner Scanner,
-	manager ScanManager,
 	config *Config,
 ) error {
 	if scanner == nil {
 		return fmt.Errorf("scanner cannot be nil")
-	}
-	if manager == nil {
-		return fmt.Errorf("manager cannot be nil")
 	}
 	if cmd == nil {
 		return fmt.Errorf("command cannot be nil")
@@ -162,6 +162,7 @@ func runStoreScannerWithDeps(
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}
+
 	versionTagDate, err := getVersionTagDate(ctx, types.NewRealHTTPClient(),
 		config.GitHubToken, config.Org, "container", url.PathEscape(config.PackageName))
 	if err != nil {
@@ -175,6 +176,7 @@ func runStoreScannerWithDeps(
 			combinedErrors = errors.Join(combinedErrors, err)
 		}
 	}
+
 	return combinedErrors
 }
 
@@ -191,7 +193,7 @@ type Config struct {
 }
 
 // getConfigFromFlags gets the configuration from the command line flags.
-func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
+func getConfigFromFlags(cmd *cobra.Command, logger types.Logger) (*Config, error) {
 	org, err := cmd.Flags().GetString("org")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get 'org' flag: %w", err)
@@ -246,12 +248,13 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 	}
 
 	parsedCreds := parseCredentials(registryCreds)
+
 	connector := sql.CreateDBConnector(dbType, dbPath, instanceConnectionName, dbUser, dbPassword, dbName)
 	dbConn, err := connector.Connect(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	logger := log.NewLogger(context.Background())
+
 	// this is for local sqlite db path and we would need to initialize the db and tables
 	if dbType == "sqlite" {
 		logger.Info("Using local SQLite database", zap.String("dbPath", dbPath))
@@ -259,6 +262,12 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup database connection: %w", err)
 		}
+	}
+
+	// all databases types need to be automigrated
+	// Auto Migrate the schema
+	if err := dbConn.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}, &model.Report{}); err != nil {
+		return nil, fmt.Errorf("failed to auto migrate schema: %w", err)
 	}
 
 	return &Config{
@@ -375,11 +384,6 @@ func setupDBConnection(dbPath string) (*gorm.DB, error) {
 	database, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
-	}
-
-	// Auto Migrate the schema
-	if err := database.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}, &model.Report{}); err != nil {
-		return nil, fmt.Errorf("failed to auto migrate schema: %w", err)
 	}
 
 	return database, nil
