@@ -15,7 +15,14 @@ func TestStore(t *testing.T) {
 	if os.Getenv("integration") != "true" {
 		t.Skip("Skipping integration test")
 	}
-	const testDBPath = "tests/uds_security_hub.db"
+	tmp, err := os.MkdirTemp("", "uds-security-hub-db-conn-*")
+	if err != nil {
+		t.Fatalf("failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmp)
+
+	testDBPath := path.Join(tmp, "uds_security_hub.db")
+
 	github := os.Getenv("GITHUB_TOKEN")
 	ghcrCreds := os.Getenv("GHCR_CREDS")
 	if github == "" || ghcrCreds == "" {
