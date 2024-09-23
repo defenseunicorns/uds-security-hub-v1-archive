@@ -1,6 +1,6 @@
 coverage:
   ignore:
-    - 'mock_*.go'
+    - '**/mock_*.go'
   status:
     project:
       default:
