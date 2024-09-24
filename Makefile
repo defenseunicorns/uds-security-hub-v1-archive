@@ -11,9 +11,9 @@ GIT_TAG := $(shell git describe --tags --abbrev=0)
 # Build the project
 build:
 	go build -ldflags "-X 'github.com/defenseunicorns/uds-security-hub/pkg/version.CommitSHA=$(GIT_COMMIT)' -X 'github.com/defenseunicorns/uds-security-hub/pkg/version.Version=$(GIT_TAG)'" -o bin/uds-security-hub main.go
-	go build -ldflags "-X 'github.com/defenseunicorns/uds-security-hub/pkg/version.CommitSHA=$(GIT_COMMIT)' -X 'github.com/defenseunicorns/uds-security-hub/pkg/version.Version=$(GIT_TAG)'" -o bin/table-init ./cmd/table-init/main.go
-	go build -ldflags "-X 'github.com/defenseunicorns/uds-security-hub/pkg/version.CommitSHA=$(GIT_COMMIT)' -X 'github.com/defenseunicorns/uds-security-hub/pkg/version.Version=$(GIT_TAG)'" -o bin/store ./cmd/store/main.go
-	go build -ldflags "-X 'github.com/defenseunicorns/uds-security-hub/pkg/version.CommitSHA=$(GIT_COMMIT)' -X 'github.com/defenseunicorns/uds-security-hub/pkg/version.Version=$(GIT_TAG)'" -o bin/scan ./cmd/scan.go
+	go build -ldflags "-X 'github.com/defenseunicorns/uds-security-hub/pkg/version.CommitSHA=$(GIT_COMMIT)' -X 'github.com/defenseunicorns/uds-security-hub/pkg/version.Version=$(GIT_TAG)'" -o bin/table-init ./cmd/table-init
+	go build -ldflags "-X 'github.com/defenseunicorns/uds-security-hub/pkg/version.CommitSHA=$(GIT_COMMIT)' -X 'github.com/defenseunicorns/uds-security-hub/pkg/version.Version=$(GIT_TAG)'" -o bin/store ./cmd/store
+	go build -ldflags "-X 'github.com/defenseunicorns/uds-security-hub/pkg/version.CommitSHA=$(GIT_COMMIT)' -X 'github.com/defenseunicorns/uds-security-hub/pkg/version.Version=$(GIT_TAG)'" -o bin/scan ./cmd
 
 # Lint the code
 lint:
