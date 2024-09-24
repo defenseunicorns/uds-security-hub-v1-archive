@@ -68,4 +68,4 @@ jobs:
           INSTANCE_CONNECTION_NAME: ${{ secrets.INSTANCE_CONNECTION_NAME }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          echo ./scripts/scan.sh -f names-short.txt -v 2
+          ./scripts/scan.sh -f names-short.txt -v 2
