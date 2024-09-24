@@ -8,12 +8,12 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.12.1
 	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/anchore/syft v1.11.1
-	github.com/docker/docker v27.2.1+incompatible
+	github.com/docker/docker v27.3.1+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jaekwon/testify v1.6.1
-	github.com/klauspost/compress v1.17.9
+	github.com/klauspost/compress v1.17.10
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/spf13/cobra v1.8.1
