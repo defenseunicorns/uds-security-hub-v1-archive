@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -13,7 +14,14 @@ func TestStore(t *testing.T) {
 	if os.Getenv("integration") != "true" {
 		t.Skip("Skipping integration test")
 	}
-	const testDBPath = "tests/uds_security_hub.db"
+	tmp, err := os.MkdirTemp("", "uds-security-hub-db-conn-*")
+	if err != nil {
+		t.Fatalf("failed to create tmpdir: %v", err)
+	}
+	defer os.RemoveAll(tmp)
+
+	testDBPath := path.Join(tmp, "uds_security_hub.db")
+
 	github := os.Getenv("GITHUB_TOKEN")
 	ghcrCreds := os.Getenv("GHCR_CREDS")
 	if github == "" || ghcrCreds == "" {
@@ -31,9 +39,8 @@ func TestStore(t *testing.T) {
 		"-t", github,
 	}
 
-	// Use a connection string for a test database
-
-	db, err := setupDBConnection(testDBPath)
+	initializer := DefaultDatabaseInitializer
+	db, err := initializer.Initialize(&DatabaseConfig{DBType: "sqlite", DBPath: testDBPath})
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -80,28 +87,4 @@ func TestStore(t *testing.T) {
 		t.Fatalf("Expected more than 0 row in report table, got %d", count)
 	}
 	t.Logf("Report %d rows", count)
-}
-
-func TestSetupDBConnection_Success(t *testing.T) {
-	if os.Getenv("integration") != "true" {
-		t.Skip("Skipping integration test")
-	}
-	// Use a connection string for a test database
-	connStr := "uds_security_hub.db"
-
-	db, err := setupDBConnection(connStr)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	// Check if the connection is valid
-	sqlDB, err := db.DB()
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	defer sqlDB.Close()
-
-	if err := sqlDB.Ping(); err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
 }

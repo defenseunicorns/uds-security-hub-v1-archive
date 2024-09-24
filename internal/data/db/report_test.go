@@ -20,6 +20,12 @@ func TestReport(t *testing.T) {
 		t.Fatalf("failed to auto-migrate models: %v", err)
 	}
 
+	nonExistentID := uint(1337)
+	_, err = GetReport(db, nonExistentID)
+	if err == nil {
+		t.Fatalf("expected error when retrieving non-existent report, got nil")
+	}
+
 	report := &model.Report{
 		PackageName: "example-package",
 		Tag:         "0.0.1",
