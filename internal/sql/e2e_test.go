@@ -50,7 +50,16 @@ func TestCreateDBConnector(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			connector := CreateDBConnector(tt.dbType, tt.dbPath, tt.instanceConnectionName, tt.user, tt.password, tt.dbname)
+			connector := CreateDBConnector(
+				&DatabaseConfig{
+					DBType:                   tt.dbPath,
+					DBPath:                   tt.dbPath,
+					DBName:                   tt.dbname,
+					DBUser:                   tt.user,
+					DBPassword:               tt.password,
+					DBInstanceConnectionName: tt.instanceConnectionName,
+				},
+			)
 			if gotType := fmt.Sprintf("%T", connector); gotType != tt.expectedType {
 				t.Errorf("CreateDBConnector() = %v, want %v", gotType, tt.expectedType)
 			}

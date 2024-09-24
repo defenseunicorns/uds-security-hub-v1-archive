@@ -43,18 +43,11 @@ func main() {
 
 func run(
 	ctx context.Context,
-	config *Config,
-	connectorFactory func(string, string, string, string, string, string) sql.DBConnector,
+	config *sql.DatabaseConfig,
+	connectorFactory func(*sql.DatabaseConfig) sql.DBConnector,
 	migrator func(*gorm.DB) error,
 ) error {
-	connector := connectorFactory(
-		config.Host,
-		config.Port,
-		config.User,
-		config.Password,
-		config.DBName,
-		config.InstanceConnectionName,
-	)
+	connector := connectorFactory(config)
 	db, err := connector.Connect(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
@@ -76,13 +69,14 @@ type Config struct {
 	InstanceConnectionName string
 }
 
-func getConfig() Config {
-	return Config{
-		Host:                   getEnv("DB_HOST", "localhost"),
-		Port:                   getEnv("DB_PORT", "5432"),
-		User:                   getEnv("DB_USER", "test_user"),
-		Password:               getEnv("DB_PASSWORD", "test_password"),
-		DBName:                 getEnv("DB_NAME", "test_db"),
-		InstanceConnectionName: os.Getenv("INSTANCE_CONNECTION_NAME"),
+func getConfig() sql.DatabaseConfig {
+	return sql.DatabaseConfig{
+		DBType:                   getEnv("DB_TYPE", ""),
+		DBHost:                   getEnv("DB_HOST", "localhost"),
+		DBPort:                   getEnv("DB_PORT", "5432"),
+		DBUser:                   getEnv("DB_USER", "test_user"),
+		DBPassword:               getEnv("DB_PASSWORD", "test_password"),
+		DBName:                   getEnv("DB_NAME", "test_db"),
+		DBInstanceConnectionName: os.Getenv("INSTANCE_CONNECTION_NAME"),
 	}
 }

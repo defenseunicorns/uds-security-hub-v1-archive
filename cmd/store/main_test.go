@@ -18,6 +18,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
+	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
@@ -136,7 +137,7 @@ type MockDatabaseInitilizer struct {
 	mock.Mock
 }
 
-func (m *MockDatabaseInitilizer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
+func (m *MockDatabaseInitilizer) Initialize(config *sql.DatabaseConfig) (*gorm.DB, error) {
 	args := m.Called(config)
 	return args.Get(0).(*gorm.DB), args.Error(1)
 }

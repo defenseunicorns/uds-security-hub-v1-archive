@@ -17,6 +17,7 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
 	"github.com/defenseunicorns/uds-security-hub/internal/log"
+	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 	"github.com/defenseunicorns/uds-security-hub/pkg/version"
@@ -174,7 +175,7 @@ func runStoreScannerWithDeps(
 
 // Config is the configuration for the store command.
 type Config struct {
-	DatabaseConfig
+	DatabaseConfig sql.DatabaseConfig
 
 	GitHubToken            string
 	Org                    string
@@ -183,15 +184,6 @@ type Config struct {
 	OfflineDBPath          string
 	RegistryCreds          []types.RegistryCredentials
 	NumberOfVersionsToScan int
-}
-
-type DatabaseConfig struct {
-	DBType                   string
-	DBName                   string
-	DBPath                   string
-	DBUser                   string
-	DBPassword               string
-	DBInstanceConnectionName string
 }
 
 // getConfigFromFlags gets the configuration from the command line flags.
@@ -260,7 +252,7 @@ func getConfigFromFlags(cmd *cobra.Command) (*Config, error) {
 		RegistryCreds:          parsedCreds,
 		OfflineDBPath:          offlineDBPath,
 
-		DatabaseConfig: DatabaseConfig{
+		DatabaseConfig: sql.DatabaseConfig{
 			DBType:                   dbType,
 			DBName:                   dbName,
 			DBPath:                   dbPath,

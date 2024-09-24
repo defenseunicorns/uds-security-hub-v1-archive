@@ -12,13 +12,14 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
+	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 )
 
 type InitializerStub struct {
 	err error
 }
 
-func (f *InitializerStub) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
+func (f *InitializerStub) Initialize(config *sql.DatabaseConfig) (*gorm.DB, error) {
 	return nil, f.err
 }
 
@@ -113,7 +114,7 @@ func TestSqliteDatabaseInitializer_Success(t *testing.T) {
 
 	initializer := &sqliteDatabaseInitializer{}
 
-	db, err := initializer.Initialize(&DatabaseConfig{DBPath: connStr})
+	db, err := initializer.Initialize(&sql.DatabaseConfig{DBPath: connStr})
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -146,7 +147,7 @@ func TestSqliteDatabaseInitializer_Failure_Create_Dir(t *testing.T) {
 
 	initializer := &sqliteDatabaseInitializer{}
 
-	_, err = initializer.Initialize(&DatabaseConfig{DBPath: path.Join(p, "uds.db")})
+	_, err = initializer.Initialize(&sql.DatabaseConfig{DBPath: path.Join(p, "uds.db")})
 	if err == nil {
 		t.Fatal("exptected error, got nil")
 	}
@@ -173,7 +174,7 @@ func TestSqliteDatabaseInitializer_Failure_Bad_Sqlite_DB(t *testing.T) {
 
 	initializer := &sqliteDatabaseInitializer{}
 
-	_, err = initializer.Initialize(&DatabaseConfig{DBPath: dbFile})
+	_, err = initializer.Initialize(&sql.DatabaseConfig{DBPath: dbFile})
 	if err == nil {
 		t.Fatal("exptected error, got nil")
 	}

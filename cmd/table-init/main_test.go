@@ -32,12 +32,12 @@ func TestGetConfig(t *testing.T) {
 
 	config := getConfig()
 
-	assert.Equal(t, "testhost", config.Host)
-	assert.Equal(t, "1234", config.Port)
-	assert.Equal(t, "testuser", config.User)
-	assert.Equal(t, "testpass", config.Password)
+	assert.Equal(t, "testhost", config.DBHost)
+	assert.Equal(t, "1234", config.DBPort)
+	assert.Equal(t, "testuser", config.DBUser)
+	assert.Equal(t, "testpass", config.DBPassword)
 	assert.Equal(t, "testdb", config.DBName)
-	assert.Equal(t, "testinstance", config.InstanceConnectionName)
+	assert.Equal(t, "testinstance", config.DBInstanceConnectionName)
 }
 
 // MockDBConnector is a mock implementation of sql.DBConnector.
@@ -52,20 +52,20 @@ func (m *MockDBConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 
 func TestRun(t *testing.T) {
 	ctx := context.Background()
-	config := Config{
-		Host:                   "testhost",
-		Port:                   "1234",
-		User:                   "testuser",
-		Password:               "testpass",
-		DBName:                 "testdb",
-		InstanceConnectionName: "testinstance",
+	config := sql.DatabaseConfig{
+		DBHost:                   "testhost",
+		DBPort:                   "1234",
+		DBUser:                   "testuser",
+		DBPassword:               "testpass",
+		DBName:                   "testdb",
+		DBInstanceConnectionName: "testinstance",
 	}
 
 	mockDB := &gorm.DB{}
 	mockConnector := new(MockDBConnector)
 	mockConnector.On("Connect", ctx).Return(mockDB, nil)
 
-	mockConnectorFactory := func(string, string, string, string, string, string) sql.DBConnector {
+	mockConnectorFactory := func(*sql.DatabaseConfig) sql.DBConnector {
 		return mockConnector
 	}
 
@@ -81,12 +81,12 @@ func TestRun(t *testing.T) {
 
 func TestRunWithConnectError(t *testing.T) {
 	ctx := context.Background()
-	config := Config{}
+	config := sql.DatabaseConfig{}
 
 	mockConnector := new(MockDBConnector)
 	mockConnector.On("Connect", ctx).Return((*gorm.DB)(nil), assert.AnError)
 
-	mockConnectorFactory := func(string, string, string, string, string, string) sql.DBConnector {
+	mockConnectorFactory := func(*sql.DatabaseConfig) sql.DBConnector {
 		return mockConnector
 	}
 
@@ -103,13 +103,13 @@ func TestRunWithConnectError(t *testing.T) {
 
 func TestRunWithMigrateError(t *testing.T) {
 	ctx := context.Background()
-	config := Config{}
+	config := sql.DatabaseConfig{}
 
 	mockDB := &gorm.DB{}
 	mockConnector := new(MockDBConnector)
 	mockConnector.On("Connect", ctx).Return(mockDB, nil)
 
-	mockConnectorFactory := func(string, string, string, string, string, string) sql.DBConnector {
+	mockConnectorFactory := func(*sql.DatabaseConfig) sql.DBConnector {
 		return mockConnector
 	}
 

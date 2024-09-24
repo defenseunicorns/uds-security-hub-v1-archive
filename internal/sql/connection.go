@@ -35,6 +35,28 @@ func (c *SQLiteConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 	return database, nil
 }
 
+// StandardDBConnector implements DBConnector for standard PostgreSQL connections.
+type StandardDBConnector struct {
+	host     string
+	port     string
+	user     string
+	password string
+	dbname   string
+}
+
+// Connect connects to the database using the standard PostgreSQL connection.
+func (c *StandardDBConnector) Connect(ctx context.Context) (*gorm.DB, error) {
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		c.host, c.port, c.user, c.password, c.dbname)
+	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	return database, nil
+}
+
 // CloudSQLConnector implements DBConnector for Cloud SQL connections.
 type CloudSQLConnector struct {
 	instanceConnectionName string
@@ -92,17 +114,45 @@ func (c *CloudSQLConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 	return gormDB, nil
 }
 
+type DatabaseConfig struct {
+	DBType                   string
+	DBHost                   string
+	DBPort                   string
+	DBName                   string
+	DBPath                   string
+	DBUser                   string
+	DBPassword               string
+	DBInstanceConnectionName string
+}
+
 // CreateDBConnector is a factory function that returns the appropriate DBConnector.
-func CreateDBConnector(dbType, dbPath, instanceConnectionName, user, password, dbname string) DBConnector {
-	if dbType == "sqlite" {
+func CreateDBConnector(config *DatabaseConfig) DBConnector {
+	if config.DBType == "sqlite" {
 		return &SQLiteConnector{
-			dbPath: dbPath,
+			dbPath: config.DBPath,
+		}
+	}
+	if config.DBType == "local" {
+		port := config.DBPort
+		if port == "" {
+			port = "5432"
+		}
+		host := config.DBHost
+		if host == "" {
+			host = "localhost"
+		}
+		return &StandardDBConnector{
+			host:     host,
+			port:     port,
+			user:     config.DBUser,
+			password: config.DBPassword,
+			dbname:   config.DBName,
 		}
 	}
 	return &CloudSQLConnector{
-		instanceConnectionName: instanceConnectionName,
-		user:                   user,
-		password:               password,
-		dbname:                 dbname,
+		instanceConnectionName: config.DBInstanceConnectionName,
+		user:                   config.DBUser,
+		password:               config.DBPassword,
+		dbname:                 config.DBName,
 	}
 }

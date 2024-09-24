@@ -14,12 +14,12 @@ import (
 )
 
 type DatabaseInitializer interface {
-	Initialize(config *DatabaseConfig) (*gorm.DB, error)
+	Initialize(config *sql.DatabaseConfig) (*gorm.DB, error)
 }
 
 type defaultDatabaseInitializer struct{}
 
-func (d *defaultDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
+func (d *defaultDatabaseInitializer) Initialize(config *sql.DatabaseConfig) (*gorm.DB, error) {
 	initializer := getInitializer(config)
 
 	dbConn, err := initializer.Initialize(config)
@@ -32,7 +32,7 @@ func (d *defaultDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.D
 
 type sqliteDatabaseInitializer struct{}
 
-func (s *sqliteDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
+func (s *sqliteDatabaseInitializer) Initialize(config *sql.DatabaseConfig) (*gorm.DB, error) {
 	if err := os.MkdirAll(filepath.Dir(config.DBPath), os.ModePerm); err != nil {
 		return nil, fmt.Errorf("failed to create directory for database: %w", err)
 	}
@@ -47,11 +47,8 @@ func (s *sqliteDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB
 
 type postgresDatabaseInitializer struct{}
 
-func (p *postgresDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
-	connector := sql.CreateDBConnector(
-		config.DBType, config.DBPath, config.DBInstanceConnectionName,
-		config.DBUser, config.DBPassword, config.DBName,
-	)
+func (p *postgresDatabaseInitializer) Initialize(config *sql.DatabaseConfig) (*gorm.DB, error) {
+	connector := sql.CreateDBConnector(config)
 	dbConn, err := connector.Connect(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
@@ -59,7 +56,7 @@ func (p *postgresDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.
 	return dbConn, nil
 }
 
-func getInitializer(config *DatabaseConfig) DatabaseInitializer {
+func getInitializer(config *sql.DatabaseConfig) DatabaseInitializer {
 	if config.DBType == "sqlite" {
 		return &sqliteDatabaseInitializer{}
 	}
@@ -96,7 +93,7 @@ type migratingDatabaseInitializer struct {
 	migrator    DatabaseMigrator
 }
 
-func (d *migratingDatabaseInitializer) Initialize(config *DatabaseConfig) (*gorm.DB, error) {
+func (d *migratingDatabaseInitializer) Initialize(config *sql.DatabaseConfig) (*gorm.DB, error) {
 	dbConn, err := d.initializer.Initialize(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize: %w", err)
