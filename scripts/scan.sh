@@ -82,7 +82,7 @@ fi
 # Read names from the file and run the Go program for each name
 while IFS= read -r NAME; do
   echo "Scanning $NAME with $NUMBER_OF_VERSIONS versions..."
-  OUTPUT=$(go run cmd/store/main.go \
+  OUTPUT=$(go run ./cmd/store \
     -n "${NAME}" \
     -v "${NUMBER_OF_VERSIONS}" \
     -t "${GITHUB_TOKEN}" \
