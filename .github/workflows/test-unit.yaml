@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
       with:
         disable-sudo: true
         egress-policy: block
@@ -46,7 +46,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
       with:
-        go-version: '1.23' 
+        go-version-file: 'go.mod'
 
     - name: Install Trivy
       run: |
@@ -57,4 +57,4 @@ jobs:
         sudo apt-get install trivy -y
 
     - name: Unit Tests
-      run: make test-unit   
+      run: make test-unit

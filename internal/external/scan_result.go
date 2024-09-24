@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
+	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 // ScanResult is a struct that represents the scan result.
@@ -43,6 +44,7 @@ type PackageDTO struct {
 	Repository string
 	Tag        string
 	Scans      []ScanDTO
+	Config     types.ZarfPackage
 	ID         uint
 }
 
@@ -104,6 +106,7 @@ func MapPackageToDTO(pkg *model.Package) PackageDTO {
 		Repository: pkg.Repository,
 		Tag:        pkg.Tag,
 		Scans:      scanDTOs,
+		Config:     pkg.Config,
 	}
 }
 

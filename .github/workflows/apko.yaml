@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
           disable-sudo: true
           egress-policy: block
@@ -37,6 +37,7 @@ jobs:
             cgr.dev:443
             9236a389bd48b984df91adc1bc924620.r2.cloudflarestorage.com:443
             packages.wolfi.dev:443
+            production.cloudflare.docker.com:443
 
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v3
