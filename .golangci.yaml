@@ -30,7 +30,6 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    - exportloopref
     - forbidigo
     - gci
     - gochecknoinits
@@ -102,17 +101,7 @@ linters-settings:
   gocritic:
     enabled-checks:
       # Diagnostic
-      - appendAssign
-      - badCond
-      - caseOrder
-      - codegenComment
       - commentedOutCode
-      - deprecatedComment
-      - dupBranchBody
-      - dupCase
-      - dupSubExpr
-      - exitAfterDefer
-      - flagName
       - nilValReturn
       - weakCond
       - octalLiteral
@@ -125,22 +114,13 @@ linters-settings:
 
       # Style
       - boolExprSimplify
-      - captLocal
-      - commentFormatting
       - commentedOutImport
-      - defaultCaseOrder
       - docStub
-      - elseif
       - emptyFallthrough
       - hexLiteral
-      - ifElseChain
       - methodExprCall
-      - singleCaseSwitch
       - typeAssertChain
-      - typeSwitchVar
-      - underef
       - unlabelStmt
-      - unlambda
 
       # Opinionated
       - builtinShadow

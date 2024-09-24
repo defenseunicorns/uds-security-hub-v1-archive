@@ -147,6 +147,7 @@ func (manager *GormScanManager) InsertPackageScans(ctx context.Context, dto *ext
 			Name:       dto.Name,
 			Repository: dto.Repository,
 			Tag:        dto.Tag,
+			Config:     dto.Config,
 		}
 		if err := tx.Create(&pkg).Error; err != nil {
 			return fmt.Errorf("error inserting package: %w", err)

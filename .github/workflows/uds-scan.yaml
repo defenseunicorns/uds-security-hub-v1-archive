@@ -2,8 +2,9 @@ name: UDS Scan
 
 on:
   schedule:
-    - cron: '0 2 * * *'   
-  workflow_dispatch:      
+    # Scheduled to run every day at 2:00 AM UTC / 8:00 PM MT   
+    - cron: '0 2 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -36,6 +37,7 @@ jobs:
             34.42.78.208:3307
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
+            hooks.slack.com:443  
 
       - name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v2
@@ -48,7 +50,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v2
         with:
-          go-version: '1.23'  
+          go-version-file: 'go.mod'
 
       - name: Install Trivy
         run: |
@@ -66,7 +68,8 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           INSTANCE_CONNECTION_NAME: ${{ secrets.INSTANCE_CONNECTION_NAME }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           chmod +x scripts/scan.sh
-          ./scripts/scan.sh -f names.txt -v 2 
+          ./scripts/scan.sh -f names.txt -v 2
           ./scripts/scan.sh -f leapfrog_names.txt -v 1

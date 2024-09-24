@@ -2,7 +2,7 @@
 
 # This script runs a Go program to scan a specified number of versions of a given name.
 # It requires several environment variables to be set and accepts parameters for the number of versions to scan.
-
+# It also requires a Slack webhook URL to be set to post messages to Slack.
 # Usage:
 #   ./scan.sh [-f <file_with_names>] [-v <number_of_versions_to_scan>]
 #
@@ -17,9 +17,24 @@
 #   DB_USER                   : Database user.
 #   DB_PASSWORD               : Database password.
 #   INSTANCE_CONNECTION_NAME  : Instance connection name.
+#   SLACK_WEBHOOK_URL         : Slack webhook URL for posting messages.
+
+# Function to post a message to Slack
+function post_to_slack() {
+  local webhook_url=$1
+  local message=$2
+  local response
+  response=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H 'Content-type: application/json' --data "$(jq -nc --arg text "$message" '{"text":$text}')" "${webhook_url}")
+  
+  if [ "$response" -ne 200 ]; then
+    echo "Failed to post to Slack. HTTP status code: $response"
+  else
+    echo "Successfully posted to Slack."
+  fi
+}
 
 # Check if necessary environment variables are set
-required_vars=(GHCR_CREDS GITHUB_TOKEN DB_NAME DB_USER DB_PASSWORD INSTANCE_CONNECTION_NAME)
+required_vars=(GHCR_CREDS GITHUB_TOKEN DB_NAME DB_USER DB_PASSWORD INSTANCE_CONNECTION_NAME SLACK_WEBHOOK_URL)
 for var in "${required_vars[@]}"; do
   if [ -z "${!var}" ]; then
     echo "Environment variable $var is not set. Please set it before running the script."
@@ -58,13 +73,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAMES_FILE="${SCRIPT_DIR}/${NAMES_FILE}"
 if [ ! -f "$NAMES_FILE" ]; then
   echo "Names file $NAMES_FILE not found!"
+  message="Names file $NAMES_FILE not found!"
+  post_to_slack "${SLACK_WEBHOOK_URL}" "${message}"
   exit 1
 fi
+
 
 # Read names from the file and run the Go program for each name
 while IFS= read -r NAME; do
   echo "Scanning $NAME with $NUMBER_OF_VERSIONS versions..."
-  OUTPUT=$(go run cmd/store/main.go \
+  OUTPUT=$(go run ./cmd/store \
     -n "${NAME}" \
     -v "${NUMBER_OF_VERSIONS}" \
     -t "${GITHUB_TOKEN}" \
@@ -80,5 +98,7 @@ while IFS= read -r NAME; do
   else
     echo "Failed to scan $NAME"
     echo "Error output: $OUTPUT"
+    message="Failed to scan $NAME. Error: $OUTPUT"
+    post_to_slack "${SLACK_WEBHOOK_URL}" "${message}"
   fi
 done < "$NAMES_FILE"
