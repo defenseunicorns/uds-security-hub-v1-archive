@@ -71,8 +71,12 @@ func TestExtractSBOMImageRefsFromReader(t *testing.T) {
 	// valid header but failing sbom conversion
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
-	_ = tw.WriteHeader(&tar.Header{Name: "test.json", Size: 10})
-	_, _ = tw.Write([]byte(`invalid json`))
+	if err := tw.WriteHeader(&tar.Header{Name: "test.json", Size: 10}); err != nil {
+		t.Fatalf("failed to write tar header: %v", err)
+	}
+	if _, err := tw.Write([]byte(`invalid json`)); err != nil {
+		t.Fatalf("failed to write tar content: %v", err)
+	}
 	tw.Close()
 
 	_, err = extractSBOMImageRefsFromReader("", bytes.NewReader(buf.Bytes()))
