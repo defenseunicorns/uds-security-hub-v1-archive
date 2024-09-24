@@ -30,6 +30,7 @@ type Scanner struct {
 	org                 string
 	packageName         string
 	tag                 string
+	platform            string
 	offlineDBPath       string
 	scannerType         ScannerType
 	registryCredentials []types.RegistryCredentials
@@ -53,6 +54,7 @@ func NewRemotePackageScanner(
 		org:                 org,
 		packageName:         packageName,
 		tag:                 tag,
+		platform:            "amd64",
 		offlineDBPath:       offlineDBPath,
 		scannerType:         scannerType,
 	}
@@ -93,7 +95,7 @@ func (s *Scanner) ScanResultReader(result types.PackageScannerResult) (types.Sca
 // Returns:
 //   - []string: A slice of file paths containing the scan results in JSON format.
 //   - error: An error if the scan operation fails.
-func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]types.PackageScannerResult, error) {
+func (s *Scanner) ScanZarfPackage(org, packageName, tag string) (*types.PackageScan, error) {
 	s.org = org
 	s.packageName = packageName
 	s.tag = tag
@@ -106,7 +108,7 @@ func (s *Scanner) ScanZarfPackage(org, packageName, tag string) ([]types.Package
 }
 
 // Scan scans the remote package and returns the scan results.
-func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error) {
+func (s *Scanner) Scan(ctx context.Context) (*types.PackageScan, error) {
 	if s.org == "" {
 		return nil, fmt.Errorf("org cannot be empty")
 	}
@@ -120,12 +122,19 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 	commandExecutor := executor.NewCommandExecutor(ctx)
 	imageRef := fmt.Sprintf("ghcr.io/%s/%s:%s", s.org, s.packageName, s.tag)
 
-	results, err := s.scanImageAndProcessResults(ctx, imageRef, commandExecutor)
+	tmpDir, err := s.downloadImage(ctx, imageRef)
+	defer os.RemoveAll(tmpDir)
+
+	if err != nil {
+		return nil, err
+	}
+
+	scan, err := s.scanImageAndProcessResults(commandExecutor, tmpDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan and process image: %w", err)
 	}
 
-	return results, nil
+	return scan, nil
 }
 
 // scanImageAndProcessResults scans an image reference and processes the results.
@@ -137,38 +146,90 @@ func (s *Scanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error
 //   - commandExecutor: The command executor to use for running commands.
 //
 // Returns:
-//   - []types.PackageScannerResult: A slice of results to be consumed.
+//   - types.PackageScan: A struct containing Zarf package config and scan results.
 //   - error: An error if the scan operation fails.
 func (s *Scanner) scanImageAndProcessResults(
-	ctx context.Context,
-	imageRef string,
 	commandExecutor types.CommandExecutor,
-) ([]types.PackageScannerResult, error) {
+	ociRootDir string,
+) (*types.PackageScan, error) {
+	zarfOverrides, err := scanForZarfLayers(ociRootDir, s.platform)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read local oci image directory: %w", err)
+	}
+
+	var zarfYaml types.ZarfPackage
+	err = unmarshalJSONFromFilename(zarfOverrides.zarfYamlFilename, &zarfYaml)
+	if err != nil {
+		return nil, fmt.Errorf("failed to process zarf.yaml: %w", err)
+	}
+
+	scan := &types.PackageScan{
+		Results:     make([]types.PackageScannerResult, 0),
+		ZarfPackage: zarfYaml,
+	}
+
+	var scannables []trivyScannable
+	switch s.scannerType {
+	case SBOMScannerType:
+		sbomScannables, err := s.processSBOMScannables(ociRootDir, zarfOverrides.sbomFilename)
+		if err != nil {
+			return nil, fmt.Errorf("failed to process SBOM scannables: %w", err)
+		}
+		scannables = sbomScannables
+	case RootFSScannerType:
+		rootfsScannables, err := s.processRootfsScannables(
+			ociRootDir,
+			ociRootDir,
+			zarfOverrides.indexJSONFilename,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to process rootfs scannables: %w", err)
+		}
+		scannables = rootfsScannables
+	}
+
+	var errs error
+	for _, image := range scannables {
+		result, err := scanWithTrivy(image, s.offlineDBPath, commandExecutor)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to scanWithTrivy: %w", err))
+			continue
+		}
+		scan.Results = append(scan.Results, *result)
+	}
+
+	if errs != nil {
+		return nil, errs
+	}
+
+	return scan, nil
+}
+
+func (s *Scanner) downloadImage(ctx context.Context, imageRef string) (string, error) {
 	ref, err := registry.ParseReference(imageRef)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse reference: %w", err)
+		return "", fmt.Errorf("failed to parse reference: %w", err)
 	}
 
 	repo, err := remote.NewRepository(fmt.Sprintf("%s/%s", ref.Registry, ref.Repository))
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to remote repository: %w", err)
+		return "", fmt.Errorf("failed to connect to remote repository: %w", err)
 	}
 
 	tmpDir, err := os.MkdirTemp("", "uds-remote-oci-root-*")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create tmp dir: %w", err)
+		return "", fmt.Errorf("failed to create tmp dir: %w", err)
 	}
-	defer os.RemoveAll(tmpDir)
 
 	ociRootDir := path.Join(tmpDir, "oci")
 	err = os.MkdirAll(ociRootDir, 0o700)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create oci root dir: %w", err)
+		return "", fmt.Errorf("failed to create oci root dir: %w", err)
 	}
 
 	ociRoot, err := oci.New(ociRootDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create oci store: %w", err)
+		return "", fmt.Errorf("failed to create oci store: %w", err)
 	}
 
 	repo.Client = &auth.Client{
@@ -186,55 +247,13 @@ func (s *Scanner) scanImageAndProcessResults(
 		},
 	}
 
-	desiredPlatform := "amd64"
 	_, err = oras.Copy(ctx, repo, ref.Reference, ociRoot, "", oras.CopyOptions{
-		MapRoot: restrictOrasCopyToPlatform(desiredPlatform),
+		MapRoot: restrictOrasCopyToPlatform(s.platform),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to copy remote repository: %w", err)
+		return "", fmt.Errorf("failed to copy remote repository: %w", err)
 	}
-
-	zarfOverrides, err := scanForZarfLayers(ociRootDir, desiredPlatform)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create local oci image directory: %w", err)
-	}
-
-	var scannables []trivyScannable
-	switch s.scannerType {
-	case SBOMScannerType:
-		sbomScannables, err := s.processSBOMScannables(tmpDir, zarfOverrides.sbomFilename)
-		if err != nil {
-			return nil, fmt.Errorf("failed to process SBOM scannables: %w", err)
-		}
-		scannables = sbomScannables
-	case RootFSScannerType:
-		rootfsScannables, err := s.processRootfsScannables(
-			tmpDir,
-			ociRootDir,
-			zarfOverrides.indexJSONFilename,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to process rootfs scannables: %w", err)
-		}
-		scannables = rootfsScannables
-	}
-
-	var errs error
-	var results []types.PackageScannerResult
-	for _, image := range scannables {
-		result, err := scanWithTrivy(image, s.offlineDBPath, commandExecutor)
-		if err != nil {
-			errs = errors.Join(errs, fmt.Errorf("failed to scanWithTrivy: %w", err))
-			continue
-		}
-		results = append(results, *result)
-	}
-
-	if errs != nil {
-		return nil, errs
-	}
-
-	return results, nil
+	return ociRootDir, nil
 }
 
 // processSBOMScannables reads from an ImageIndex and returns a list of
@@ -268,6 +287,7 @@ func (s *Scanner) processRootfsScannables(
 type zarfOverrides struct {
 	indexJSONFilename string
 	sbomFilename      string
+	zarfYamlFilename  string
 }
 
 func restrictOrasCopyToPlatform(desiredPlatform string) func(
@@ -323,6 +343,11 @@ func scanForZarfLayers(imagesDir, platform string) (*zarfOverrides, error) {
 		return nil, fmt.Errorf("failed to find images/index.json in platform %s", platform)
 	}
 
+	zarfYaml := findLayerByTitle(manifest.Layers, "zarf.yaml")
+	if zarfYaml == nil {
+		return nil, fmt.Errorf("failed to find zarf.yaml layer in platform %s: %w", platform, err)
+	}
+
 	sbomsTarDigest := findLayerByTitle(manifest.Layers, "sboms.tar")
 	if sbomsTarDigest == nil {
 		return nil, fmt.Errorf("failed to find sboms.tar layer in platform %s: %w", platform, err)
@@ -331,6 +356,7 @@ func scanForZarfLayers(imagesDir, platform string) (*zarfOverrides, error) {
 	return &zarfOverrides{
 		indexJSONFilename: path.Join(imagesDir, "blobs", indexJSONDigest.Algorithm, indexJSONDigest.Hex),
 		sbomFilename:      path.Join(imagesDir, "blobs", sbomsTarDigest.Algorithm, sbomsTarDigest.Hex),
+		zarfYamlFilename:  path.Join(imagesDir, "blobs", zarfYaml.Algorithm, zarfYaml.Hex),
 	}, nil
 }
 

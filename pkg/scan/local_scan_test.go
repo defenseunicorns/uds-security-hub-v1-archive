@@ -11,16 +11,8 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
-type mockLogger struct{}
-
-func (m *mockLogger) Debug(msg string, fields ...interface{})  {}
-func (m *mockLogger) Info(msg string, fields ...interface{})   {}
-func (m *mockLogger) Warn(msg string, fields ...interface{})   {}
-func (m *mockLogger) Error(msg string, fields ...interface{})  {}
-func (m *mockLogger) Fatalf(msg string, fields ...interface{}) {}
-
 func TestNewLocalPackageScanner(t *testing.T) {
-	logger := &mockLogger{}
+	logger := &types.MockLogger{}
 	packagePath := "/path/to/package"
 
 	tests := []struct {
@@ -114,7 +106,7 @@ func TestScanImageE2E(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to scan image: %v", err)
 			}
-			reader, err := lps.ScanResultReader(result[0])
+			reader, err := lps.ScanResultReader(result.Results[0])
 			if err != nil {
 				t.Fatalf("Failed to get scan result reader: %v", err)
 			}
