@@ -62,13 +62,14 @@ func (f *faultyReader) Read(p []byte) (n int, err error) {
 	return 0, errors.New("simulated read error")
 }
 
-func TestExtractSBOMImageRefsFromReader(t *testing.T) {
-	// faulty tar reader
+func TestExtractSBOMImageRefsFromReader_FaultyReader(t *testing.T) {
 	_, err := extractSBOMImageRefsFromReader("", &faultyReader{})
 	if err == nil || !strings.Contains(err.Error(), "failed to read header in sbom tar") {
 		t.Errorf("expected header read error, got: %v", err)
 	}
-	// valid header but failing sbom conversion
+}
+
+func TestExtractSBOMImageRefsFromReader_InvalidSBOMConversion(t *testing.T) {
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
 	data := []byte(`invalid json`)
@@ -81,7 +82,7 @@ func TestExtractSBOMImageRefsFromReader(t *testing.T) {
 	}
 	tw.Close()
 
-	_, err = extractSBOMImageRefsFromReader("", bytes.NewReader(buf.Bytes()))
+	_, err := extractSBOMImageRefsFromReader("", bytes.NewReader(buf.Bytes()))
 	if err == nil {
 		t.Errorf("expected conversion error, got: %v", err)
 	}
