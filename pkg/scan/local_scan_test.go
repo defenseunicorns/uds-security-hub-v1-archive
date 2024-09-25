@@ -172,8 +172,13 @@ func TestExtractFilesFromTar(t *testing.T) {
 	data := []byte("mock data")
 	buf := bytes.NewBuffer(nil)
 	tw := tar.NewWriter(buf)
-	tw.WriteHeader(&tar.Header{Name: "testfile.txt", Size: int64(len(data))})
-	tw.Write(data)
+	if err := tw.WriteHeader(&tar.Header{Name: "testfile.txt", Size: int64(len(data))}); err != nil {
+		t.Fatalf("Error writing tar header: %v", err)
+	}
+
+	if _, err := tw.Write(data); err != nil {
+		t.Fatalf("Error writing data to tar: %v", err)
+	}
 	tw.Close()
 
 	tests := []struct {
