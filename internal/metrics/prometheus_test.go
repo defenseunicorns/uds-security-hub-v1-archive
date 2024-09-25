@@ -60,6 +60,22 @@ func TestRegisterHistogram(t *testing.T) {
 	}
 }
 
+func TestRegisterHistogram_AlreadyRegistered(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterHistogram(ctx, "test_histogram", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer collector.UnregisterHistogram(ctx, "test_histogram", "label1") // nolint: errcheck
+
+	_, err = collector.RegisterHistogram(ctx, "test_histogram", "label1")
+	if err == nil || !strings.Contains(err.Error(), "already registered") {
+		t.Fatalf("Expected error to indicate registration conflict, got: %v", err)
+	}
+}
+
 // TestRegisterGauge tests the RegisterGauge method of the Collector.
 func TestRegisterGauge(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
@@ -83,6 +99,22 @@ func TestRegisterGauge(t *testing.T) {
 	`))
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRegisterGauge_AlreadyRegistered(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterGauge(ctx, "test_gauge", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer collector.UnregisterGauge(ctx, "test_gauge", "label1") // nolint: errcheck
+
+	_, err = collector.RegisterGauge(ctx, "test_gauge", "label1")
+	if err == nil || !strings.Contains(err.Error(), "already registered") {
+		t.Fatalf("Expected error to indicate registration conflict, got: %v", err)
 	}
 }
 
@@ -200,51 +232,6 @@ func TestUnregisterHistogram(t *testing.T) {
 	}
 }
 
-func Test_prometheusCollector_UnregisterGauge(t *testing.T) {
-	ctx := WithMetrics(context.Background(), "uds_security_hub")
-	collector := FromContext(ctx, "uds_security_hub")
-
-	_, err := collector.RegisterGauge(ctx, "test_gauge", "label1")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = collector.UnregisterGauge(ctx, "test_gauge", "label1")
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func Test_prometheusCollector_UnregisterHistogram(t *testing.T) {
-	ctx := WithMetrics(context.Background(), "uds_security_hub")
-	collector := FromContext(ctx, "uds_security_hub")
-
-	_, err := collector.RegisterHistogram(ctx, "test_histogram", "label1")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = collector.UnregisterHistogram(ctx, "test_histogram", "label1")
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func Test_prometheusCollector_UnregisterCounter(t *testing.T) {
-	ctx := WithMetrics(context.Background(), "uds_security_hub")
-	collector := FromContext(ctx, "uds_security_hub")
-
-	_, err := collector.RegisterCounter(ctx, "test_counter", "label1")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = collector.UnregisterCounter(ctx, "test_counter", "label1")
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func Test_AddHistogram(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")
@@ -260,6 +247,23 @@ func Test_AddHistogram(t *testing.T) {
 	}
 }
 
+func Test_AddHistogram_NotFound(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	err := collector.AddHistogram(ctx, "non_existent_histogram", 3.0, "label1")
+	if err == nil {
+		t.Fatal("Expected error when adding to a non-existent histogram, got nil")
+	}
+
+	t.Logf("Received error: %v", err)
+
+	expectedError := "histogram 'uds_security_hub_non_existent_histogram' not found"
+	if err.Error() != expectedError {
+		t.Fatalf("Expected error: %s, got: %s", expectedError, err.Error())
+	}
+}
+
 func Test_SetGauge(t *testing.T) {
 	ctx := WithMetrics(context.Background(), "uds_security_hub")
 	collector := FromContext(ctx, "uds_security_hub")
@@ -272,5 +276,60 @@ func Test_SetGauge(t *testing.T) {
 	err = collector.SetGauge(ctx, "test_gauge", 1, "label1")
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestAddToNonExistentGauge(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	err := collector.SetGauge(ctx, "non_existent_gauge", 1, "label1")
+	if err == nil {
+		t.Fatal("expected error for non-existent gauge")
+	}
+}
+
+func TestDuplicateRegisterCounter(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	_, err := collector.RegisterCounter(ctx, "duplicate_counter", "label1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = collector.RegisterCounter(ctx, "duplicate_counter", "label1")
+	if err == nil {
+		t.Fatal("expected error when registering a counter twice")
+	}
+}
+
+func TestUnregisterNonExistentHistogram(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	err := collector.UnregisterHistogram(ctx, "non_existent_histogram", "label1")
+	if err != nil {
+		t.Fatal("expected no error when unregistering non-existent histogram")
+	}
+}
+
+func TestUnregisterNonExistentCounter(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	err := collector.UnregisterCounter(ctx, "non_existent_counter", "label1")
+	if err != nil {
+		t.Fatal("expected no error when unregistering non-existent counter")
+	}
+}
+
+func TestUnregisterNonExistentGauge(t *testing.T) {
+	ctx := WithMetrics(context.Background(), "uds_security_hub")
+	collector := FromContext(ctx, "uds_security_hub")
+
+	err := collector.UnregisterGauge(ctx, "non_existent_gauge", "label1")
+	if err != nil {
+		t.Fatal("expected no error when unregistering non-existent gauge")
 	}
 }
