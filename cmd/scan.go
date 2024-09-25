@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 
 	"github.com/spf13/cobra"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 	"github.com/defenseunicorns/uds-security-hub/pkg/version"
@@ -87,7 +87,7 @@ This should have all the files extracted from the trivy-db image and ran once be
 // runScanner is the main entry point for the scanner.
 func runScanner(cmd *cobra.Command, _ []string) error {
 	ctx := context.Background()
-	logger := log.NewLogger(ctx)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	org, _ := cmd.Flags().GetString("org")                           //nolint:errcheck
 	packageName, _ := cmd.Flags().GetString("package-name")          //nolint:errcheck
 	tag, _ := cmd.Flags().GetString("tag")                           //nolint:errcheck

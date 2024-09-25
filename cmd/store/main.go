@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 	"os/exec"
@@ -16,7 +17,6 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 	"github.com/defenseunicorns/uds-security-hub/internal/github"
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/scan"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 	"github.com/defenseunicorns/uds-security-hub/pkg/version"
@@ -110,30 +110,26 @@ func parseCredentials(creds []string) []types.RegistryCredentials {
 // runStoreScanner runs the store scanner.
 func runStoreScanner(cmd *cobra.Command, _ []string) error {
 	ctx := context.Background()
-	logger := log.NewLogger(ctx)
 
 	config, err := getConfigFromFlags(cmd)
 	if err != nil {
 		return fmt.Errorf("error getting config from flags: %w", err)
 	}
 
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	scanner := scan.NewRemotePackageScanner(ctx,
 		logger, config.Org, config.PackageName,
 		config.Tag, config.OfflineDBPath, config.RegistryCreds, scan.RootFSScannerType,
 	)
 
-	remoteScanner, ok := scanner.(*scan.Scanner)
-	if !ok {
-		return fmt.Errorf("error creating remote package scanner")
-	}
-
-	return runStoreScannerWithDeps(ctx, logger, remoteScanner, config, DefaultDatabaseInitializer)
+	return runStoreScannerWithDeps(ctx, logger, scanner, config, DefaultDatabaseInitializer)
 }
 
 // runStoreScannerWithDeps runs the store scanner with the provided dependencies.
 func runStoreScannerWithDeps(
 	ctx context.Context,
-	_ types.Logger,
+	logger *slog.Logger,
 	scanner Scanner,
 	config *Config,
 	dbInitializer DatabaseInitializer,
@@ -150,7 +146,7 @@ func runStoreScannerWithDeps(
 		return fmt.Errorf("failed to setup database: %w", err)
 	}
 
-	manager, err := db.NewGormScanManager(dbConn)
+	manager, err := db.NewGormScanManager(dbConn, logger)
 	if err != nil {
 		return fmt.Errorf("error initializing GormScanManager: %w", err)
 	}

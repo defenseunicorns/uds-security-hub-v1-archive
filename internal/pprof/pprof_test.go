@@ -53,4 +53,14 @@ func TestStartPprofServer(t *testing.T) {
 		// Wait for all goroutines to complete
 		wg.Wait()
 	})
+	t.Run("Empty_address", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		addr := ""
+		err := StartPprofServer(ctx, addr)
+		if err == nil || err.Error() != "address cannot be empty" {
+			t.Fatalf("expected error 'address cannot be empty' got %v", err)
+		}
+	})
 }
