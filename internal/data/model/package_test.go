@@ -257,3 +257,50 @@ func TestDeletePackagesByNameExceptTags(t *testing.T) {
 	// Clean up the test database
 	_ = db.Migrator().DropTable(&Package{}, &Scan{}, &Vulnerability{}) //nolint:errcheck
 }
+
+func TestDeletePackagesByNameExceptTags_EmptyExcludeTags(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect to test database: %v", err)
+	}
+
+	err = db.AutoMigrate(&Package{}, &Scan{}, &Vulnerability{})
+	if err != nil {
+		t.Fatalf("failed to auto-migrate models: %v", err)
+	}
+
+	pkg := &Package{
+		Name:       "example-package",
+		Repository: "example-repo",
+		Tag:        "0.24.1-unicorn",
+	}
+	db.Create(pkg)
+
+	err = DeletePackagesByNameExceptTags(db, "example-package", []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var count int64
+	db.Model(&Package{}).Where("name = ?", "example-package").Count(&count)
+	if count == 0 {
+		t.Errorf("expected package to remain, but it was deleted")
+	}
+}
+
+func TestDeletePackagesByNameExceptTags_EmptyName(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect to test database: %v", err)
+	}
+
+	err = db.AutoMigrate(&Package{}, &Scan{}, &Vulnerability{})
+	if err != nil {
+		t.Fatalf("failed to auto-migrate models: %v", err)
+	}
+
+	err = DeletePackagesByNameExceptTags(db, "", []string{"0.24.1-unicorn"})
+	if err == nil || err.Error() != "name is required" {
+		t.Errorf("expected error 'name is required', got %v", err)
+	}
+}
