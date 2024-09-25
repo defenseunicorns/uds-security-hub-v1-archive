@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"slices"
 
@@ -41,7 +42,7 @@ func extractFilesFromTar(r io.Reader, filenames ...string) (map[string][]byte, e
 
 // LocalPackageScanner is a struct that holds the logger and paths for docker configuration and package.
 type LocalPackageScanner struct {
-	logger        types.Logger
+	logger        *slog.Logger
 	packagePath   string
 	offlineDBPath string // New field for offline DB path
 	scannerType   ScannerType
@@ -56,9 +57,9 @@ type LocalPackageScanner struct {
 // Returns:
 // - *LocalPackageScanner: the LocalPackageScanner instance.
 // - error: an error if the instance cannot be created.
-func NewLocalPackageScanner(logger types.Logger,
+func NewLocalPackageScanner(logger *slog.Logger,
 	packagePath, offlineDBPath string, scannerType ScannerType,
-) (types.PackageScanner, error) {
+) (*LocalPackageScanner, error) {
 	if packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}

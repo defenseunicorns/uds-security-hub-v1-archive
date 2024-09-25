@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -31,6 +32,7 @@ func convertDTOToScan(dto *external.ScanDTO) model.Scan {
 
 // TestInsertScan tests the InsertScan method of the GormScanManager.
 func TestInsertScan(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	type args struct {
 		db  *gorm.DB
 		dto external.ScanDTO
@@ -71,7 +73,7 @@ func TestInsertScan(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dto := tt.args.dto
-			manager, err := NewGormScanManager(tt.args.db)
+			manager, err := NewGormScanManager(tt.args.db, logger)
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
@@ -118,6 +120,7 @@ func TestInsertScan(t *testing.T) {
 
 // TestUpdateScan tests the UpdateScan method of the GormScanManager.
 func TestUpdateScan(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	type args struct {
 		db  *gorm.DB
 		dto external.ScanDTO
@@ -149,7 +152,7 @@ func TestUpdateScan(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			manager, err := NewGormScanManager(tt.args.db)
+			manager, err := NewGormScanManager(tt.args.db, logger)
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
@@ -230,6 +233,7 @@ func TestUpdateScan(t *testing.T) {
 
 // TestGetScan tests the GetScan method of the GormScanManager.
 func TestGetScan(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	type args struct {
 		db *gorm.DB
 		id uint
@@ -250,7 +254,7 @@ func TestGetScan(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			manager, err := NewGormScanManager(tt.args.db)
+			manager, err := NewGormScanManager(tt.args.db, logger)
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
@@ -320,6 +324,7 @@ func TestGetScan(t *testing.T) {
 }
 
 func TestInsertPackageScans(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	type args struct {
 		db  *gorm.DB
 		dto external.PackageDTO
@@ -366,7 +371,7 @@ func TestInsertPackageScans(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			manager, err := NewGormScanManager(tt.args.db)
+			manager, err := NewGormScanManager(tt.args.db, logger)
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
@@ -428,8 +433,9 @@ func TestScanResultDeserialization(t *testing.T) {
 		t.Fatalf("Failed to deserialize JSON data: %s", err)
 	}
 	db := setupSQLiteDB(t)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	// Create the scan manager
-	manager, err := NewGormScanManager(db)
+	manager, err := NewGormScanManager(db, logger)
 	if err != nil {
 		t.Fatalf("failed to create scan manager: %v", err)
 	}

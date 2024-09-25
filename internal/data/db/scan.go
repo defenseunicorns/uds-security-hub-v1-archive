@@ -3,13 +3,13 @@ package db
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 )
 
 // ScanManager defines the interface for managing scans in the database.
@@ -24,15 +24,16 @@ type ScanManager interface {
 
 // GormScanManager implements the ScanManager interface using a GORM DB connection.
 type GormScanManager struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *slog.Logger
 }
 
 // NewGormScanManager creates a new GormScanManager.
-func NewGormScanManager(db *gorm.DB) (*GormScanManager, error) {
+func NewGormScanManager(db *gorm.DB, logger *slog.Logger) (*GormScanManager, error) {
 	if db == nil {
 		return nil, fmt.Errorf("db cannot be nil")
 	}
-	return &GormScanManager{db: db}, nil
+	return &GormScanManager{db: db, logger: logger}, nil
 }
 
 // InsertScan inserts a new Scan and its associated Vulnerabilities into the database.
@@ -43,8 +44,8 @@ func (manager *GormScanManager) InsertScan(ctx context.Context, dto *external.Sc
 	if ctx == nil {
 		return fmt.Errorf("ctx cannot be nil")
 	}
-	logger := log.NewLogger(ctx)
-	logger.Debug("InsertScan", zap.Any("dto", dto))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger.Debug("InsertScan", "dto", dto)
 	scan := model.Scan{
 		SchemaVersion:   dto.SchemaVersion,
 		CreatedAt:       dto.CreatedAt,
@@ -72,8 +73,8 @@ func (manager *GormScanManager) UpdateScan(ctx context.Context, dto *external.Sc
 		return fmt.Errorf("dto cannot be nil")
 	}
 
-	logger := log.NewLogger(ctx)
-	logger.Debug("UpdateScan", zap.Any("dto", dto))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger.Debug("UpdateScan", "dto", dto)
 
 	var scan model.Scan
 	if err := manager.db.First(&scan, dto.ID).Error; err != nil {
@@ -117,8 +118,8 @@ func (manager *GormScanManager) GetScan(ctx context.Context, id uint) (*model.Sc
 		return nil, fmt.Errorf("db cannot be nil")
 	}
 
-	logger := log.NewLogger(ctx)
-	logger.Debug("GetScan", zap.Uint("id", id))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger.Debug("GetScan", "id", id)
 
 	var scan model.Scan
 	if err := manager.db.Preload("Vulnerabilities").First(&scan, id).Error; err != nil {
@@ -137,8 +138,8 @@ func (manager *GormScanManager) InsertPackageScans(ctx context.Context, dto *ext
 		return fmt.Errorf("db cannot be nil")
 	}
 
-	logger := log.NewLogger(ctx)
-	logger.Debug("InsertPackageScans", zap.String("package", dto.Name))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger.Debug("InsertPackageScans", "package", dto.Name)
 
 	// Use a transaction to ensure atomicity
 	err := manager.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -152,7 +153,7 @@ func (manager *GormScanManager) InsertPackageScans(ctx context.Context, dto *ext
 		if err := tx.Create(&pkg).Error; err != nil {
 			return fmt.Errorf("error inserting package: %w", err)
 		}
-		logger.Debug("InsertPackageScans", zap.Uint("package_id", pkg.ID))
+		logger.Debug("InsertPackageScans", "package_id", pkg.ID)
 		if pkg.ID == 0 {
 			return fmt.Errorf("error inserting package the ID is 0")
 		}
