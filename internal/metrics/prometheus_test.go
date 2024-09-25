@@ -68,7 +68,7 @@ func TestRegisterHistogram_AlreadyRegistered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer collector.UnregisterHistogram(ctx, "test_histogram", "label1") // nolint: errcheck
+	defer collector.UnregisterHistogram(ctx, "test_histogram", "label1") //nolint: errcheck
 
 	_, err = collector.RegisterHistogram(ctx, "test_histogram", "label1")
 	if err == nil || !strings.Contains(err.Error(), "already registered") {
@@ -110,7 +110,7 @@ func TestRegisterGauge_AlreadyRegistered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer collector.UnregisterGauge(ctx, "test_gauge", "label1") // nolint: errcheck
+	defer collector.UnregisterGauge(ctx, "test_gauge", "label1") //nolint: errcheck
 
 	_, err = collector.RegisterGauge(ctx, "test_gauge", "label1")
 	if err == nil || !strings.Contains(err.Error(), "already registered") {
