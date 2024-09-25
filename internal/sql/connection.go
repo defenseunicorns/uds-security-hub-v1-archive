@@ -6,8 +6,8 @@ import (
 	"net"
 
 	"cloud.google.com/go/cloudsqlconn"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -68,7 +68,7 @@ func (c *CloudSQLConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 		return conn, nil
 	}
 
-	dbpool, err := pgxpool.ConnectConfig(ctx, config)
+	dbpool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to the database: %w", err)
 	}
