@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/zarf-dev/zarf/src/api/v1beta1"
 )
@@ -90,7 +91,7 @@ type ScannerFactory interface {
 	//   - error: An error if the scanner cannot be created.
 	CreateScanner(
 		ctx context.Context,
-		logger Logger,
+		logger *slog.Logger,
 		dockerConfigPath,
 		org,
 		packageName,
