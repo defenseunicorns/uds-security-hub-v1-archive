@@ -3,7 +3,6 @@ package scan
 import (
 	"archive/tar"
 	"compress/gzip"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +13,7 @@ import (
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/klauspost/compress/zstd"
+	"gopkg.in/yaml.v3"
 )
 
 // Sanitize archive file pathing from "G305: Zip Slip vulnerability".
@@ -85,7 +85,7 @@ func unmarshalJSONFromFilename(filename string, out interface{}) error {
 		return fmt.Errorf("failed to open %s: %w", filename, err)
 	}
 
-	err = json.NewDecoder(f).Decode(out)
+	err = yaml.NewDecoder(f).Decode(out)
 	if err != nil {
 		return fmt.Errorf("failed to decode %s: %w", filename, err)
 	}

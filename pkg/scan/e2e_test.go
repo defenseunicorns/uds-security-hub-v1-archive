@@ -43,14 +43,14 @@ func TestE2EScanFunctionality(t *testing.T) {
 			// Create the scanner
 			scanner := NewRemotePackageScanner(ctx, logger, org, packageName, tag, "", registryCreds, tt.scannerType)
 			// Perform the scan
-			results, err := scanner.Scan(ctx)
+			scan, err := scanner.Scan(ctx)
 			if err != nil {
 				t.Fatalf("Error scanning package: %v", err)
 			}
 
 			var allResults []types.ScanResultReader
 
-			for _, v := range results {
+			for _, v := range scan.Results {
 				r, err := scanner.ScanResultReader(v)
 				if err != nil {
 					t.Fatalf("Error reading scan result: %v", err)

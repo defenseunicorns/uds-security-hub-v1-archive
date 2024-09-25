@@ -80,7 +80,7 @@ func NewLocalPackageScanner(logger *slog.Logger,
 // Returns:
 // - []string: the scan results which are trivy scan results in json format.
 // - error: an error if the scan fails.
-func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScannerResult, error) {
+func (lps *LocalPackageScanner) Scan(ctx context.Context) (*types.PackageScan, error) {
 	if lps.packagePath == "" {
 		return nil, fmt.Errorf("packagePath cannot be empty")
 	}
@@ -108,15 +108,18 @@ func (lps *LocalPackageScanner) Scan(ctx context.Context) ([]types.PackageScanne
 		}
 	}
 
-	var scanResults []types.PackageScannerResult
+	scan := &types.PackageScan{
+		Results: make([]types.PackageScannerResult, 0),
+	}
+
 	for _, result := range scannables {
 		scanResult, err := scanWithTrivy(result, lps.offlineDBPath, commandExecutor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan: %w", err)
 		}
-		scanResults = append(scanResults, *scanResult)
+		scan.Results = append(scan.Results, *scanResult)
 	}
-	return scanResults, nil
+	return scan, nil
 }
 
 // ScanResultReader reads the scan result from the json file and returns the scan result.

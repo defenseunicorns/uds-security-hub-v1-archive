@@ -3,6 +3,8 @@ package types
 import (
 	"context"
 	"log/slog"
+
+	"github.com/zarf-dev/zarf/src/api/v1beta1"
 )
 
 // VulnerabilityInfo represents information about a vulnerability found in a scanned artifact.
@@ -45,16 +47,23 @@ type ScanResultReader interface {
 	GetVulnerabilities() []VulnerabilityInfo
 }
 
+type ZarfPackage v1beta1.ZarfPackage
+
 type PackageScannerResult struct {
 	ArtifactNameOverride string
 	JSONFilePath         string
+}
+
+type PackageScan struct {
+	ZarfPackage ZarfPackage
+	Results     []PackageScannerResult
 }
 
 // PackageScanner defines the methods required for scanning packages.
 type PackageScanner interface {
 	// Scan scans the package and returns the scan results.
 	// Returns a slice of file paths containing the scan results in JSON format and an error if the scan operation fails.
-	Scan(ctx context.Context) ([]PackageScannerResult, error)
+	Scan(ctx context.Context) (*PackageScan, error)
 
 	// ScanResultReader creates a new ScanResultReader from a JSON file.
 	// Takes a trivy scan result file and returns a ScanResultReader.
