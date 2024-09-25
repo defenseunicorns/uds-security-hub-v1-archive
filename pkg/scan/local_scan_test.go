@@ -3,20 +3,22 @@ package scan
 import (
 	"bytes"
 	"context"
+	"log/slog"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/defenseunicorns/uds-security-hub/internal/log"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
 func TestNewLocalPackageScanner(t *testing.T) {
-	logger := &types.MockLogger{}
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	packagePath := "/path/to/package"
 
 	tests := []struct {
-		logger      types.Logger
+		logger      *slog.Logger
 		expected    *LocalPackageScanner
 		name        string
 		packagePath string
@@ -66,10 +68,8 @@ func TestNewLocalPackageScanner(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "", tt.scannerType)
 			checkError(t, err, tt.expectError)
-			if !tt.expectError {
-				if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{})); diff != "" {
-					t.Errorf("scanner mismatch (-expected +got):\n%s", diff)
-				}
+			if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{}), cmpopts.IgnoreUnexported(slog.Logger{})); diff != "" {
+				t.Errorf("scanner mismatch (-expected +got):\n%s", diff)
 			}
 		})
 	}
@@ -78,7 +78,7 @@ func TestNewLocalPackageScanner(t *testing.T) {
 func TestScanImageE2E(t *testing.T) {
 	const zarfPackagePath = "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 	ctx := context.Background()
-	logger := log.NewLogger(ctx)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	type testCase struct {
 		name        string

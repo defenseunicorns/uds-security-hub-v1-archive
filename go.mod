@@ -20,7 +20,6 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/zarf-dev/zarf v0.39.0
 	github.com/zeebo/assert v1.3.1
-	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.9
