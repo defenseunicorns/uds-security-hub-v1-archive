@@ -3,6 +3,7 @@ package scan
 import (
 	"context"
 	"io"
+	"log/slog"
 	"reflect"
 	"testing"
 
@@ -60,7 +61,7 @@ func TestScanner_scanWithTrivy(t *testing.T) {
 	t.Parallel()
 	type fields struct {
 		commandExecutor types.CommandExecutor
-		logger          types.Logger
+		logger          *slog.Logger
 		ctx             context.Context
 		dockerUsername  string
 		dockerPassword  string

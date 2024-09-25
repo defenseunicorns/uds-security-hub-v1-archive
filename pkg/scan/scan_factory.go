@@ -3,6 +3,7 @@ package scan
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -13,7 +14,7 @@ type ScannerFactoryImpl struct{}
 // CreateScanner creates a new PackageScanner based on the provided options.
 func (sf *ScannerFactoryImpl) CreateScanner(
 	ctx context.Context,
-	logger types.Logger,
+	logger *slog.Logger,
 	org, packageName, tag, packagePath, offlineDBPath string,
 	registryCredentials []types.RegistryCredentials,
 	scannerType ScannerType,
