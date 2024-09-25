@@ -320,3 +320,34 @@ func TestWriteToCSVError(t *testing.T) {
 		t.Fatal("expected an err writing to a bad writer")
 	}
 }
+
+type jsonFailWriter struct{}
+
+func (j *jsonFailWriter) Write(p []byte) (int, error) {
+	return 0, fmt.Errorf("failed to write JSON data")
+}
+
+func TestWriteToJSONWriteError(t *testing.T) {
+	writer := &jsonFailWriter{}
+	testResults := []types.ScanResultReader{
+		&scanResultReader{
+			scanResult: types.ScanResult{
+				ArtifactName: "test-artifact",
+				Results: []struct {
+					Vulnerabilities []types.VulnerabilityInfo `json:"Vulnerabilities"`
+				}{
+					{
+						Vulnerabilities: []types.VulnerabilityInfo{
+							{VulnerabilityID: "CVE-2021-1234", Description: "Test vulnerability", Severity: "HIGH"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := WriteToJSON(writer, testResults)
+	if err == nil || !strings.Contains(err.Error(), "error writing JSON data") {
+		t.Fatalf("expected error writing JSON data, got %v", err)
+	}
+}
