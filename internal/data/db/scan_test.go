@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,6 +17,38 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
 )
+
+func TestNewGormScanManager(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	tests := []struct {
+		name    string
+		db      *gorm.DB
+		logger  *slog.Logger
+		wantErr bool
+	}{
+		{
+			name:    "valid db",
+			db:      setupDB(t),
+			logger:  logger,
+			wantErr: false,
+		},
+		{
+			name:    "nil db",
+			db:      nil,
+			logger:  logger,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewGormScanManager(tt.db, tt.logger)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("NewGormScanManager() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
 
 // Convert external.ScanDTO to Scan.
 func convertDTOToScan(dto *external.ScanDTO) model.Scan {
@@ -235,21 +268,44 @@ func TestUpdateScan(t *testing.T) {
 func TestGetScan(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	type args struct {
-		db *gorm.DB
-		id uint
+		db  *gorm.DB
+		ctx context.Context
+		id  uint
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
+		errMsg  string
 	}{
 		{
 			name: "successful retrieval",
 			args: args{
-				db: setupSQLiteDB(t),
-				id: 1, // This ID will be set after insertion
+				db:  setupSQLiteDB(t),
+				ctx: context.Background(),
+				id:  1, // This ID will be set after insertion
 			},
 			wantErr: false,
+		},
+		{
+			name: "nil context",
+			args: args{
+				db:  setupSQLiteDB(t),
+				ctx: nil,
+				id:  1,
+			},
+			wantErr: true,
+			errMsg:  "ctx cannot be nil",
+		},
+		{
+			name: "nil database",
+			args: args{
+				db:  setupSQLiteDB(t),
+				ctx: context.Background(),
+				id:  1,
+			},
+			wantErr: true,
+			errMsg:  "db cannot be nil",
 		},
 	}
 	for _, tt := range tests {
@@ -295,6 +351,10 @@ func TestGetScan(t *testing.T) {
 				t.Fatalf("failed to insert scan: %v", err)
 			}
 
+			if tt.name == "nil database" {
+				manager.db = nil //simulate nil database by setting manager.db to nil
+			}
+
 			// Fetch the inserted scan to get its ID
 			var insertedScan model.Scan
 			if err := tt.args.db.Preload("Vulnerabilities").First(&insertedScan, "artifact_name = ?", dto.ArtifactName).Error; err != nil {
@@ -305,19 +365,28 @@ func TestGetScan(t *testing.T) {
 			tt.args.id = insertedScan.ID
 
 			// Fetch the scan using the GetScan method
-			fetchedScan, err := manager.GetScan(context.Background(), tt.args.id)
+			fetchedScan, err := manager.GetScan(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetScan() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			// Convert dto to model.Scan for comparison
-			expectedScan := convertDTOToScan(&dto)
-			expectedScan.ID = insertedScan.ID // Ensure the ID matches
+			if tt.wantErr && err != nil && tt.errMsg != "" {
+				if !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("expected error message %q, got %v", tt.errMsg, err)
+				}
+			}
 
-			// Check if the fetched scan matches the inserted scan
-			if diff := cmp.Diff(&expectedScan, fetchedScan,
-				cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt", "Metadata"),
-				cmpopts.EquateApproxTime(time.Second)); diff != "" {
-				t.Errorf("fetched scan mismatch (-want +got):\n%s", diff)
+			if !tt.wantErr {
+				// Convert dto to model.Scan for comparison
+				expectedScan := convertDTOToScan(&dto)
+				expectedScan.ID = insertedScan.ID        // Ensure the ID matches
+				expectedScan.PackageID = packageModel.ID // Ensure PackageID matches
+
+				// Check if the fetched scan matches the inserted scan
+				if diff := cmp.Diff(&expectedScan, fetchedScan,
+					cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt", "Metadata"),
+					cmpopts.EquateApproxTime(time.Second)); diff != "" {
+					t.Errorf("fetched scan mismatch (-want +got):\n%s", diff)
+				}
 			}
 		})
 	}
@@ -487,4 +556,120 @@ func setupSQLiteDB(t *testing.T) *gorm.DB {
 		t.Fatalf("failed to migrate database: %v", err)
 	}
 	return db
+}
+
+func TestInsertReport(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	type args struct {
+		db     *gorm.DB
+		ctx    context.Context
+		report *model.Report
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "successful insertion",
+			args: args{
+				db:  setupSQLiteDB(t),
+				ctx: context.Background(),
+				report: &model.Report{
+					CreatedAt:   time.Now(),
+					PackageName: "test-package",
+					Tag:         "v1.2.3",
+					SBOM:        json.RawMessage(`{"type": "jsonb"}`),
+					ID:          1337,
+					Critical:    0,
+					High:        1,
+					Medium:      2,
+					Low:         3,
+					Info:        4,
+					Total:       10,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "nil context",
+			args: args{
+				db:     setupSQLiteDB(t),
+				ctx:    nil,
+				report: &model.Report{PackageName: "test-package"},
+			},
+			wantErr: true,
+			errMsg:  "ctx cannot be nil",
+		},
+		{
+			name: "nil database",
+			args: args{
+				db:     setupSQLiteDB(t),
+				ctx:    context.Background(),
+				report: &model.Report{PackageName: "test-package"},
+			},
+			wantErr: true,
+			errMsg:  "db cannot be nil",
+		},
+		{
+			name: "nil report",
+			args: args{
+				db:     setupSQLiteDB(t),
+				ctx:    context.Background(),
+				report: nil,
+			},
+			wantErr: true,
+			errMsg:  "report cannot be nil",
+		},
+		{
+			name: "error inserting report",
+			args: args{
+				db: func() *gorm.DB {
+					db := setupSQLiteDB(t)
+					sqlDB, _ := db.DB() //prematurely close db to simulate error
+					sqlDB.Close()
+					return db
+				}(),
+				ctx:    context.Background(),
+				report: &model.Report{PackageName: "test-package"},
+			},
+			wantErr: true,
+			errMsg:  "error inserting report",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			manager, err := NewGormScanManager(tt.args.db, logger)
+			if err != nil {
+				t.Fatalf("failed to create scan manager: %v", err)
+			}
+
+			if tt.name == "nil database" {
+				manager.db = nil //simulate nil database by setting manager.db to nil
+			}
+
+			err = manager.InsertReport(tt.args.ctx, tt.args.report)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("InsertReport() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr && err != nil && tt.errMsg != "" {
+				if !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("expected error message %q, got %v", tt.errMsg, err)
+				}
+			}
+
+			if tt.args.report != nil && !tt.wantErr {
+				var fetchedReport model.Report
+				if err := tt.args.db.First(&fetchedReport, "id = ?", tt.args.report.ID).Error; err != nil {
+					t.Fatalf("failed to fetch report: %v", err)
+				}
+				if diff := cmp.Diff(tt.args.report, &fetchedReport, cmpopts.IgnoreFields(model.Report{}, "ID", "CreatedAt")); diff != "" {
+					t.Errorf("fetched report mismatch (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
 }
