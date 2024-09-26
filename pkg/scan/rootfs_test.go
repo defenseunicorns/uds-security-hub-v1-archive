@@ -35,7 +35,9 @@ func TestUnmarshalJSONFromFilename(t *testing.T) {
 	defer os.Remove(tmpFile.Name())
 
 	validYAML := "key: value"
-	tmpFile.WriteString(validYAML)
+	if _, err := tmpFile.WriteString(validYAML); err != nil {
+		t.Fatalf("failed to write to temp file: %v", err)
+	}
 	tmpFile.Close()
 
 	var output map[string]string
