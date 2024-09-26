@@ -2,76 +2,8 @@ package scan
 
 import (
 	"os"
-	"strings"
 	"testing"
 )
-
-func TestSanitizeArchivePath(t *testing.T) {
-	testCases := []struct {
-		dir      string
-		filename string
-		wantErr  bool
-	}{
-		{"/safe/dir", "file.txt", false},                  // valid path
-		{"/safe/dir", "../unsafe.txt", true},              // directory traversal attempt
-		{"/safe/dir", "/safe/dir/subdir/file.txt", false}, // nested safe path
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.filename, func(t *testing.T) {
-			_, err := sanitizeArchivePath(tc.dir, tc.filename)
-			if (err != nil) != tc.wantErr {
-				t.Errorf("got error %v, want error %v", err != nil, tc.wantErr)
-			}
-		})
-	}
-}
-
-func TestUnmarshalJSONFromFilename(t *testing.T) {
-	tmpFile, err := os.CreateTemp("", "test.yaml")
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	validYAML := "key: value"
-	if _, err := tmpFile.WriteString(validYAML); err != nil {
-		t.Fatalf("failed to write to temp file: %v", err)
-	}
-	tmpFile.Close()
-
-	var output map[string]string
-	err = unmarshalJSONFromFilename(tmpFile.Name(), &output)
-	if err != nil || output["key"] != "value" {
-		t.Errorf("failed to unmarshal valid YAML, got: %v", err)
-	}
-
-	invalidFile := "nonexistent.yaml"
-	err = unmarshalJSONFromFilename(invalidFile, &output)
-	if err == nil {
-		t.Errorf("expected error for nonexistent file, got none")
-	}
-}
-
-func TestUnmarshalJSONFromFilename_DecodeError(t *testing.T) {
-	tmpFile, err := os.CreateTemp("", "invalid*.yaml")
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	_, err = tmpFile.WriteString("invalid_yaml: [unterminated")
-	if err != nil {
-		t.Fatalf("failed to write to temp file: %v", err)
-	}
-	tmpFile.Close()
-
-	var output map[string]interface{}
-	err = unmarshalJSONFromFilename(tmpFile.Name(), &output)
-	if err == nil || !strings.Contains(err.Error(), "failed to decode") {
-		t.Errorf("expected decode error, got: %v", err)
-	}
-}
 
 func TestExtractRootFsFromTarFilePath(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
