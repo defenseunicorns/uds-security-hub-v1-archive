@@ -352,7 +352,7 @@ func TestGetScan(t *testing.T) {
 			}
 
 			if tt.name == "nil database" {
-				manager.db = nil //simulate nil database by setting manager.db to nil
+				manager.db = nil // simulate nil database by setting manager.db to nil
 			}
 
 			// Fetch the inserted scan to get its ID
@@ -627,7 +627,10 @@ func TestInsertReport(t *testing.T) {
 			args: args{
 				db: func() *gorm.DB {
 					db := setupSQLiteDB(t)
-					sqlDB, _ := db.DB() //prematurely close db to simulate error
+					sqlDB, err := db.DB() // prematurely close db to simulate error
+					if err != nil {
+						t.Fatalf("failed to get database object: %v", err)
+					}
 					sqlDB.Close()
 					return db
 				}(),
@@ -647,7 +650,7 @@ func TestInsertReport(t *testing.T) {
 			}
 
 			if tt.name == "nil database" {
-				manager.db = nil //simulate nil database by setting manager.db to nil
+				manager.db = nil // simulate nil database by setting manager.db to nil
 			}
 
 			err = manager.InsertReport(tt.args.ctx, tt.args.report)
