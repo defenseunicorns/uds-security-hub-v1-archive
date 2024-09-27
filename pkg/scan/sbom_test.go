@@ -1,7 +1,11 @@
 package scan
 
 import (
+	"archive/tar"
+	"bytes"
+	"errors"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -49,5 +53,62 @@ func TestExtractSBOMsFromTar(t *testing.T) {
 		if !found {
 			t.Errorf("Expected image not found: %s", sbomName)
 		}
+	}
+}
+
+type faultyReader struct{}
+
+func (f *faultyReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("simulated read error")
+}
+
+func TestExtractSBOMImageRefsFromReader_FaultyReader(t *testing.T) {
+	_, err := extractSBOMImageRefsFromReader("", &faultyReader{})
+	if err == nil || !strings.Contains(err.Error(), "failed to read header in sbom tar") {
+		t.Errorf("expected header read error, got: %v", err)
+	}
+}
+
+func TestExtractSBOMImageRefsFromReader_InvalidSBOMConversion(t *testing.T) {
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+	data := []byte(`invalid json`)
+
+	if err := tw.WriteHeader(&tar.Header{Name: "test.json", Size: int64(len(data))}); err != nil {
+		t.Fatalf("failed to write tar header: %v", err)
+	}
+	if _, err := tw.Write(data); err != nil {
+		t.Fatalf("failed to write tar content: %v", err)
+	}
+	tw.Close()
+
+	_, err := extractSBOMImageRefsFromReader("", bytes.NewReader(buf.Bytes()))
+	if err == nil {
+		t.Errorf("expected conversion error, got: %v", err)
+	}
+}
+
+func TestExtractSBOMsFromZarfTarFile(t *testing.T) {
+	_, err := ExtractSBOMsFromZarfTarFile("", "nonexistent.tar")
+	if err == nil || !strings.Contains(err.Error(), "failed to open tar file") {
+		t.Errorf("expected open file error, got: %v", err)
+	}
+}
+
+func TestConvertToCyclonedxFormat(t *testing.T) {
+	// invalid tar header
+	header := &tar.Header{Name: "invalid.json"}
+
+	// reader that returns faulty data
+	_, err := convertToCyclonedxFormat(header, &faultyReader{}, "")
+	if err == nil || !strings.Contains(err.Error(), "failed to read sbom from tar") {
+		t.Errorf("expected read error, got: %v", err)
+	}
+
+	// encoding error by passing invalid sbom data
+	sbomReader := strings.NewReader(`invalid sbom data`)
+	_, err = convertToCyclonedxFormat(header, sbomReader, "")
+	if err == nil || !strings.Contains(err.Error(), "failed to convert sbom format") {
+		t.Errorf("expected sbom conversion error, got: %v", err)
 	}
 }
