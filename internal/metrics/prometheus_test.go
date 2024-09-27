@@ -145,7 +145,7 @@ func TestNonExistingCounter(t *testing.T) {
 
 	err := collector.AddCounter(ctx, "non_existing_counter", 1, "label1")
 	if err == nil {
-		t.Fatal("expected error for non-existing counter")
+		t.Fatal("expected error for non-existing counter, got nil")
 	}
 }
 
@@ -285,7 +285,7 @@ func TestAddToNonExistentGauge(t *testing.T) {
 
 	err := collector.SetGauge(ctx, "non_existent_gauge", 1, "label1")
 	if err == nil {
-		t.Fatal("expected error for non-existent gauge")
+		t.Fatalf("expected error for non-existent gauge, got nil")
 	}
 }
 
@@ -300,7 +300,7 @@ func TestDuplicateRegisterCounter(t *testing.T) {
 
 	_, err = collector.RegisterCounter(ctx, "duplicate_counter", "label1")
 	if err == nil {
-		t.Fatal("expected error when registering a counter twice")
+		t.Fatalf("expected error when registering a counter twice, got nil")
 	}
 }
 
@@ -310,7 +310,7 @@ func TestUnregisterNonExistentHistogram(t *testing.T) {
 
 	err := collector.UnregisterHistogram(ctx, "non_existent_histogram", "label1")
 	if err != nil {
-		t.Fatal("expected no error when unregistering non-existent histogram")
+		t.Fatalf("expected no error when unregistering non-existent histogram, got: %v", err)
 	}
 }
 
@@ -320,7 +320,7 @@ func TestUnregisterNonExistentCounter(t *testing.T) {
 
 	err := collector.UnregisterCounter(ctx, "non_existent_counter", "label1")
 	if err != nil {
-		t.Fatal("expected no error when unregistering non-existent counter")
+		t.Fatalf("expected no error when unregistering non-existent counter, got: %v", err)
 	}
 }
 
@@ -330,6 +330,6 @@ func TestUnregisterNonExistentGauge(t *testing.T) {
 
 	err := collector.UnregisterGauge(ctx, "non_existent_gauge", "label1")
 	if err != nil {
-		t.Fatal("expected no error when unregistering non-existent gauge")
+		t.Fatalf("expected no error when unregistering non-existent gauge, got: %v", err)
 	}
 }
