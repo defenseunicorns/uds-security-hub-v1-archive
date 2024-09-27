@@ -104,7 +104,6 @@ func TestInsertScan(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
-
 			// Insert a package first
 			packageModel := model.Package{
 				Name:       "test-package-TestInsertScan",
@@ -262,22 +261,19 @@ func TestUpdateScan(t *testing.T) {
 func TestGetScan(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	type args struct {
-		db  *gorm.DB
-		ctx context.Context
-		id  uint
+		db *gorm.DB
+		id uint
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
-		errMsg  string
 	}{
 		{
 			name: "successful retrieval",
 			args: args{
-				db:  setupSQLiteDB(t),
-				ctx: context.Background(),
-				id:  1, // This ID will be set after insertion
+				db: setupSQLiteDB(t),
+				id: 1, // This ID will be set after insertion
 			},
 			wantErr: false,
 		},
@@ -334,28 +330,19 @@ func TestGetScan(t *testing.T) {
 			tt.args.id = insertedScan.ID
 
 			// Fetch the scan using the GetScan method
-			fetchedScan, err := manager.GetScan(tt.args.ctx, tt.args.id)
+			fetchedScan, err := manager.GetScan(context.Background(), tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetScan() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if tt.wantErr && err != nil && tt.errMsg != "" {
-				if !strings.Contains(err.Error(), tt.errMsg) {
-					t.Errorf("expected error message %q, got %v", tt.errMsg, err)
-				}
-			}
+			// Convert dto to model.Scan for comparison
+			expectedScan := convertDTOToScan(&dto)
+			expectedScan.ID = insertedScan.ID // Ensure the ID matches
 
-			if !tt.wantErr {
-				// Convert dto to model.Scan for comparison
-				expectedScan := convertDTOToScan(&dto)
-				expectedScan.ID = insertedScan.ID        // Ensure the ID matches
-				expectedScan.PackageID = packageModel.ID // Ensure PackageID matches
-
-				// Check if the fetched scan matches the inserted scan
-				if diff := cmp.Diff(&expectedScan, fetchedScan,
-					cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt", "Metadata"),
-					cmpopts.EquateApproxTime(time.Second)); diff != "" {
-					t.Errorf("fetched scan mismatch (-want +got):\n%s", diff)
-				}
+			// Check if the fetched scan matches the inserted scan
+			if diff := cmp.Diff(&expectedScan, fetchedScan,
+				cmpopts.IgnoreFields(model.Scan{}, "CreatedAt", "UpdatedAt", "Metadata"),
+				cmpopts.EquateApproxTime(time.Second)); diff != "" {
+				t.Errorf("fetched scan mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
