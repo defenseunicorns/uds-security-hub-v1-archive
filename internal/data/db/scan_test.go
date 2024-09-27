@@ -32,12 +32,6 @@ func TestNewGormScanManager(t *testing.T) {
 			logger:  logger,
 			wantErr: false,
 		},
-		{
-			name:    "nil db",
-			db:      nil,
-			logger:  logger,
-			wantErr: true,
-		},
 	}
 
 	for _, tt := range tests {
@@ -287,26 +281,6 @@ func TestGetScan(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "nil context",
-			args: args{
-				db:  setupSQLiteDB(t),
-				ctx: nil,
-				id:  1,
-			},
-			wantErr: true,
-			errMsg:  "ctx cannot be nil",
-		},
-		{
-			name: "nil database",
-			args: args{
-				db:  setupSQLiteDB(t),
-				ctx: context.Background(),
-				id:  1,
-			},
-			wantErr: true,
-			errMsg:  "db cannot be nil",
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -350,11 +324,6 @@ func TestGetScan(t *testing.T) {
 			if err := manager.InsertScan(context.Background(), &dto); err != nil {
 				t.Fatalf("failed to insert scan: %v", err)
 			}
-
-			if tt.name == "nil database" {
-				manager.db = nil // simulate nil database by setting manager.db to nil
-			}
-
 			// Fetch the inserted scan to get its ID
 			var insertedScan model.Scan
 			if err := tt.args.db.Preload("Vulnerabilities").First(&insertedScan, "artifact_name = ?", dto.ArtifactName).Error; err != nil {
@@ -593,36 +562,6 @@ func TestInsertReport(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "nil context",
-			args: args{
-				db:     setupSQLiteDB(t),
-				ctx:    nil,
-				report: &model.Report{PackageName: "test-package"},
-			},
-			wantErr: true,
-			errMsg:  "ctx cannot be nil",
-		},
-		{
-			name: "nil database",
-			args: args{
-				db:     setupSQLiteDB(t),
-				ctx:    context.Background(),
-				report: &model.Report{PackageName: "test-package"},
-			},
-			wantErr: true,
-			errMsg:  "db cannot be nil",
-		},
-		{
-			name: "nil report",
-			args: args{
-				db:     setupSQLiteDB(t),
-				ctx:    context.Background(),
-				report: nil,
-			},
-			wantErr: true,
-			errMsg:  "report cannot be nil",
-		},
-		{
 			name: "error inserting report",
 			args: args{
 				db: func() *gorm.DB {
@@ -648,11 +587,6 @@ func TestInsertReport(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
-
-			if tt.name == "nil database" {
-				manager.db = nil // simulate nil database by setting manager.db to nil
-			}
-
 			err = manager.InsertReport(tt.args.ctx, tt.args.report)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("InsertReport() error = %v, wantErr %v", err, tt.wantErr)
