@@ -1,8 +1,10 @@
 package scan
 
 import (
+	"archive/tar"
 	"bytes"
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"testing"
@@ -149,5 +151,74 @@ func checkError(t *testing.T, err error, expectError bool) {
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
+	}
+}
+
+func TestLocalPackageScanner_Scan_LPSEmptyPackagePath(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	lps := &LocalPackageScanner{
+		logger:      logger,
+		packagePath: "",
+		scannerType: SBOMScannerType,
+	}
+
+	_, err := lps.Scan(context.Background())
+	if err == nil || err.Error() != "packagePath cannot be empty" {
+		t.Fatalf("Expected error for empty packagePath, got: %v", err)
+	}
+}
+
+func TestExtractFilesFromTar(t *testing.T) {
+	data := []byte("mock data")
+	buf := bytes.NewBuffer(nil)
+	tw := tar.NewWriter(buf)
+	if err := tw.WriteHeader(&tar.Header{Name: "testfile.txt", Size: int64(len(data))}); err != nil {
+		t.Fatalf("Error writing tar header: %v", err)
+	}
+
+	if _, err := tw.Write(data); err != nil {
+		t.Fatalf("Error writing data to tar: %v", err)
+	}
+	tw.Close()
+
+	tests := []struct {
+		name       string
+		reader     io.Reader
+		filenames  []string
+		wantResult map[string][]byte
+		expectErr  bool
+	}{
+		{
+			name:      "valid extraction",
+			reader:    bytes.NewReader(buf.Bytes()),
+			filenames: []string{"testfile.txt"},
+			wantResult: map[string][]byte{
+				"testfile.txt": data,
+			},
+			expectErr: false,
+		},
+		{
+			name:       "missing file",
+			reader:     bytes.NewReader(buf.Bytes()),
+			filenames:  []string{"missing.txt"},
+			wantResult: map[string][]byte{},
+			expectErr:  false,
+		},
+		{
+			name:      "corrupted tar file",
+			reader:    bytes.NewReader([]byte("not a tar file")),
+			filenames: []string{"testfile.txt"},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			results, err := extractFilesFromTar(tt.reader, tt.filenames...)
+			checkError(t, err, tt.expectErr)
+			if diff := cmp.Diff(tt.wantResult, results); diff != "" {
+				t.Errorf("results mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
