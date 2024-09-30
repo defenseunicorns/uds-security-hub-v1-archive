@@ -40,7 +40,7 @@ jobs:
             hooks.slack.com:443  
 
       - name: Checkout repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v2
+        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v2
 
       - uses: google-github-actions/auth@62cf5bd3e4211a0a0b51f2c6d6a37129d828611d # v2
         with:
