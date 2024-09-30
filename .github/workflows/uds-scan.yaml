@@ -12,11 +12,7 @@ permissions:
 
 jobs:
   scan:
-<<<<<<< Updated upstream
-    runs-on: ubuntu-latest
-=======
     runs-on: uds-marketplace-ubuntu-big-boy-8-core
->>>>>>> Stashed changes
 
     steps:
       - name: Harden Runner
