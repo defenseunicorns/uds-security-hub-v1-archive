@@ -1,0 +1,24 @@
+name: check disk
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+      with:
+        disable-sudo: true
+        egress-policy: block
+
+    - name: check disk
+      run: |
+        df -h
+        du -sh /tmp/*
+      shell: bash
