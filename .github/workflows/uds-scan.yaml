@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   scan:
-    runs-on: uds-marketplace-ubuntu-arm64-8-core
+    runs-on: uds-marketplace-ubuntu-big-boy-8-core
 
     steps:
       - name: Harden Runner
