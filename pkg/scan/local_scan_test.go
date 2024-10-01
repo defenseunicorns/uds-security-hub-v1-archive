@@ -168,6 +168,50 @@ func TestLocalPackageScanner_Scan_LPSEmptyPackagePath(t *testing.T) {
 	}
 }
 
+func TestLocalPackageScanner_ScanResultReader_OpenJSONError(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	scanner := &LocalPackageScanner{
+		logger:      logger,
+		packagePath: "mock-package-path.tar.zst",
+	}
+
+	result := types.PackageScannerResult{
+		JSONFilePath: "non-existent-file.json",
+	}
+
+	_, err := scanner.ScanResultReader(result)
+	if err == nil || err.Error() != "failed to open JSON file: open non-existent-file.json: no such file or directory" {
+		t.Fatalf("Expected error opening non-existent file, got: %v", err)
+	}
+}
+
+func TestLocalPackageScanner_ScanResultReader_DecodeJSONError(t *testing.T) {
+	file, err := os.CreateTemp("", "invalid-json-*.json")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(file.Name())
+
+	if _, err := file.Write([]byte("invalid json content")); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	scanner := &LocalPackageScanner{
+		logger:      logger,
+		packagePath: "mock-package-path.tar.zst",
+	}
+
+	result := types.PackageScannerResult{
+		JSONFilePath: file.Name(),
+	}
+
+	_, err = scanner.ScanResultReader(result)
+	if err == nil || err.Error() != "failed to decode JSON file: invalid character 'i' looking for beginning of value" {
+		t.Fatalf("Expected JSON decoding error, got: %v", err)
+	}
+}
+
 func TestExtractFilesFromTar(t *testing.T) {
 	data := []byte("mock data")
 	buf := bytes.NewBuffer(nil)
