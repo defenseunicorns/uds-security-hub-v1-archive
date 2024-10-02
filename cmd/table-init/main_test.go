@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
@@ -75,9 +74,7 @@ func TestRun(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	if diff := cmp.Diff(nil, err); diff != "" {
-		t.Errorf("run() mismatch (-want +got):\n%s", diff)
-	}
+	assert.NoError(t, err, "run() should not return an error")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -98,11 +95,7 @@ func TestRunWithConnectError(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	if diff := cmp.Diff(assert.AnError, err); diff == "" {
-		t.Errorf("expected error but got none")
-	} else if diff := cmp.Diff("failed to connect to database", err.Error()); diff == "" {
-		t.Errorf("error message mismatch (-want +got):\n%s", diff)
-	}
+	assert.Error(t, err, "expected error but got none")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -123,11 +116,6 @@ func TestRunWithMigrateError(t *testing.T) {
 	}
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
-
-	if diff := cmp.Diff(assert.AnError, err); diff == "" {
-		t.Errorf("expected error but got none")
-	} else if diff := cmp.Diff("failed to migrate database", err.Error()); diff == "" {
-		t.Errorf("error message mismatch (-want +got):\n%s", diff)
-	}
+	assert.Error(t, err, "expected error but got none")
 	mockConnector.AssertExpectations(t)
 }
