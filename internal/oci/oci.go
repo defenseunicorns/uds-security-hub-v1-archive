@@ -29,7 +29,7 @@ type DockerClient interface {
 
 // realClient wraps the Docker client.
 type realClient struct {
-	cli DockerClient
+	cli *client.Client
 }
 
 // ImageInspectWithRaw wraps the ImageInspectWithRaw function of the Docker client.

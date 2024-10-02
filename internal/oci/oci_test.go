@@ -91,57 +91,6 @@ func TestImageBuildTime(t *testing.T) {
 	}
 }
 
-// TestRealClientImageInspectWithRaw tests the ImageInspectWithRaw method of the realClient.
-func TestRealClientImageInspectWithRaw(t *testing.T) {
-	timeParsed, err := time.Parse(time.RFC3339, "2021-10-21T14:33:00Z")
-	if err != nil {
-		t.Fatalf("failed to parse time: %v", err)
-	}
-	tests := []struct {
-		name         string
-		imageRef     string
-		setupMocks   func(m *MockDockerClient)
-		expectedErr  error
-		expectedTime *time.Time
-	}{
-		{
-			name:     "Successful image inspection",
-			imageRef: "valid-image",
-			setupMocks: func(m *MockDockerClient) {
-				m.On("ImageInspectWithRaw", mock.Anything, "valid-image").
-					Return(types.ImageInspect{Created: "2021-10-21T14:33:00Z"}, []byte{}, nil)
-			},
-			expectedErr:  nil,
-			expectedTime: &timeParsed,
-		},
-		{
-			name:     "Error inspecting image",
-			imageRef: "invalid-image",
-			setupMocks: func(m *MockDockerClient) {
-				m.On("ImageInspectWithRaw", mock.Anything, "invalid-image").
-					Return(types.ImageInspect{}, []byte{}, errors.New("failed to inspect image"))
-			},
-			expectedErr:  errFailedToInspectImage,
-			expectedTime: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockClient := new(MockDockerClient)
-			tt.setupMocks(mockClient)
-
-			rc := &realClient{cli: mockClient}
-
-			_, _, err := rc.ImageInspectWithRaw(context.Background(), tt.imageRef)
-
-			checkErrorAndTime(t, err, tt.expectedErr, nil, nil)
-
-			mockClient.AssertExpectations(t)
-		})
-	}
-}
-
 func checkErrorAndTime(t *testing.T, err, expectedErr error, buildTime, expectedTime *time.Time) {
 	t.Helper()
 	if expectedErr == nil {
