@@ -133,7 +133,7 @@ func TestMigrateDatabase(t *testing.T) {
 	// Check if the tables do not exist before migration
 	models := []interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}}
 	for _, m := range models {
-		require.False(t, db.Migrator().HasTable(m), "expected table for model %T to not exist before migration, but it does", m)
+		assert.False(t, db.Migrator().HasTable(m), "expected table for model %T to not exist before migration, but it does", m)
 	}
 
 	// Run the migration
@@ -144,19 +144,19 @@ func TestMigrateDatabase(t *testing.T) {
 
 	// Check if the tables were created
 	for _, m := range models {
-		require.True(t, db.Migrator().HasTable(m), "expected table for model %T to be created, but it was not", m)
+		assert.True(t, db.Migrator().HasTable(m), "expected table for model %T to be created, but it was not", m)
 	}
 
 	// Check if specific columns exist in the tables
 	columnChecks := map[interface{}][]string{
 		&model.Package{}:       {"ID", "Name"},
 		&model.Scan{}:          {"ID", "PackageID"},
-		&model.Vulnerability{}: {"ID", "ScanID"},
+		&model.Vulnerability{}: {"ID", "ScanID", "Description"},
 	}
 
 	for model, columns := range columnChecks {
 		for _, column := range columns {
-			require.True(t, db.Migrator().HasColumn(model, column), "expected column %s to be created in model %T, but it was not", column, model)
+			assert.True(t, db.Migrator().HasColumn(model, column), "expected column %s to be created in model %T, but it was not", column, model)
 		}
 	}
 }
