@@ -128,9 +128,7 @@ func TestRunWithMigrateError(t *testing.T) {
 // TestMigrateDatabase tests the migrateDatabase function with an in-memory SQLite database.
 func TestMigrateDatabase(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect to in-memory SQLite database: %v", err)
-	}
+	require.NoError(t, err, "failed to connect to in-memory SQLite database")
 
 	err = migrateDatabase(db)
 	if err != nil {
@@ -140,8 +138,6 @@ func TestMigrateDatabase(t *testing.T) {
 	// Check if the tables were created
 	models := []interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}}
 	for _, m := range models {
-		if !db.Migrator().HasTable(m) {
-			t.Fatalf("expected table for model %T to be created, but it was not", m)
-		}
+		require.True(t, db.Migrator().HasTable(m), "expected table for model %T to be created, but it was not", m)
 	}
 }
