@@ -525,7 +525,7 @@ func TestInsertReport(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		errMsg  string
+		errMsg  error
 	}{
 		{
 			name: "successful insertion",
@@ -564,7 +564,7 @@ func TestInsertReport(t *testing.T) {
 				report: &model.Report{PackageName: "test-package"},
 			},
 			wantErr: true,
-			errMsg:  "error inserting report",
+			errMsg:  errInsertReport,
 		},
 	}
 
@@ -579,8 +579,8 @@ func TestInsertReport(t *testing.T) {
 				t.Errorf("InsertReport() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if tt.wantErr && err != nil && tt.errMsg != "" {
-				if !strings.Contains(err.Error(), tt.errMsg) {
+			if tt.wantErr && err != nil && tt.errMsg != nil {
+				if !strings.Contains(err.Error(), tt.errMsg.Error()) {
 					t.Errorf("expected error message %q, got %v", tt.errMsg, err)
 				}
 			}
