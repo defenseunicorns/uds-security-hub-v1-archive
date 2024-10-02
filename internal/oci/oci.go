@@ -42,8 +42,8 @@ func (rc *realClient) ImageInspectWithRaw(ctx context.Context, image string) (ty
 }
 
 // NewRealClient creates a new instance of a realClient.
-func NewRealClient(clientCreator func() (*client.Client, error)) (*realClient, error) {
-	cli, err := clientCreator()
+func NewRealClient() (*realClient, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errDockerClientCreation, err)
 	}

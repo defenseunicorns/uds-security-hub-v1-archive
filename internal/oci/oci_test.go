@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/mock"
 )
@@ -88,42 +87,6 @@ func TestImageBuildTime(t *testing.T) {
 			checkErrorAndTime(t, err, tt.expectedErr, buildTime, tt.expectedTime)
 
 			mockClient.AssertExpectations(t)
-		})
-	}
-}
-
-// TestNewRealClient tests the NewRealClient function.
-func TestNewRealClient(t *testing.T) {
-	tests := []struct {
-		name          string
-		clientCreator func() (*client.Client, error)
-		expectedErr   error
-	}{
-		{
-			name: "Successful client creation",
-			clientCreator: func() (*client.Client, error) {
-				return &client.Client{}, nil
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "Error creating Docker client",
-			clientCreator: func() (*client.Client, error) {
-				return nil, errors.New("failed to create Docker client")
-			},
-			expectedErr: errDockerClientCreation,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rc, err := NewRealClient(tt.clientCreator)
-
-			checkErrorAndTime(t, err, tt.expectedErr, nil, nil)
-
-			if tt.expectedErr == nil && (rc == nil || rc.cli == nil) {
-				t.Errorf("expected non-nil client and internal Docker client")
-			}
 		})
 	}
 }

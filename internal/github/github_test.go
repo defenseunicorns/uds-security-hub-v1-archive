@@ -68,7 +68,6 @@ func NewMockHTTPClient(mockStatus int, mockResp string, mockError, mockBodyReadE
 func TestGetPackageVersions(t *testing.T) {
 	type args struct {
 		ctx         context.Context
-		client      types.HTTPClientInterface
 		token       string
 		org         string
 		packageType string
@@ -89,7 +88,6 @@ func TestGetPackageVersions(t *testing.T) {
 			name: "successful fetch",
 			args: args{
 				ctx:         context.Background(),
-				client:      nil,
 				token:       "test-token",
 				org:         "test-org",
 				packageType: "test-package-type",
@@ -109,7 +107,6 @@ func TestGetPackageVersions(t *testing.T) {
 			name: "unauthorized fetch",
 			args: args{
 				ctx:         context.Background(),
-				client:      nil,
 				token:       "invalid-token",
 				org:         "test-org",
 				packageType: "test-package-type",
@@ -117,7 +114,6 @@ func TestGetPackageVersions(t *testing.T) {
 			},
 			mockResp:         `{"message":"Bad credentials","documentation_url":"https://docs.github.com/rest"}`,
 			mockStatus:       http.StatusUnauthorized,
-			want:             nil,
 			wantErr:          true,
 			expectedErrCheck: func(err error) bool { return errors.Is(err, errInvalidResponse) },
 		},
@@ -125,7 +121,6 @@ func TestGetPackageVersions(t *testing.T) {
 			name: "fetch with network error",
 			args: args{
 				ctx:         context.Background(),
-				client:      nil,
 				token:       "test-token",
 				org:         "test-org",
 				packageType: "test-package-type",
@@ -133,7 +128,6 @@ func TestGetPackageVersions(t *testing.T) {
 			},
 			mockResp:   ``,
 			mockStatus: http.StatusInternalServerError,
-			want:       nil,
 			wantErr:    true,
 			expectedErrCheck: func(err error) bool {
 				return errors.Is(err, errInvalidResponse)
@@ -143,7 +137,6 @@ func TestGetPackageVersions(t *testing.T) {
 			name: "empty token",
 			args: args{
 				ctx:         context.Background(),
-				client:      nil,
 				token:       "",
 				org:         "test-org",
 				packageType: "test-package-type",
@@ -151,7 +144,6 @@ func TestGetPackageVersions(t *testing.T) {
 			},
 			mockResp:   ``,
 			mockStatus: http.StatusOK,
-			want:       nil,
 			wantErr:    true,
 			expectedErrCheck: func(err error) bool {
 				return errors.Is(err, errNoToken)
@@ -161,7 +153,6 @@ func TestGetPackageVersions(t *testing.T) {
 			name: "malformed JSON response",
 			args: args{
 				ctx:         context.Background(),
-				client:      nil,
 				token:       "test-token",
 				org:         "test-org",
 				packageType: "test-package-type",
@@ -169,7 +160,6 @@ func TestGetPackageVersions(t *testing.T) {
 			},
 			mockResp:         `invalid JSON`,
 			mockStatus:       http.StatusOK,
-			want:             nil,
 			wantErr:          true,
 			expectedErrCheck: func(err error) bool { return errors.Is(err, errJSONParsing) },
 		},
@@ -177,7 +167,6 @@ func TestGetPackageVersions(t *testing.T) {
 			name: "error creating request",
 			args: args{
 				ctx:         context.Background(),
-				client:      nil,
 				token:       "test-token",
 				org:         "test-org",
 				packageType: "test-package-type",
@@ -185,7 +174,6 @@ func TestGetPackageVersions(t *testing.T) {
 			},
 			mockResp:         ``,
 			mockStatus:       http.StatusOK,
-			want:             nil,
 			wantErr:          true,
 			expectedErrCheck: func(err error) bool { return errors.Is(err, errCreatingRequest) },
 		},
@@ -193,7 +181,6 @@ func TestGetPackageVersions(t *testing.T) {
 			name: "client.Do returns error",
 			args: args{
 				ctx:         context.Background(),
-				client:      nil,
 				token:       "test-token",
 				org:         "test-org",
 				packageType: "test-package-type",
@@ -202,7 +189,6 @@ func TestGetPackageVersions(t *testing.T) {
 			mockResp:         ``,
 			mockStatus:       http.StatusOK,
 			mockError:        errors.New("network failure"),
-			want:             nil,
 			wantErr:          true,
 			expectedErrCheck: func(err error) bool { return errors.Is(err, errRequestFailed) },
 		},
@@ -210,7 +196,6 @@ func TestGetPackageVersions(t *testing.T) {
 			name: "error reading response body",
 			args: args{
 				ctx:         context.Background(),
-				client:      nil,
 				token:       "test-token",
 				org:         "test-org",
 				packageType: "test-package-type",
@@ -219,7 +204,6 @@ func TestGetPackageVersions(t *testing.T) {
 			mockResp:         `[{"id":1,"name":"test-package","url":"http://example.com","package_html_url":"http://example.com","created_at":"2020-01-01T00:00:00Z","updated_at":"2020-01-01T00:00:00Z","html_url":"http://example.com","metadata":{"package_type":"test-package-type","container":{"tags":["v1.0.0","v1.0.1"]}}}]`,
 			mockStatus:       http.StatusOK,
 			mockBodyReadErr:  errors.New("error reading body"),
-			want:             nil,
 			wantErr:          true,
 			expectedErrCheck: func(err error) bool { return errors.Is(err, errReadingResponseBody) },
 		},
@@ -227,8 +211,7 @@ func TestGetPackageVersions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := NewMockHTTPClient(tt.mockStatus, tt.mockResp, tt.mockError, tt.mockBodyReadErr)
-			tt.args.client = mockClient
-			got, err := GetPackageVersions(tt.args.ctx, tt.args.client, tt.args.token, tt.args.org, tt.args.packageType, tt.args.packageName)
+			got, err := GetPackageVersions(tt.args.ctx, mockClient, tt.args.token, tt.args.org, tt.args.packageType, tt.args.packageName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetPackageVersions() error = %v, wantErr %v", err, tt.wantErr)
 				return
