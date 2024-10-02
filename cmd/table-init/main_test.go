@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
@@ -74,7 +75,7 @@ func TestRun(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	assert.NoError(t, err, "run() should not return an error")
+	require.NoError(t, err, "run() should not return an error")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -95,7 +96,7 @@ func TestRunWithConnectError(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	assert.Error(t, err, "expected error but got none")
+	require.Error(t, err, "expected error but got none")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -116,6 +117,6 @@ func TestRunWithMigrateError(t *testing.T) {
 	}
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
-	assert.Error(t, err, "expected error but got none")
+	require.Error(t, err, "expected error but got none")
 	mockConnector.AssertExpectations(t)
 }
