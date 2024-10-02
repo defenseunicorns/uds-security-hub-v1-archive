@@ -192,7 +192,7 @@ func TestLocalPackageScanner_ScanResultReader_DecodeJSONError(t *testing.T) {
 	}
 	defer os.Remove(file.Name())
 
-	if _, err := file.Write([]byte("invalid json content")); err != nil {
+	if _, err := file.WriteString("invalid json content"); err != nil {
 		t.Fatalf("Failed to write to temp file: %v", err)
 	}
 
