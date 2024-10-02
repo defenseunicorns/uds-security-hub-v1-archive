@@ -351,3 +351,19 @@ func TestWriteToJSONWriteError(t *testing.T) {
 		t.Fatalf("expected error writing JSON data, got %v", err)
 	}
 }
+
+func TestGetVulnerabilities_EmptyResults(t *testing.T) {
+	r := &scanResultReader{
+		scanResult: types.ScanResult{
+			ArtifactName: "test-artifact",
+			Results: []struct {
+				Vulnerabilities []types.VulnerabilityInfo `json:"Vulnerabilities"`
+			}{},
+		},
+	}
+
+	got := r.GetVulnerabilities()
+	if len(got) != 0 {
+		t.Errorf("Expected empty vulnerabilities, got %v", got)
+	}
+}
