@@ -97,6 +97,7 @@ func TestRunWithConnectError(t *testing.T) {
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
 	require.Error(t, err, "expected error but got none")
+	require.ErrorContains(t, err, "failed to connect to database")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -118,5 +119,6 @@ func TestRunWithMigrateError(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 	require.Error(t, err, "expected error but got none")
+	require.ErrorContains(t, err, "failed to migrate database")
 	mockConnector.AssertExpectations(t)
 }
