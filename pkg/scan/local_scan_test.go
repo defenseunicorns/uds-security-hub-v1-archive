@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -163,9 +164,8 @@ func TestLocalPackageScanner_Scan_LPSEmptyPackagePath(t *testing.T) {
 	}
 
 	_, err := lps.Scan(context.Background())
-	if err == nil || err.Error() != "packagePath cannot be empty" {
-		t.Fatalf("Expected error for empty packagePath, got: %v", err)
-	}
+	require.Error(t, err)
+	require.ErrorContains(t, err, "packagePath cannot be empty")
 }
 
 func TestLocalPackageScanner_ScanResultReader_OpenJSONError(t *testing.T) {
@@ -180,9 +180,9 @@ func TestLocalPackageScanner_ScanResultReader_OpenJSONError(t *testing.T) {
 	}
 
 	_, err := scanner.ScanResultReader(result)
-	if err == nil || err.Error() != "failed to open JSON file: open non-existent-file.json: no such file or directory" {
-		t.Fatalf("Expected error opening non-existent file, got: %v", err)
-	}
+	require.Error(t, err)
+	require.ErrorContains(t, err, "failed to open JSON file")
+	require.ErrorContains(t, err, "no such file or directory")
 }
 
 func TestLocalPackageScanner_ScanResultReader_DecodeJSONError(t *testing.T) {
@@ -207,9 +207,9 @@ func TestLocalPackageScanner_ScanResultReader_DecodeJSONError(t *testing.T) {
 	}
 
 	_, err = scanner.ScanResultReader(result)
-	if err == nil || err.Error() != "failed to decode JSON file: invalid character 'i' looking for beginning of value" {
-		t.Fatalf("Expected JSON decoding error, got: %v", err)
-	}
+	require.Error(t, err)
+	require.ErrorContains(t, err, "failed to decode JSON file")
+	require.ErrorContains(t, err, "invalid character 'i' looking for beginning of value")
 }
 
 func TestExtractFilesFromTar(t *testing.T) {
