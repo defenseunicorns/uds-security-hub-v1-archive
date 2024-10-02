@@ -7,8 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 )
 
@@ -121,4 +123,25 @@ func TestRunWithMigrateError(t *testing.T) {
 	require.Error(t, err, "expected error but got none")
 	require.ErrorContains(t, err, "failed to migrate database")
 	mockConnector.AssertExpectations(t)
+}
+
+// TestMigrateDatabase tests the migrateDatabase function with an in-memory SQLite database.
+func TestMigrateDatabase(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect to in-memory SQLite database: %v", err)
+	}
+
+	err = migrateDatabase(db)
+	if err != nil {
+		t.Fatalf("failed to migrate database: %v", err)
+	}
+
+	// Check if the tables were created
+	models := []interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}}
+	for _, m := range models {
+		if !db.Migrator().HasTable(m) {
+			t.Fatalf("expected table for model %T to be created, but it was not", m)
+		}
+	}
 }
