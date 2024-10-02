@@ -133,14 +133,12 @@ func TestMigrateDatabase(t *testing.T) {
 	// Check if the tables do not exist before migration
 	models := []interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}}
 	for _, m := range models {
-		assert.False(t, db.Migrator().HasTable(m), "expected table for model %T to not exist before migration, but it does", m)
+		require.False(t, db.Migrator().HasTable(m), "expected table for model %T to not exist before migration, but it does", m)
 	}
 
 	// Run the migration
 	err = migrateDatabase(db)
-	if err != nil {
-		t.Fatalf("failed to migrate database: %v", err)
-	}
+	require.NoError(t, err, "failed to migrate database")
 
 	// Check if the tables were created
 	for _, m := range models {
