@@ -23,6 +23,9 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
+var errOpeningFile = errors.New("error opening file")
+var errDecodingJSON = errors.New("error decoding JSON")
+
 // Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
 	logger              *slog.Logger
@@ -73,14 +76,14 @@ func NewRemotePackageScanner(
 func (s *Scanner) ScanResultReader(result types.PackageScannerResult) (types.ScanResultReader, error) {
 	file, err := os.Open(result.JSONFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("error opening file: %w", err)
+		return nil, fmt.Errorf("%w: %w", errOpeningFile, err)
 	}
 	defer file.Close()
 
 	var scanResult types.ScanResult
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&scanResult); err != nil {
-		return nil, fmt.Errorf("error decoding JSON: %w", err)
+		return nil, fmt.Errorf("%w: %w", errDecodingJSON, err)
 	}
 
 	return &scanResultReader{ArtifactNameOverride: result.ArtifactNameOverride, scanResult: scanResult}, nil
