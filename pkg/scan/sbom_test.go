@@ -136,7 +136,7 @@ func TestExtractArtifactInformationFromSBOM_WithTags(t *testing.T) {
 	{
 		"source": {
 			"metadata": {
-				"tags": ["docker.io/appropriate/curl:latest"]
+				"tags": ["example-tag:latest"]
 			}
 		}
 	}`
@@ -144,7 +144,7 @@ func TestExtractArtifactInformationFromSBOM_WithTags(t *testing.T) {
 	reader := strings.NewReader(sbomWithTags)
 	result := extractArtifactInformationFromSBOM(reader)
 
-	expectedTag := "docker.io/appropriate/curl:latest"
+	expectedTag := "example-tag:latest"
 	if result != expectedTag {
 		t.Errorf("expected %s, got: %s", expectedTag, result)
 	}
