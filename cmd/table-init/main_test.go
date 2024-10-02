@@ -2,23 +2,38 @@ package main
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	"github.com/jaekwon/testify/require"
-	"github.com/stretchr/testify/assert"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/mock"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
+)
+
+var (
+	errConnectFailed = errors.New("failed to connect to database")
+	errMigrateFailed = errors.New("failed to migrate database")
 )
 
 func TestGetEnv(t *testing.T) {
 	// Test when environment variable exists
 	t.Setenv("TEST_KEY", "test_value")
-	assert.Equal(t, "test_value", getEnv("TEST_KEY", "default"))
+	got := getEnv("TEST_KEY", "default")
+	want := "test_value"
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("getEnv() mismatch (-want +got):\n%s", diff)
+	}
 
 	// Test when environment variable doesn't exist
-	assert.Equal(t, "default", getEnv("NON_EXISTENT_KEY", "default"))
+	got = getEnv("NON_EXISTENT_KEY", "default")
+	want = "default"
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("getEnv() mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func TestGetConfig(t *testing.T) {
@@ -30,14 +45,19 @@ func TestGetConfig(t *testing.T) {
 	t.Setenv("DB_NAME", "testdb")
 	t.Setenv("INSTANCE_CONNECTION_NAME", "testinstance")
 
-	config := getConfig()
+	got := getConfig()
+	want := Config{
+		Host:                   "testhost",
+		Port:                   "1234",
+		User:                   "testuser",
+		Password:               "testpass",
+		DBName:                 "testdb",
+		InstanceConnectionName: "testinstance",
+	}
 
-	assert.Equal(t, "testhost", config.Host)
-	assert.Equal(t, "1234", config.Port)
-	assert.Equal(t, "testuser", config.User)
-	assert.Equal(t, "testpass", config.Password)
-	assert.Equal(t, "testdb", config.DBName)
-	assert.Equal(t, "testinstance", config.InstanceConnectionName)
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("getConfig() mismatch (-want +got):\n%s", diff)
+	}
 }
 
 // MockDBConnector is a mock implementation of sql.DBConnector.
@@ -47,7 +67,10 @@ type MockDBConnector struct {
 
 func (m *MockDBConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(*gorm.DB), args.Error(1)
+	if db, ok := args.Get(0).(*gorm.DB); ok {
+		return db, args.Error(1)
+	}
+	return nil, args.Error(1)
 }
 
 func TestRun(t *testing.T) {
@@ -74,8 +97,9 @@ func TestRun(t *testing.T) {
 	}
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
-
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("run() returned unexpected error: %v", err)
+	}
 	mockConnector.AssertExpectations(t)
 }
 
@@ -84,7 +108,7 @@ func TestRunWithConnectError(t *testing.T) {
 	config := Config{}
 
 	mockConnector := new(MockDBConnector)
-	mockConnector.On("Connect", ctx).Return((*gorm.DB)(nil), assert.AnError)
+	mockConnector.On("Connect", ctx).Return((*gorm.DB)(nil), errConnectFailed)
 
 	mockConnectorFactory := func(string, string, string, string, string, string) sql.DBConnector {
 		return mockConnector
@@ -95,9 +119,12 @@ func TestRunWithConnectError(t *testing.T) {
 	}
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to connect to database")
+	if err == nil {
+		t.Fatalf("run() expected to return an error, got nil")
+	}
+	if !errors.Is(err, errConnectFailed) {
+		t.Errorf("run() error mismatch. Want %v, got %v", errConnectFailed, err)
+	}
 	mockConnector.AssertExpectations(t)
 }
 
@@ -114,12 +141,36 @@ func TestRunWithMigrateError(t *testing.T) {
 	}
 
 	mockMigrator := func(*gorm.DB) error {
-		return assert.AnError
+		return errMigrateFailed
 	}
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to migrate database")
+	if err == nil {
+		t.Fatalf("run() expected to return an error, got nil")
+	}
+	if !errors.Is(err, errMigrateFailed) {
+		t.Errorf("run() error mismatch. Want %v, got %v", errMigrateFailed, err)
+	}
 	mockConnector.AssertExpectations(t)
+}
+
+func TestMigrateDatabase(t *testing.T) {
+	// Create an in-memory SQLite database
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect to in-memory database: %v", err)
+	}
+
+	// Run the migration
+	err = migrateDatabase(db)
+	if err != nil {
+		t.Fatalf("failed to migrate database: %v", err)
+	}
+
+	// Check if tables were created
+	for _, table := range []interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}} {
+		if !db.Migrator().HasTable(table) {
+			t.Errorf("table for model %T was not created", table)
+		}
+	}
 }
