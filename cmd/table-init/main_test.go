@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jaekwon/testify/require"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
@@ -75,7 +75,7 @@ func TestRun(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	require.NoError(t, err)
+	require.NoError(t, err, "run() should not return an error")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -96,8 +96,8 @@ func TestRunWithConnectError(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to connect to database")
+	require.Error(t, err, "expected error but got none")
+	require.ErrorContains(t, err, "failed to connect to database")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -118,8 +118,7 @@ func TestRunWithMigrateError(t *testing.T) {
 	}
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to migrate database")
+	require.Error(t, err, "expected error but got none")
+	require.ErrorContains(t, err, "failed to migrate database")
 	mockConnector.AssertExpectations(t)
 }
