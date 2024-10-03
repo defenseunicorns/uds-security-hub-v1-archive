@@ -29,9 +29,6 @@ const (
 )
 
 var (
-	// errOfflineDBPathEmpty indicates that the offline DB path is empty.
-	errOfflineDBPathEmpty = errors.New("offline DB path is empty")
-
 	// errTrivyDBNotFound indicates that the trivy.db file is missing in the offline DB path.
 	errTrivyDBNotFound = errors.New("trivy.db does not exist in the offline DB path")
 
@@ -420,9 +417,6 @@ func scanWithTrivy(
 	err := checkOfflineDBPath(offlineDBPath)
 	if err != nil {
 		switch {
-		case errors.Is(err, errOfflineDBPathEmpty):
-			// Handle empty offline DB path
-			return nil, fmt.Errorf("offline DB path is required: %w", err)
 		case errors.Is(err, errTrivyDBNotFound):
 			// Handle missing trivy.db file
 			return nil, fmt.Errorf("required trivy.db file is missing: %w", err)
@@ -483,7 +477,8 @@ func scanWithTrivy(
 // checkOfflineDBPath checks if the offline DB path contains the required files.
 func checkOfflineDBPath(offlineDBPath string) error {
 	if offlineDBPath == "" {
-		return errOfflineDBPathEmpty
+		// If offlineDBPath is empty, we skip checking and assume no offline DB is used.
+		return nil
 	}
 
 	trivyDBPath := filepath.Join(offlineDBPath, trivyDBFileName)

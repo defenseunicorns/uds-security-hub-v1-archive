@@ -240,41 +240,57 @@ func Test_localScanResult_GetVulnerabilities(t *testing.T) {
 
 func TestOfflineDBPathChecks(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupFiles  []string
-		expectError error
+		name          string
+		setupFiles    []string
+		offlineDBPath string
+		expectError   error
 	}{
 		{
-			name:        "Both files exist",
-			setupFiles:  []string{"trivy.db", "metadata.json"},
-			expectError: nil,
+			name:          "Both files exist",
+			setupFiles:    []string{"trivy.db", "metadata.json"},
+			offlineDBPath: "some/temp/dir", // Will be set to t.TempDir()
+			expectError:   nil,
 		},
 		{
-			name:        "Missing trivy.db",
-			setupFiles:  []string{"metadata.json"},
-			expectError: errTrivyDBNotFound,
+			name:          "Missing trivy.db",
+			setupFiles:    []string{"metadata.json"},
+			offlineDBPath: "some/temp/dir",
+			expectError:   errTrivyDBNotFound,
 		},
 		{
-			name:        "Missing metadata.json",
-			setupFiles:  []string{"trivy.db"},
-			expectError: errMetadataJSONNotFound,
+			name:          "Missing metadata.json",
+			setupFiles:    []string{"trivy.db"},
+			offlineDBPath: "some/temp/dir",
+			expectError:   errMetadataJSONNotFound,
 		},
 		{
-			name:        "Both files missing",
-			setupFiles:  []string{},
-			expectError: errTrivyDBNotFound,
+			name:          "Both files missing",
+			setupFiles:    []string{},
+			offlineDBPath: "some/temp/dir",
+			expectError:   errTrivyDBNotFound, // Or errMetadataJSONNotFound, depending on which error you expect first
+		},
+		{
+			name:          "Empty offlineDBPath",
+			setupFiles:    []string{},
+			offlineDBPath: "", // Empty offlineDBPath
+			expectError:   nil,
 		},
 	}
 
 	for _, tt := range tests {
+		tt := tt // Capture loop variable
 		t.Run(tt.name, func(t *testing.T) {
-			offlineDBPath := t.TempDir()
-
-			// Create necessary files
-			for _, file := range tt.setupFiles {
-				filePath := filepath.Join(offlineDBPath, file)
-				_, err := os.Create(filePath)
-				require.NoError(t, err)
+			var offlineDBPath string
+			if tt.offlineDBPath == "" {
+				offlineDBPath = ""
+			} else {
+				offlineDBPath = t.TempDir()
+				// Create necessary files
+				for _, file := range tt.setupFiles {
+					filePath := filepath.Join(offlineDBPath, file)
+					_, err := os.Create(filePath)
+					require.NoError(t, err)
+				}
 			}
 
 			// Test the function
