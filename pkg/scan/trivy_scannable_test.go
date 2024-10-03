@@ -2,6 +2,8 @@ package scan
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestScannerType_String(t *testing.T) {
@@ -16,9 +18,8 @@ func TestScannerType_String(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.scanner.String(); got != tt.expected {
-				t.Errorf("ScannerType.String() = %v, want %v", got, tt.expected)
-			}
+			got := tt.scanner.String()
+			require.Equal(t, tt.expected, got, "ScannerType.Type() mismatch (-got +want):\n%s")
 		})
 	}
 }
@@ -38,11 +39,11 @@ func TestScannerType_Set(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var scanner ScannerType
 			err := scanner.Set(tt.input)
-			if tt.expectErr && err == nil {
-				t.Errorf("ScannerType.Set() error = %v, wantErr %v", err, tt.expectErr)
-			}
-			if !tt.expectErr && scanner.String() != tt.input {
-				t.Errorf("Expected scanner to be set to %v, but got %v", tt.input, scanner.String())
+			if tt.expectErr {
+				require.Error(t, err, "expected an error but got none")
+			} else {
+				require.NoError(t, err, "expected no error but got one")
+				require.Equal(t, tt.input, scanner.String(), "expected scanner to be set to %v, but got %v", tt.input, scanner.String())
 			}
 		})
 	}
@@ -52,7 +53,6 @@ func TestScannerType_Type(t *testing.T) {
 	scanner := ScannerType("any")
 	expectedType := "ScannerType"
 
-	if got := scanner.Type(); got != expectedType {
-		t.Errorf("ScannerType.Type() = %v, want %v", got, expectedType)
-	}
+	got := scanner.Type()
+	require.Equal(t, expectedType, got, "ScannerType.Type() mismatch (-got +want):\n%s")
 }
