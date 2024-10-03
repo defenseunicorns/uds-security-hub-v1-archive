@@ -9,9 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestE2EScanFunctionality(t *testing.T) {
