@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
 // MockPackageScanner is a mock implementation of the PackageScanner interface.
@@ -22,12 +22,8 @@ func TestCreateScanner_LocalPackage(t *testing.T) {
 	packagePath := "/path/to/package"
 
 	scanner, err := sf.CreateScanner(context.Background(), logger, "", "", "", packagePath, "", nil, RootFSScannerType)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if scanner == nil {
-		t.Fatalf("expected non-nil scanner, got nil")
-	}
+	require.NoError(t, err, "expected no error, got %v", err)
+	require.NotNil(t, scanner, "expected non-nil scanner, got nil")
 }
 
 func TestCreateScanner_RemotePackage(t *testing.T) {
@@ -37,12 +33,8 @@ func TestCreateScanner_RemotePackage(t *testing.T) {
 	tag := "latest"
 
 	scanner, err := sf.CreateScanner(context.Background(), nil, org, packageName, tag, "", "", nil, RootFSScannerType)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if scanner == nil {
-		t.Fatalf("expected non-nil scanner, got nil")
-	}
+	require.NoError(t, err, "expected no error, got %v", err)
+	require.NotNil(t, scanner, "expected non-nil scanner, got nil")
 }
 
 func TestCreateScanner_MissingParameters(t *testing.T) {
@@ -50,7 +42,5 @@ func TestCreateScanner_MissingParameters(t *testing.T) {
 
 	_, err := sf.CreateScanner(context.Background(), nil, "", "", "", "", "", nil, RootFSScannerType)
 	expectedErr := "org, packageName, and tag are required for remote scanning"
-	if diff := cmp.Diff(expectedErr, err.Error()); diff != "" {
-		t.Errorf("unexpected error (-want +got):\n%s", diff)
-	}
+	require.Equal(t, expectedErr, err.Error(), "unexpected error (-want +got)")
 }
