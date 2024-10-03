@@ -12,11 +12,11 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
+// errUnexpectedStatusCode is returned when the status code is unexpected.
+var errUnexpectedStatusCode = errors.New("unexpected status code")
+
 // errRequestFailed is returned when there is an error making the HTTP request.
 var errRequestFailed = errors.New("error making request")
-
-// errInvalidResponse is returned when the response from the server is invalid.
-var errInvalidResponse = errors.New("invalid response")
 
 // errJSONParsing is returned when there is an error parsing the JSON response.
 var errJSONParsing = errors.New("error parsing JSON response")
@@ -88,7 +88,7 @@ func GetPackageVersions(ctx context.Context, client types.HTTPClientInterface, t
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%w: %d", errInvalidResponse, resp.StatusCode)
+		return nil, fmt.Errorf("%w %d: %s", errUnexpectedStatusCode, resp.StatusCode, resp.Status)
 	}
 
 	body, err := io.ReadAll(resp.Body)

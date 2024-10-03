@@ -113,7 +113,7 @@ func TestGetPackageVersions(t *testing.T) {
 			},
 			mockResp:    `{"message":"Bad credentials","documentation_url":"https://docs.github.com/rest"}`,
 			mockStatus:  http.StatusUnauthorized,
-			expectedErr: errInvalidResponse,
+			expectedErr: errUnexpectedStatusCode,
 		},
 		{
 			name: "fetch with network error",
@@ -124,9 +124,8 @@ func TestGetPackageVersions(t *testing.T) {
 				packageType: "test-package-type",
 				packageName: "test-package-name",
 			},
-			mockResp:    ``,
-			mockStatus:  http.StatusInternalServerError,
-			expectedErr: errInvalidResponse,
+			mockError:   errors.New("network failure"),
+			expectedErr: errRequestFailed,
 		},
 		{
 			name: "empty token",
@@ -137,8 +136,6 @@ func TestGetPackageVersions(t *testing.T) {
 				packageType: "test-package-type",
 				packageName: "test-package-name",
 			},
-			mockResp:    ``,
-			mockStatus:  http.StatusOK,
 			expectedErr: errNoToken,
 		},
 		{
@@ -163,23 +160,7 @@ func TestGetPackageVersions(t *testing.T) {
 				packageType: "test-package-type",
 				packageName: string([]byte{0x7f}),
 			},
-			mockResp:    ``,
-			mockStatus:  http.StatusOK,
 			expectedErr: errCreatingRequest,
-		},
-		{
-			name: "client.Do returns error",
-			args: args{
-				ctx:         context.Background(),
-				token:       "test-token",
-				org:         "test-org",
-				packageType: "test-package-type",
-				packageName: "test-package-name",
-			},
-			mockResp:    ``,
-			mockStatus:  http.StatusOK,
-			mockError:   errors.New("network failure"),
-			expectedErr: errRequestFailed,
 		},
 		{
 			name: "error reading response body",
