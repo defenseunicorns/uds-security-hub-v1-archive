@@ -23,6 +23,22 @@ import (
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
 
+const (
+	trivyDBFileName      = "trivy.db"
+	metadataJSONFileName = "metadata.json"
+)
+
+var (
+	// errOfflineDBPathEmpty indicates that the offline DB path is empty.
+	errOfflineDBPathEmpty = errors.New("offline DB path is empty")
+
+	// errTrivyDBNotFound indicates that the trivy.db file is missing in the offline DB path.
+	errTrivyDBNotFound = errors.New("trivy.db does not exist in the offline DB path")
+
+	// errMetadataJSONNotFound indicates that the metadata.json file is missing in the offline DB path.
+	errMetadataJSONNotFound = errors.New("metadata.json does not exist in the offline DB path")
+)
+
 // Scanner implements the PackageScanner interface for remote packages.
 type Scanner struct {
 	logger              *slog.Logger
@@ -401,19 +417,21 @@ func scanWithTrivy(
 	offlineDBPath string,
 	commandExecutor types.CommandExecutor,
 ) (*types.PackageScannerResult, error) {
-	const trivyDBFileName = "db/trivy.db"
-	const metadataFileName = "db/metadata.json"
-
-	if offlineDBPath != "" {
-		trivyDBPath := filepath.Join(offlineDBPath, trivyDBFileName)
-		metadataPath := filepath.Join(offlineDBPath, metadataFileName)
-
-		if _, err := os.Stat(trivyDBPath); os.IsNotExist(err) {
-			return nil, fmt.Errorf("trivy.db does not exist in the offline DB path: %s", offlineDBPath)
-		}
-
-		if _, err := os.Stat(metadataPath); os.IsNotExist(err) {
-			return nil, fmt.Errorf("metadata.json does not exist in the offline DB path: %s", offlineDBPath)
+	err := checkOfflineDBPath(offlineDBPath)
+	if err != nil {
+		switch {
+		case errors.Is(err, errOfflineDBPathEmpty):
+			// Handle empty offline DB path
+			return nil, fmt.Errorf("offline DB path is required: %w", err)
+		case errors.Is(err, errTrivyDBNotFound):
+			// Handle missing trivy.db file
+			return nil, fmt.Errorf("required trivy.db file is missing: %w", err)
+		case errors.Is(err, errMetadataJSONNotFound):
+			// Handle missing metadata.json file
+			return nil, fmt.Errorf("required metadata.json file is missing: %w", err)
+		default:
+			// Handle other errors
+			return nil, fmt.Errorf("unexpected error checking offline DB path: %w", err)
 		}
 	}
 
@@ -460,4 +478,31 @@ func scanWithTrivy(
 	}
 
 	return result, nil
+}
+
+// checkOfflineDBPath checks if the offline DB path contains the required files.
+func checkOfflineDBPath(offlineDBPath string) error {
+	if offlineDBPath == "" {
+		return errOfflineDBPathEmpty
+	}
+
+	trivyDBPath := filepath.Join(offlineDBPath, trivyDBFileName)
+	metadataPath := filepath.Join(offlineDBPath, metadataJSONFileName)
+
+	if _, err := os.Stat(trivyDBPath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%w: %s", errTrivyDBNotFound, trivyDBPath)
+		}
+		// Handle other errors (e.g., permission denied)
+		return fmt.Errorf("failed to access %s: %w", trivyDBPath, err)
+	}
+
+	if _, err := os.Stat(metadataPath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%w: %s", errMetadataJSONNotFound, metadataPath)
+		}
+		return fmt.Errorf("failed to access %s: %w", metadataPath, err)
+	}
+
+	return nil
 }

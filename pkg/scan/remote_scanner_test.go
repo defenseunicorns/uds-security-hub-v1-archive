@@ -4,8 +4,12 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -229,6 +233,57 @@ func Test_localScanResult_GetVulnerabilities(t *testing.T) {
 			}
 			if got := s.GetVulnerabilities(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetVulnerabilities() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestOfflineDBPathChecks(t *testing.T) {
+	tests := []struct {
+		name        string
+		setupFiles  []string
+		expectError error
+	}{
+		{
+			name:        "Both files exist",
+			setupFiles:  []string{"trivy.db", "metadata.json"},
+			expectError: nil,
+		},
+		{
+			name:        "Missing trivy.db",
+			setupFiles:  []string{"metadata.json"},
+			expectError: errTrivyDBNotFound,
+		},
+		{
+			name:        "Missing metadata.json",
+			setupFiles:  []string{"trivy.db"},
+			expectError: errMetadataJSONNotFound,
+		},
+		{
+			name:        "Both files missing",
+			setupFiles:  []string{},
+			expectError: errTrivyDBNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			offlineDBPath := t.TempDir()
+
+			// Create necessary files
+			for _, file := range tt.setupFiles {
+				filePath := filepath.Join(offlineDBPath, file)
+				_, err := os.Create(filePath)
+				require.NoError(t, err)
+			}
+
+			// Test the function
+			err := checkOfflineDBPath(offlineDBPath)
+			if tt.expectError != nil {
+				require.Error(t, err)
+				require.ErrorIs(t, err, tt.expectError)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
