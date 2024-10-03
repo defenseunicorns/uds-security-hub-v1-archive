@@ -16,9 +16,7 @@ func TestNewScanResultReader(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name               string
-		want               types.ScanResultReader
 		jsonFilePath       string
-		wantErr            bool
 		err                error
 		artifactName       string
 		vulnerabilityCount int
@@ -26,7 +24,6 @@ func TestNewScanResultReader(t *testing.T) {
 		{
 			name:               "Test with valid scan result",
 			jsonFilePath:       "testdata/scanresult.json",
-			wantErr:            false,
 			err:                nil,
 			artifactName:       "ghcr.io/defenseunicorns/leapfrogai/rag:0.3.1",
 			vulnerabilityCount: 44,
@@ -34,13 +31,11 @@ func TestNewScanResultReader(t *testing.T) {
 		{
 			name:         "Test with invalid scan result",
 			jsonFilePath: "testdata/invalid.json",
-			wantErr:      true,
 			err:          ErrDecodingJSON,
 		},
 		{
 			name:         "Test with invalid file",
 			jsonFilePath: "testdata/nonexistent.json",
-			wantErr:      true,
 			err:          ErrOpeningFile,
 		},
 	}
@@ -50,11 +45,9 @@ func TestNewScanResultReader(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.ScanResultReader(types.PackageScannerResult{JSONFilePath: tt.jsonFilePath})
-			if tt.wantErr {
+			if tt.err != nil {
 				require.Error(t, err, "Expected an error but got none")
-				if tt.err != nil {
-					require.ErrorIs(t, err, tt.err, "Expected error %v, but got %v", tt.err, err)
-				}
+				require.ErrorIs(t, err, tt.err, "Expected error %v, but got %v", tt.err, err)
 				return
 			}
 			require.NoError(t, err, "Did not expect an error but got one")
