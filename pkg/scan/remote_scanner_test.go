@@ -35,13 +35,13 @@ func TestNewScanResultReader(t *testing.T) {
 			name:         "Test with invalid scan result",
 			jsonFilePath: "testdata/invalid.json",
 			wantErr:      true,
-			err:          errDecodingJSON,
+			err:          ErrDecodingJSON,
 		},
 		{
 			name:         "Test with invalid file",
 			jsonFilePath: "testdata/nonexistent.json",
 			wantErr:      true,
-			err:          errOpeningFile,
+			err:          ErrOpeningFile,
 		},
 	}
 
