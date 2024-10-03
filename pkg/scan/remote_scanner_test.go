@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -51,8 +52,8 @@ func TestNewScanResultReader(t *testing.T) {
 				return
 			}
 			require.NoError(t, err, "Did not expect an error but got one")
-			require.Equal(t, tt.artifactName, got.GetArtifactName(), "Artifact names do not match")
-			require.Len(t, got.GetVulnerabilities(), tt.vulnerabilityCount, "Number of vulnerabilities does not match")
+			assert.Equal(t, tt.artifactName, got.GetArtifactName(), "Artifact names do not match")
+			assert.Len(t, got.GetVulnerabilities(), tt.vulnerabilityCount, "Number of vulnerabilities does not match")
 		})
 	}
 }
