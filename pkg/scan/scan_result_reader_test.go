@@ -286,7 +286,7 @@ func TestWriteToCSV(t *testing.T) {
 
 			var buf bytes.Buffer
 			err := WriteToCSV(&buf, allResults)
-			require.NoError(t, err, "error occured while writing to cvs")
+			require.NoError(t, err, "error occurred while writing to cvs")
 
 			got := buf.String()
 			r := csv.NewReader(strings.NewReader(got))
@@ -352,5 +352,4 @@ func TestGetVulnerabilities_EmptyResults(t *testing.T) {
 
 	got := r.GetVulnerabilities()
 	require.Empty(t, got, "expected empty vulnerabilities, but got %v", got)
-
 }
