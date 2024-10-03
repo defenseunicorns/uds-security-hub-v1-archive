@@ -4,11 +4,10 @@ import (
 	"context"
 	"io"
 	"log/slog"
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -240,60 +239,58 @@ func Test_localScanResult_GetVulnerabilities(t *testing.T) {
 
 func TestOfflineDBPathChecks(t *testing.T) {
 	tests := []struct {
-		name          string
-		setupFiles    []string
-		offlineDBPath string
-		expectError   error
+		name             string
+		setupFiles       []string
+		setOfflineDBPath bool
+		expectError      error
 	}{
 		{
-			name:          "Both files exist",
-			setupFiles:    []string{"trivy.db", "metadata.json"},
-			offlineDBPath: "some/temp/dir", // Will be set to t.TempDir()
-			expectError:   nil,
+			name:             "Both files exist",
+			setupFiles:       []string{"trivy.db", "metadata.json"},
+			setOfflineDBPath: true,
+			expectError:      nil,
 		},
 		{
-			name:          "Missing trivy.db",
-			setupFiles:    []string{"metadata.json"},
-			offlineDBPath: "some/temp/dir",
-			expectError:   errTrivyDBNotFound,
+			name:             "Missing trivy.db",
+			setupFiles:       []string{"metadata.json"},
+			setOfflineDBPath: true,
+			expectError:      errTrivyDBNotFound,
 		},
 		{
-			name:          "Missing metadata.json",
-			setupFiles:    []string{"trivy.db"},
-			offlineDBPath: "some/temp/dir",
-			expectError:   errMetadataJSONNotFound,
+			name:             "Missing metadata.json",
+			setupFiles:       []string{"trivy.db"},
+			setOfflineDBPath: true,
+			expectError:      errMetadataJSONNotFound,
 		},
 		{
-			name:          "Both files missing",
-			setupFiles:    []string{},
-			offlineDBPath: "some/temp/dir",
-			expectError:   errTrivyDBNotFound, // Or errMetadataJSONNotFound, depending on which error you expect first
+			name:             "Both files missing",
+			setupFiles:       []string{},
+			setOfflineDBPath: true,
+			expectError:      errTrivyDBNotFound,
 		},
 		{
-			name:          "Empty offlineDBPath",
-			setupFiles:    []string{},
-			offlineDBPath: "", // Empty offlineDBPath
-			expectError:   nil,
+			name:             "Empty offlineDBPath",
+			setupFiles:       []string{},
+			setOfflineDBPath: false,
+			expectError:      nil,
 		},
 	}
 
 	for _, tt := range tests {
-		tt := tt // Capture loop variable
 		t.Run(tt.name, func(t *testing.T) {
-			var offlineDBPath string
-			if tt.offlineDBPath == "" {
-				offlineDBPath = ""
-			} else {
+			offlineDBPath := ""
+
+			if tt.setOfflineDBPath {
 				offlineDBPath = t.TempDir()
-				// Create necessary files
+				fs := afero.NewOsFs()
+				basePathFs := afero.NewBasePathFs(fs, offlineDBPath)
+
 				for _, file := range tt.setupFiles {
-					filePath := filepath.Join(offlineDBPath, file)
-					_, err := os.Create(filePath)
+					err := afero.WriteFile(basePathFs, file, []byte{}, 0o644)
 					require.NoError(t, err)
 				}
 			}
 
-			// Test the function
 			err := checkOfflineDBPath(offlineDBPath)
 			if tt.expectError != nil {
 				require.Error(t, err)

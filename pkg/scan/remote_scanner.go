@@ -416,17 +416,7 @@ func scanWithTrivy(
 ) (*types.PackageScannerResult, error) {
 	err := checkOfflineDBPath(offlineDBPath)
 	if err != nil {
-		switch {
-		case errors.Is(err, errTrivyDBNotFound):
-			// Handle missing trivy.db file
-			return nil, fmt.Errorf("required trivy.db file is missing: %w", err)
-		case errors.Is(err, errMetadataJSONNotFound):
-			// Handle missing metadata.json file
-			return nil, fmt.Errorf("required metadata.json file is missing: %w", err)
-		default:
-			// Handle other errors
-			return nil, fmt.Errorf("unexpected error checking offline DB path: %w", err)
-		}
+		return nil, fmt.Errorf("offline DB path check failed: %w", err)
 	}
 
 	// Create a temporary file for the Trivy scan results.
