@@ -44,7 +44,6 @@ func TestRealHTTPClient_Do(t *testing.T) {
 	require.NoError(t, err, "expected no error, but got one")
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode, "expected status code to be OK")
-
 }
 
 func TestRealHTTPClient_Do_Error(t *testing.T) {
