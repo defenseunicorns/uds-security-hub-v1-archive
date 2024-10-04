@@ -30,12 +30,9 @@ func (c *SQLiteConnector) Connect(ctx context.Context) (*gorm.DB, error) {
 	return database, nil
 }
 
-// CreateDBConnector is a factory function that returns the appropriate DBConnector.
-func CreateDBConnector(dbType, dbPath string) DBConnector {
-	if dbType == "sqlite" {
-		return &SQLiteConnector{
-			dbPath: dbPath,
-		}
+// CreateDBConnector creates a new SQLiteConnector.
+func CreateDBConnector(dbPath string) *SQLiteConnector {
+	return &SQLiteConnector{
+		dbPath: dbPath,
 	}
-	return nil
 }

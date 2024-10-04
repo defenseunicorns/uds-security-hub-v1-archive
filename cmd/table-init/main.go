@@ -36,7 +36,9 @@ func main() {
 	ctx := context.Background()
 	config := getConfig()
 
-	if err := run(ctx, &config, sql.CreateDBConnector, migrateDatabase); err != nil {
+	if err := run(ctx, &config, func(dbPath string) sql.DBConnector {
+		return sql.CreateDBConnector(dbPath)
+	}, migrateDatabase); err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 }
@@ -44,13 +46,10 @@ func main() {
 func run(
 	ctx context.Context,
 	config *Config,
-	connectorFactory func(string, string) sql.DBConnector,
+	connectorFactory func(string) sql.DBConnector,
 	migrator func(*gorm.DB) error,
 ) error {
-	connector := connectorFactory(
-		config.DBType,
-		config.DBPath,
-	)
+	connector := connectorFactory(config.DBPath)
 	db, err := connector.Connect(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)

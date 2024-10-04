@@ -55,7 +55,7 @@ func TestRun(t *testing.T) {
 	mockConnector := new(MockDBConnector)
 	mockConnector.On("Connect", ctx).Return(mockDB, nil)
 
-	mockConnectorFactory := func(string, string) sql.DBConnector {
+	mockConnectorFactory := func(string) sql.DBConnector {
 		return mockConnector
 	}
 
@@ -63,7 +63,9 @@ func TestRun(t *testing.T) {
 		return nil
 	}
 
-	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
+	err := run(ctx, &config, func(s string) sql.DBConnector {
+		return mockConnectorFactory(s)
+	}, mockMigrator)
 
 	require.NoError(t, err, "run() should not return an error")
 	mockConnector.AssertExpectations(t)
@@ -76,7 +78,7 @@ func TestRunWithConnectError(t *testing.T) {
 	mockConnector := new(MockDBConnector)
 	mockConnector.On("Connect", ctx).Return((*gorm.DB)(nil), assert.AnError)
 
-	mockConnectorFactory := func(string, string) sql.DBConnector {
+	mockConnectorFactory := func(string) sql.DBConnector {
 		return mockConnector
 	}
 
@@ -99,15 +101,13 @@ func TestRunWithMigrateError(t *testing.T) {
 	mockConnector := new(MockDBConnector)
 	mockConnector.On("Connect", ctx).Return(mockDB, nil)
 
-	mockConnectorFactory := func(string, string) sql.DBConnector {
-		return mockConnector
-	}
-
 	mockMigrator := func(*gorm.DB) error {
 		return assert.AnError
 	}
 
-	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
+	err := run(ctx, &config, func(dbPath string) sql.DBConnector {
+		return mockConnector
+	}, mockMigrator)
 	require.Error(t, err, "expected error but got none")
 	require.ErrorContains(t, err, "failed to migrate database")
 	mockConnector.AssertExpectations(t)
