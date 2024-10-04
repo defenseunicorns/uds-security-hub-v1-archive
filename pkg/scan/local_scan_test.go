@@ -195,7 +195,7 @@ func TestExtractFilesFromTar(t *testing.T) {
 			results, err := extractFilesFromTar(tt.reader, tt.filenames...)
 			checkError(t, err, tt.expectErr)
 			diff := cmp.Diff(tt.wantResult, results)
-			require.Empty(t, diff, "results mismatch (-want +got):\n%s", diff)
+			require.Empty(t, diff)
 		})
 	}
 }

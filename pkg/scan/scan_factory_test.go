@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,5 +43,7 @@ func TestCreateScanner_MissingParameters(t *testing.T) {
 
 	_, err := sf.CreateScanner(context.Background(), nil, "", "", "", "", "", nil, RootFSScannerType)
 	expectedErr := "org, packageName, and tag are required for remote scanning"
-	require.Equal(t, expectedErr, err.Error(), "unexpected error (-want +got)")
+
+	diff := cmp.Diff(expectedErr, err.Error())
+	require.Empty(t, diff)
 }
