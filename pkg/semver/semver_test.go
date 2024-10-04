@@ -1,7 +1,6 @@
 package semver
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,7 +42,7 @@ func TestGetNMinusTwoSemversInvalidN(t *testing.T) {
 
 	_, err := GetNMinusTwoSemvers(versions, n)
 	require.Error(t, err, "expected an error but got none")
-	require.True(t, errors.Is(err, ErrInvalidN), "expected error %v, got %v", ErrInvalidN, err)
+	require.ErrorIs(t, err, ErrInvalidN, "expected error %v, got %v", ErrInvalidN, err)
 }
 
 func TestGetNMinusTwoSemversNotEnoughVersions(t *testing.T) {
@@ -52,7 +51,7 @@ func TestGetNMinusTwoSemversNotEnoughVersions(t *testing.T) {
 
 	_, err := GetNMinusTwoSemvers(versions, n)
 	require.Error(t, err, "expected an error but got none")
-	require.True(t, errors.Is(err, ErrNotEnoughVersions), "expected error %v, got %v", ErrNotEnoughVersions, err)
+	require.ErrorIs(t, err, ErrNotEnoughVersions, "expected error %v, got %v", ErrNotEnoughVersions, err)
 }
 
 func TestGetNMinusTwoSemversInvalidVersion(t *testing.T) {
@@ -61,5 +60,5 @@ func TestGetNMinusTwoSemversInvalidVersion(t *testing.T) {
 
 	_, err := GetNMinusTwoSemvers(versions, n)
 	require.Error(t, err, "expected an error but got none")
-	require.True(t, errors.Is(err, ErrInvalidSemver), "expected error %v, got %v", ErrInvalidSemver, err)
+	require.ErrorIs(t, err, ErrInvalidSemver, "expected error %v, got %v", ErrInvalidSemver, err)
 }
