@@ -156,8 +156,8 @@ func TestExtractFilesFromTar(t *testing.T) {
 
 	_, err := tw.Write(data)
 	require.NoError(t, err, "error writing data to tar")
-
-	require.NoError(t, tw.Close(), "failed to close writer")
+	err = tw.Close()
+	require.NoError(t, err, "failed to close writer")
 
 	tests := []struct {
 		name       string
