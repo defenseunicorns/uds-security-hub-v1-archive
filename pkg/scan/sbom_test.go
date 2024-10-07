@@ -7,25 +7,21 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestExtractSBOMsFromTar(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 
 	tmpDir, err := os.MkdirTemp("", "extract-sbom-*")
-	if err != nil {
-		t.Fatalf("failed to create tmpdir: %s", tmpDir)
-	}
+	require.NoError(t, err, "failed to create tmpdir: %s", tmpDir)
 	defer os.RemoveAll(tmpDir)
 
 	refs, err := ExtractSBOMsFromZarfTarFile(tmpDir, filePath)
-	if err != nil {
-		t.Fatalf("Failed to extract images from tar: %v", err)
-	}
+	require.NoError(t, err, "failed to extract images from tar: %v", err)
 
-	if len(refs) == 0 {
-		t.Fatal("Expected non-empty images, got empty")
-	}
+	require.NotEmpty(t, refs, "expected non-empty images, got empty")
 
 	expectedImageNameFromSBOM := []string{
 		"docker.io/appropriate/curl:latest",
@@ -35,24 +31,17 @@ func TestExtractSBOMsFromTar(t *testing.T) {
 		found := false
 		for _, ref := range refs {
 			actualRef, ok := ref.(*cyclonedxSBOMScannable)
-			if !ok {
-				t.Errorf("expected ref to be a cyclonedxSBOMRef")
-				continue
-			}
+			require.True(t, ok, "expected ref to be a cuclonedxSBOMRef")
 
 			if actualRef.ArtifactName == sbomName {
 				found = true
-				t.Logf("Found expected image: %s", sbomName)
+				t.Logf("found expected image: %s", sbomName)
 
-				if actualRef.SBOMFile == "" {
-					t.Error("got an empty sbomfile, this will not be scannable by trivy")
-				}
+				require.NotEmpty(t, actualRef.SBOMFile, "got an empty sbomfile, this will not be scannable by trivy")
 				break
 			}
 		}
-		if !found {
-			t.Errorf("Expected image not found: %s", sbomName)
-		}
+		require.True(t, found, "expected image not found: %s", sbomName)
 	}
 }
 
@@ -64,9 +53,8 @@ func (f *faultyReader) Read(p []byte) (n int, err error) {
 
 func TestExtractSBOMImageRefsFromReader_FaultyReader(t *testing.T) {
 	_, err := extractSBOMImageRefsFromReader("", &faultyReader{})
-	if err == nil || !strings.Contains(err.Error(), "failed to read header in sbom tar") {
-		t.Errorf("expected header read error, got: %v", err)
-	}
+	require.Error(t, err, "expected header read error, got none")
+	require.ErrorContains(t, err, "failed to read header in sbom tar")
 }
 
 func TestExtractSBOMImageRefsFromReader_InvalidSBOMConversion(t *testing.T) {
@@ -74,25 +62,21 @@ func TestExtractSBOMImageRefsFromReader_InvalidSBOMConversion(t *testing.T) {
 	tw := tar.NewWriter(buf)
 	data := []byte(`invalid json`)
 
-	if err := tw.WriteHeader(&tar.Header{Name: "test.json", Size: int64(len(data))}); err != nil {
-		t.Fatalf("failed to write tar header: %v", err)
-	}
-	if _, err := tw.Write(data); err != nil {
-		t.Fatalf("failed to write tar content: %v", err)
-	}
-	tw.Close()
+	require.NoError(t, tw.WriteHeader(&tar.Header{Name: "test.json", Size: int64(len(data))}), "failed to write tar header")
 
-	_, err := extractSBOMImageRefsFromReader("", bytes.NewReader(buf.Bytes()))
-	if err == nil {
-		t.Errorf("expected conversion error, got: %v", err)
-	}
+	_, err := tw.Write(data)
+	require.NoError(t, err, "failed to write tar")
+
+	require.NoError(t, tw.Close(), "failed to close tar writer")
+
+	_, err = extractSBOMImageRefsFromReader("", bytes.NewReader(buf.Bytes()))
+	require.Error(t, err, "expected conversion error, got none")
 }
 
 func TestExtractSBOMsFromZarfTarFile(t *testing.T) {
 	_, err := ExtractSBOMsFromZarfTarFile("", "nonexistent.tar")
-	if err == nil || !strings.Contains(err.Error(), "failed to open tar file") {
-		t.Errorf("expected open file error, got: %v", err)
-	}
+	require.Error(t, err, "expected open file error, got none")
+	require.ErrorContains(t, err, "failed to open tar file")
 }
 
 func TestConvertToCyclonedxFormat(t *testing.T) {
@@ -101,16 +85,14 @@ func TestConvertToCyclonedxFormat(t *testing.T) {
 
 	// reader that returns faulty data
 	_, err := convertToCyclonedxFormat(header, &faultyReader{}, "")
-	if err == nil || !strings.Contains(err.Error(), "failed to read sbom from tar") {
-		t.Errorf("expected read error, got: %v", err)
-	}
+	require.Error(t, err, "expected read error, got none")
+	require.ErrorContains(t, err, "failed to read sbom from tar")
 
 	// encoding error by passing invalid sbom data
 	sbomReader := strings.NewReader(`invalid sbom data`)
 	_, err = convertToCyclonedxFormat(header, sbomReader, "")
-	if err == nil || !strings.Contains(err.Error(), "failed to convert sbom format") {
-		t.Errorf("expected sbom conversion error, got: %v", err)
-	}
+	require.Error(t, err, "expected sbom conversion error, got none")
+	require.ErrorContains(t, err, "failed to convert sbom format")
 }
 
 func TestExtractArtifactInformationFromSBOM_NoTags(t *testing.T) {
