@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/defenseunicorns/uds-security-hub/internal/docker"
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -31,9 +33,7 @@ func TestE2EScanFunctionality(t *testing.T) {
 			ctx := context.Background()
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 			ghcrCreds := os.Getenv("GHCR_CREDS")
-			if ghcrCreds == "" {
-				t.Fatalf("GHCR_CREDS must be set")
-			}
+			require.NotEmpty(t, ghcrCreds, "GHCR_CREDS must be set")
 			registryCreds := docker.ParseCredentials([]string{ghcrCreds})
 			// Define the test inputs
 
@@ -44,38 +44,28 @@ func TestE2EScanFunctionality(t *testing.T) {
 			scanner := NewRemotePackageScanner(ctx, logger, org, packageName, tag, "", registryCreds, tt.scannerType)
 			// Perform the scan
 			scan, err := scanner.Scan(ctx)
-			if err != nil {
-				t.Fatalf("Error scanning package: %v", err)
-			}
+			require.NoError(t, err, "error scanning package")
 
 			var allResults []types.ScanResultReader
 
 			for _, v := range scan.Results {
 				r, err := scanner.ScanResultReader(v)
-				if err != nil {
-					t.Fatalf("Error reading scan result: %v", err)
-				}
+				require.NoError(t, err, "error reading scan result")
 
 				allResults = append(allResults, r)
 			}
 
 			// Process the results
 			var buf bytes.Buffer
-			if err := WriteToCSV(&buf, allResults); err != nil {
-				t.Fatalf("failed to WriteToCSV: %v", err)
-			}
+			require.NoError(t, WriteToCSV(&buf, allResults), "failed to WriteToCSV")
 			combinedCSV := buf.String()
 
 			// Verify the combined CSV output
-			if len(combinedCSV) == 0 {
-				t.Fatalf("Combined CSV output is empty")
-			}
+			require.NotEmpty(t, combinedCSV, "combined csv output is empty")
 
 			// make sure the header only exists in the first line
 			lines := strings.Split(combinedCSV, "\n")
-			if slices.Contains(lines[1:], lines[0]) {
-				t.Error("the header line appears more than once")
-			}
+			require.False(t, slices.Contains(lines[1:], lines[0]), "the header line appears more than once")
 		})
 	}
 }
