@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 
 	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/external"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewGormScanManager(t *testing.T) {
@@ -32,13 +32,21 @@ func TestNewGormScanManager(t *testing.T) {
 			logger:  logger,
 			wantErr: false,
 		},
+		{
+			name:    "nil db",
+			db:      nil,
+			logger:  logger,
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewGormScanManager(tt.db, tt.logger)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("NewGormScanManager() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				require.Error(t, err, "NewGormScanManager() expected an error")
+			} else {
+				require.NoError(t, err, "NewGormScanManager() did not expect an error")
 			}
 		})
 	}
@@ -65,9 +73,11 @@ func TestInsertScan(t *testing.T) {
 		dto external.ScanDTO
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name       string
+		args       args
+		wantErr    bool
+		wantDBNil  bool
+		wantCtxNil bool
 	}{
 		{
 			name: "successful insertion",
@@ -96,9 +106,28 @@ func TestInsertScan(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "nil db",
+			args: args{
+				db:  setupDB(t),
+				dto: external.ScanDTO{},
+			},
+			wantErr:   true,
+			wantDBNil: true,
+		},
+		{
+			name: "nil context",
+			args: args{
+				db:  setupDB(t),
+				dto: external.ScanDTO{},
+			},
+			wantErr:    true,
+			wantCtxNil: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			dto := tt.args.dto
 			manager, err := NewGormScanManager(tt.args.db, logger)
 			if err != nil {
@@ -110,7 +139,7 @@ func TestInsertScan(t *testing.T) {
 				Repository: "test-repo-TestInsertScan",
 				Tag:        "latest-TestInsertScan",
 			}
-			tx := tt.args.db.WithContext(context.Background())
+			tx := tt.args.db.WithContext(ctx)
 			if err := tx.Create(&packageModel).Error; err != nil {
 				t.Fatalf("failed to insert package: %v", err)
 				tx.Rollback()
@@ -119,10 +148,18 @@ func TestInsertScan(t *testing.T) {
 			// Set the PackageID in the ScanDTO
 			dto.PackageID = packageModel.ID
 
-			if err := manager.InsertScan(context.Background(), &dto); (err != nil) != tt.wantErr {
-				t.Errorf("InsertScan() error = %v, wantErr %v", err, tt.wantErr)
-				tx.Rollback()
+			if tt.wantDBNil {
+				manager.db = nil
 			}
+			if tt.wantCtxNil {
+				ctx = nil
+			}
+			err = manager.InsertScan(ctx, &dto)
+			if tt.wantErr {
+				require.Error(t, err, "InsertScan() expected an error")
+				return
+			}
+			require.NoError(t, err, "InsertScan() did not expect an error")
 
 			// Fetch the scan from the database
 			var fetchedScan model.Scan
@@ -152,9 +189,12 @@ func TestUpdateScan(t *testing.T) {
 		dto external.ScanDTO
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name       string
+		args       args
+		wantErr    bool
+		wantDBNil  bool
+		wantCtxNil bool
+		wantNilDTO bool
 	}{
 		{
 			name: "successful update",
@@ -175,20 +215,46 @@ func TestUpdateScan(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "nil db",
+			args: args{
+				db:  setupDB(t),
+				dto: external.ScanDTO{},
+			},
+			wantErr:   true,
+			wantDBNil: true,
+		},
+		{
+			name: "nil context",
+			args: args{
+				db:  setupDB(t),
+				dto: external.ScanDTO{},
+			},
+			wantErr:    true,
+			wantCtxNil: true,
+		},
+		{
+			name: "nil dto",
+			args: args{
+				db: setupDB(t),
+			},
+			wantErr:    true,
+			wantNilDTO: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			manager, err := NewGormScanManager(tt.args.db, logger)
 			if err != nil {
 				t.Fatalf("failed to create scan manager: %v", err)
 			}
-
 			packageModel := model.Package{
 				Name:       "test-package-TestUpdateScan",
 				Repository: "test-repo-TestUpdateScan",
 				Tag:        "latest-TestUpdateScan",
 			}
-			tx := tt.args.db.WithContext(context.Background())
+			tx := tt.args.db.WithContext(ctx)
 			if err := tx.Create(&packageModel).Error; err != nil {
 				t.Fatalf("failed to insert package: %v", err)
 				tx.Rollback()
@@ -217,7 +283,7 @@ func TestUpdateScan(t *testing.T) {
 				},
 			}
 			initialDTO.PackageID = packageModel.ID
-			if err := manager.InsertScan(context.Background(), &initialDTO); err != nil {
+			if err := manager.InsertScan(ctx, &initialDTO); err != nil {
 				t.Fatalf("failed to insert initial scan: %v", err)
 				tx.Rollback()
 			}
@@ -229,14 +295,25 @@ func TestUpdateScan(t *testing.T) {
 				tx.Rollback()
 			}
 
-			// Update the inserted scan record
-			dt := tt.args.dto
-			dt.ID = initialScan.ID         // Ensure the ID is set for the update
-			dt.PackageID = packageModel.ID // Ensure the PackageID is set for the update
-			if err := manager.UpdateScan(context.Background(), &dt); (err != nil) != tt.wantErr {
-				t.Errorf("UpdateScan() error = %v, wantErr %v", err, tt.wantErr)
-				tx.Rollback()
+			if tt.wantDBNil {
+				manager.db = nil
 			}
+			if tt.wantCtxNil {
+				ctx = nil
+			}
+			// Update the inserted scan record
+			var dt *external.ScanDTO
+			if !tt.wantNilDTO {
+				dt = &tt.args.dto
+				dt.ID = initialScan.ID         // Ensure the ID is set for the update
+				dt.PackageID = packageModel.ID // Ensure the PackageID is set for the update
+			}
+			err = manager.UpdateScan(ctx, dt)
+			if tt.wantErr {
+				require.Error(t, err, "UpdateScan() expected an error")
+				return
+			}
+			require.NoError(t, err, "UpdateScan() did not expect an error")
 
 			// Fetch the updated scan from the database using the ID
 			var fetchedScan model.Scan
@@ -245,7 +322,7 @@ func TestUpdateScan(t *testing.T) {
 				tx.Rollback()
 			}
 			// Convert dto to model.Scan for comparison
-			expectedScan := convertDTOToScan(&dt)
+			expectedScan := convertDTOToScan(&tt.args.dto)
 			expectedScan.PackageID = packageModel.ID // Ensure the PackageID matches
 
 			// Check if the fetched scan matches the updated scan
@@ -507,7 +584,7 @@ func setupSQLiteDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to connect to in-memory SQLite: %v", err)
 	}
-	err = db.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{})
+	err = db.AutoMigrate(&model.Package{}, &model.Scan{}, &model.Vulnerability{}, &model.Report{})
 	if err != nil {
 		t.Fatalf("failed to migrate database: %v", err)
 	}
@@ -526,6 +603,7 @@ func TestInsertReport(t *testing.T) {
 		args    args
 		wantErr bool
 		errMsg  error
+		nilDB   bool
 	}{
 		{
 			name: "successful insertion",
@@ -566,33 +644,52 @@ func TestInsertReport(t *testing.T) {
 			wantErr: true,
 			errMsg:  errInsertReport,
 		},
+		{
+			name: "nil report",
+			args: args{
+				db:     setupSQLiteDB(t),
+				ctx:    context.Background(),
+				report: nil,
+			},
+			wantErr: true,
+		},
+		{
+			name: "nil db",
+			args: args{
+				db:  setupSQLiteDB(t),
+				ctx: context.Background(),
+			},
+			wantErr: true,
+			nilDB:   true,
+		},
+		{
+			name: "nil context",
+			args: args{
+				db:  setupSQLiteDB(t),
+				ctx: nil,
+			},
+			wantErr: true,
+		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			manager, err := NewGormScanManager(tt.args.db, logger)
-			if err != nil {
-				t.Fatalf("failed to create scan manager: %v", err)
+			require.NoError(t, err, "failed to create scan manager")
+			if tt.nilDB {
+				manager.db = nil
 			}
 			err = manager.InsertReport(tt.args.ctx, tt.args.report)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("InsertReport() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			require.Equal(t, tt.wantErr, err != nil, "InsertReport() error mismatch")
 
 			if tt.wantErr && err != nil && tt.errMsg != nil {
-				if !strings.Contains(err.Error(), tt.errMsg.Error()) {
-					t.Errorf("expected error message %q, got %v", tt.errMsg, err)
-				}
+				require.Contains(t, err.Error(), tt.errMsg.Error(), "Error message mismatch")
 			}
 
 			if tt.args.report != nil && !tt.wantErr {
 				var fetchedReport model.Report
-				if err := tt.args.db.First(&fetchedReport, "id = ?", tt.args.report.ID).Error; err != nil {
-					t.Fatalf("failed to fetch report: %v", err)
-				}
-				if diff := cmp.Diff(tt.args.report, &fetchedReport, cmpopts.IgnoreFields(model.Report{}, "ID", "CreatedAt")); diff != "" {
-					t.Errorf("fetched report mismatch (-want +got):\n%s", diff)
-				}
+				require.NoError(t, tt.args.db.First(&fetchedReport, "id = ?", tt.args.report.ID).Error, "failed to fetch report")
+				diff := cmp.Diff(tt.args.report, &fetchedReport, cmpopts.IgnoreFields(model.Report{}, "ID", "CreatedAt"))
+				require.Empty(t, diff, "fetched report mismatch")
 			}
 		})
 	}
