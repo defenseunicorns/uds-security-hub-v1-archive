@@ -285,7 +285,7 @@ func TestScanResultReader(t *testing.T) {
 	}
 }
 
-func TestScan_TmpDirError(t *testing.T) {
+func TestLocalPackageScanner_Scan_TmpDirError(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	packagePath := "/path/to/package"
 	ctx := context.Background()
