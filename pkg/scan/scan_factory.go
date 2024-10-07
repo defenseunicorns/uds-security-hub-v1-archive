@@ -2,11 +2,14 @@ package scan
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
+
+var errEmpty = errors.New("org, packageName, and tag are required for remote scanning")
 
 // ScannerFactoryImpl is the implementation of the ScannerFactory interface.
 type ScannerFactoryImpl struct{}
@@ -24,7 +27,7 @@ func (sf *ScannerFactoryImpl) CreateScanner(
 	}
 
 	if org == "" || packageName == "" || tag == "" {
-		return nil, fmt.Errorf("org, packageName, and tag are required for remote scanning")
+		return nil, fmt.Errorf("%w", errEmpty)
 	}
 
 	return NewRemotePackageScanner(
