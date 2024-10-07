@@ -4,8 +4,9 @@ import (
 	"context"
 	"io"
 	"log/slog"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -27,17 +28,15 @@ func TestNewScanResultReader(t *testing.T) {
 	s := NewRemotePackageScanner(context.Background(), nil, "test", "test", "test", "test", nil, RootFSScannerType)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
 			got, err := s.ScanResultReader(types.PackageScannerResult{JSONFilePath: tt.jsonFilePath})
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewScanResultReader() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(err, "expected an error but got none")
+			} else {
+				require.NoError(err, "expected no error but got one")
 			}
-			if got.GetArtifactName() != "ghcr.io/defenseunicorns/leapfrogai/rag:0.3.1" {
-				t.Errorf("NewScanResultReader() got = %v, want %v", got.GetArtifactName(), "ghcr.io/defenseunicorns/leapfrogai/rag:0.3.0")
-			}
-			if len(got.GetVulnerabilities()) != 44 {
-				t.Errorf("NewScanResultReader() got = %v, want %v", len(got.GetVulnerabilities()), 44)
-			}
+			require.Equal("ghcr.io/defenseunicorns/leapfrogai/rag:0.3.1", got.GetArtifactName(), "artifact name mismatch")
+			require.Equal(44, len(got.GetVulnerabilities()), "Vulnerabilities count mismatch")
 		})
 	}
 }
@@ -227,9 +226,8 @@ func Test_localScanResult_GetVulnerabilities(t *testing.T) {
 			s := &scanResultReader{
 				scanResult: tt.fields.ScanResult,
 			}
-			if got := s.GetVulnerabilities(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetVulnerabilities() = %v, want %v", got, tt.want)
-			}
+			got := s.GetVulnerabilities()
+			require.Equal(t, tt.want, got, "GetVulnerabilities() mismatch")
 		})
 	}
 }
