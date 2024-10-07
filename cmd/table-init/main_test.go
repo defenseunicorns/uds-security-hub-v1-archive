@@ -4,11 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jaekwon/testify/require"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/defenseunicorns/uds-security-hub/internal/data/model"
 	"github.com/defenseunicorns/uds-security-hub/internal/sql"
 )
 
@@ -75,7 +77,7 @@ func TestRun(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	require.NoError(t, err)
+	require.NoError(t, err, "run() should not return an error")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -96,8 +98,8 @@ func TestRunWithConnectError(t *testing.T) {
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
 
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to connect to database")
+	require.Error(t, err, "expected error but got none")
+	require.ErrorContains(t, err, "failed to connect to database")
 	mockConnector.AssertExpectations(t)
 }
 
@@ -118,8 +120,41 @@ func TestRunWithMigrateError(t *testing.T) {
 	}
 
 	err := run(ctx, &config, mockConnectorFactory, mockMigrator)
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to migrate database")
+	require.Error(t, err, "expected error but got none")
+	require.ErrorContains(t, err, "failed to migrate database")
 	mockConnector.AssertExpectations(t)
+}
+
+// TestMigrateDatabase tests the migrateDatabase function with an in-memory SQLite database.
+func TestMigrateDatabase(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err, "failed to connect to in-memory SQLite database")
+
+	// Check if the tables do not exist before migration
+	models := []interface{}{&model.Package{}, &model.Scan{}, &model.Vulnerability{}}
+	for _, m := range models {
+		require.False(t, db.Migrator().HasTable(m), "expected table for model %T to not exist before migration, but it does", m)
+	}
+
+	// Run the migration
+	err = migrateDatabase(db)
+	require.NoError(t, err, "failed to migrate database")
+
+	// Check if the tables were created
+	for _, m := range models {
+		assert.True(t, db.Migrator().HasTable(m), "expected table for model %T to be created, but it was not", m)
+	}
+
+	// Check if specific columns exist in the tables
+	columnChecks := map[interface{}][]string{
+		&model.Package{}:       {"ID", "Name"},
+		&model.Scan{}:          {"ID", "PackageID"},
+		&model.Vulnerability{}: {"ID", "ScanID", "Description"},
+	}
+
+	for model, columns := range columnChecks {
+		for _, column := range columns {
+			assert.True(t, db.Migrator().HasColumn(model, column), "expected column %s to be created in model %T, but it was not", column, model)
+		}
+	}
 }
