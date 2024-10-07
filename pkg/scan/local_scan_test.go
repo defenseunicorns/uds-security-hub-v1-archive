@@ -296,8 +296,7 @@ func TestScan_TmpDirError(t *testing.T) {
 	}
 
 	// Set TMPDIR to a directory that doesn't exist to force os.MkdirTemp to fail
-	os.Setenv("TMPDIR", "/non/existent/directory")
-	defer os.Unsetenv("TMPDIR") // Reset after the test
+	t.Setenv("TMPDIR", "/non/existent/directory")
 
 	_, err := lps.Scan(ctx)
 	require.Error(t, err, "expected an error from os.MkdirTemp due to invalid directory")
