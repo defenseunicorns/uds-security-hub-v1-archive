@@ -30,15 +30,14 @@ func TestNewScanResultReader(t *testing.T) {
 	s := NewRemotePackageScanner(context.Background(), nil, "test", "test", "test", "test", nil, RootFSScannerType)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require := require.New(t)
 			got, err := s.ScanResultReader(types.PackageScannerResult{JSONFilePath: tt.jsonFilePath})
 			if tt.wantErr {
-				require.Error(err, "expected an error but got none")
+				require.Error(t, err, "expected an error but got none")
 			} else {
-				require.NoError(err, "expected no error but got one")
+				require.NoError(t, err, "expected no error but got one")
 			}
-			require.Equal("ghcr.io/defenseunicorns/leapfrogai/rag:0.3.1", got.GetArtifactName(), "artifact name mismatch")
-			require.Equal(44, len(got.GetVulnerabilities()), "Vulnerabilities count mismatch")
+			require.Equal(t, "ghcr.io/defenseunicorns/leapfrogai/rag:0.3.1", got.GetArtifactName(), "artifact name mismatch")
+			require.Len(t, got.GetVulnerabilities(), 44, "Vulnerabilities count mismatch")
 		})
 	}
 }
