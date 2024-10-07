@@ -2,10 +2,12 @@ package scan
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
@@ -228,6 +230,83 @@ func Test_localScanResult_GetVulnerabilities(t *testing.T) {
 			}
 			got := s.GetVulnerabilities()
 			require.Equal(t, tt.want, got, "GetVulnerabilities() mismatch")
+		})
+	}
+}
+
+type MockScanner struct {
+	Scanner
+	mock.Mock
+}
+
+func (m *MockScanner) Scan(ctx context.Context) (*types.PackageScan, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(*types.PackageScan), args.Error(1)
+}
+
+func TestScanner_ScanZarfPackage(t *testing.T) {
+	tests := []struct {
+		name        string
+		org         string
+		packageName string
+		tag         string
+		mockScan    func(*MockScanner)
+		wantErr     bool
+	}{
+		{
+			name:        "Missing org",
+			org:         "",
+			packageName: "valid-package",
+			tag:         "valid-tag",
+			wantErr:     true,
+		},
+		{
+			name:        "Missing packageName",
+			org:         "valid-org",
+			packageName: "",
+			tag:         "valid-tag",
+			wantErr:     true,
+		},
+		{
+			name:        "Missing tag",
+			org:         "valid-org",
+			packageName: "valid-package",
+			tag:         "",
+			wantErr:     true,
+		},
+		{
+			name:        "Scan failure",
+			org:         "valid-org",
+			packageName: "valid-package",
+			tag:         "valid-tag",
+			mockScan: func(m *MockScanner) {
+				m.On("Scan", mock.Anything).Return((*types.PackageScan)(nil), errors.New("mock scan error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockScanner := &MockScanner{}
+
+			if tt.mockScan != nil {
+				tt.mockScan(mockScanner)
+			}
+
+			_, err := mockScanner.ScanZarfPackage(tt.org, tt.packageName, tt.tag)
+
+			if tt.wantErr {
+				require.Error(t, err, "expected an error but got none")
+			} else {
+				require.NoError(t, err, "did not expect an error but got one")
+			}
+
+			if !tt.wantErr {
+				mockScanner.AssertCalled(t, "Scan", mock.Anything)
+			} else {
+				mockScanner.AssertNotCalled(t, "Scan", mock.Anything)
+			}
 		})
 	}
 }
