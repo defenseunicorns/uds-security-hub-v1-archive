@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
 
 	"github.com/defenseunicorns/uds-security-hub/pkg/types"
 )
@@ -70,9 +71,8 @@ func TestNewLocalPackageScanner(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			scanner, err := NewLocalPackageScanner(tt.logger, tt.packagePath, "", tt.scannerType)
 			checkError(t, err, tt.expectError)
-			if diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{}), cmpopts.IgnoreUnexported(slog.Logger{})); diff != "" {
-				t.Errorf("scanner mismatch (-expected +got):\n%s", diff)
-			}
+			diff := cmp.Diff(tt.expected, scanner, cmp.AllowUnexported(LocalPackageScanner{}), cmpopts.IgnoreUnexported(slog.Logger{}))
+			require.Empty(t, diff, "scanner mismatch (-expected +got):\n%s", diff)
 		})
 	}
 }
@@ -101,42 +101,23 @@ func TestScanImageE2E(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			lps, err := NewLocalPackageScanner(logger, zarfPackagePath, "", tt.scannerType)
-			if err != nil {
-				t.Fatalf("Failed to create local package scanner: %v", err)
-			}
+			require.NoError(t, err, "failed to create local package scanner")
 			result, err := lps.Scan(ctx)
-			if err != nil {
-				t.Fatalf("Failed to scan image: %v", err)
-			}
+			require.NoError(t, err, "failed to scan image")
 			reader, err := lps.ScanResultReader(result.Results[0])
-			if err != nil {
-				t.Fatalf("Failed to get scan result reader: %v", err)
-			}
+			require.NoError(t, err, "failed to get scan result reader")
 			artifactName := reader.GetArtifactName()
-			if artifactName == "" {
-				t.Fatalf("Expected artifact name to be non-empty, got %s", artifactName)
-			}
+			require.NotEmpty(t, artifactName, "expected artifact name to be non-empty, got empty")
 			vulnerabilities := reader.GetVulnerabilities()
-			if len(vulnerabilities) == 0 {
-				t.Fatalf("Expected non-empty vulnerabilities, got empty")
-			}
+			require.NotEmpty(t, vulnerabilities, "expected vulnerabilities to be non-empty, got empty")
 			var buf bytes.Buffer
-			if err := WriteToJSON(&buf, []types.ScanResultReader{reader}); err != nil {
-				t.Fatalf("Error writing JSON: %v", err)
-			}
+			require.NoError(t, WriteToJSON(&buf, []types.ScanResultReader{reader}), "error writing json")
 			jsonOutput := buf.String()
-			if jsonOutput == "" {
-				t.Fatalf("Expected non-empty JSON, got empty")
-			}
+			require.NotEmpty(t, jsonOutput, "expected JSON to be non-empty, got empty")
 			buf.Reset() // Reset buffer for CSV writing
-
-			if err := WriteToCSV(&buf, []types.ScanResultReader{reader}); err != nil {
-				t.Fatalf("Error writing CSV: %v", err)
-			}
+			require.NoError(t, WriteToCSV(&buf, []types.ScanResultReader{reader}), "error writing csv")
 			csvOutput := buf.String()
-			if csvOutput == "" {
-				t.Fatalf("Expected non-empty CSV, got empty")
-			}
+			require.NotEmpty(t, csvOutput, "expected csv to be non-empty, got empty")
 		})
 	}
 }
@@ -145,11 +126,11 @@ func checkError(t *testing.T, err error, expectError bool) {
 	t.Helper()
 	if expectError {
 		if err == nil {
-			t.Fatalf("expected error, got nil")
+			require.Error(t, err, "expected an error, but got none")
 		}
 	} else {
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			require.NoError(t, err, "expected no error, but got one")
 		}
 	}
 }
@@ -163,23 +144,20 @@ func TestLocalPackageScanner_Scan_LPSEmptyPackagePath(t *testing.T) {
 	}
 
 	_, err := lps.Scan(context.Background())
-	if err == nil || err.Error() != "packagePath cannot be empty" {
-		t.Fatalf("Expected error for empty packagePath, got: %v", err)
-	}
+	require.Error(t, err, "expected error for empty packagePath, got :%v", err)
+	require.ErrorContains(t, err, "packagePath cannot be empty", "unexpected error message")
 }
 
 func TestExtractFilesFromTar(t *testing.T) {
 	data := []byte("mock data")
 	buf := bytes.NewBuffer(nil)
 	tw := tar.NewWriter(buf)
-	if err := tw.WriteHeader(&tar.Header{Name: "testfile.txt", Size: int64(len(data))}); err != nil {
-		t.Fatalf("Error writing tar header: %v", err)
-	}
+	require.NoError(t, tw.WriteHeader(&tar.Header{Name: "testfile.txt", Size: int64(len(data))}), "error writing tar header")
 
-	if _, err := tw.Write(data); err != nil {
-		t.Fatalf("Error writing data to tar: %v", err)
-	}
-	tw.Close()
+	_, err := tw.Write(data)
+	require.NoError(t, err, "error writing data to tar")
+	err = tw.Close()
+	require.NoError(t, err, "failed to close writer")
 
 	tests := []struct {
 		name       string
@@ -216,9 +194,8 @@ func TestExtractFilesFromTar(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			results, err := extractFilesFromTar(tt.reader, tt.filenames...)
 			checkError(t, err, tt.expectErr)
-			if diff := cmp.Diff(tt.wantResult, results); diff != "" {
-				t.Errorf("results mismatch (-want +got):\n%s", diff)
-			}
+			diff := cmp.Diff(tt.wantResult, results)
+			require.Empty(t, diff)
 		})
 	}
 }

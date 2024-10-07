@@ -2,8 +2,9 @@ package scan
 
 import (
 	"os"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSanitizeArchivePath(t *testing.T) {
@@ -20,8 +21,10 @@ func TestSanitizeArchivePath(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
 			_, err := sanitizeArchivePath(tc.dir, tc.filename)
-			if (err != nil) != tc.wantErr {
-				t.Errorf("got error %v, want error %v", err != nil, tc.wantErr)
+			if tc.wantErr {
+				require.Error(t, err, "expected error but got none")
+			} else {
+				require.NoError(t, err, "got an unexpected error")
 			}
 		})
 	}
@@ -29,67 +32,51 @@ func TestSanitizeArchivePath(t *testing.T) {
 
 func TestUnmarshalJSONFromFilename(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test.yaml")
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
-	}
+	require.NoError(t, err, "failed to create temp file: %v", err)
 	defer os.Remove(tmpFile.Name())
 
 	validYAML := "key: value"
-	if _, err := tmpFile.WriteString(validYAML); err != nil {
-		t.Fatalf("failed to write to temp file: %v", err)
-	}
-	tmpFile.Close()
+	_, err = tmpFile.WriteString(validYAML)
+	require.NoError(t, err, "failed to write to temp file")
+
+	require.NoError(t, tmpFile.Close(), "failed to close temp file")
 
 	var output map[string]string
 	err = unmarshalJSONFromFilename(tmpFile.Name(), &output)
-	if err != nil || output["key"] != "value" {
-		t.Errorf("failed to unmarshal valid YAML, got: %v", err)
-	}
+	require.NoError(t, err, "failed to unmarshal valid YAML")
+	require.Equal(t, "value", output["key"], "unexpected value for 'key'")
 
 	invalidFile := "nonexistent.yaml"
 	err = unmarshalJSONFromFilename(invalidFile, &output)
-	if err == nil {
-		t.Errorf("expected error for nonexistent file, got none")
-	}
+	require.Error(t, err, "expected error for nonexistent file, but got none")
 }
 
 func TestUnmarshalJSONFromFilename_DecodeError(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "invalid*.yaml")
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
-	}
+	require.NoError(t, err, "failed to create temp file: %v", err)
 	defer os.Remove(tmpFile.Name())
 
 	_, err = tmpFile.WriteString("invalid_yaml: [unterminated")
-	if err != nil {
-		t.Fatalf("failed to write to temp file: %v", err)
-	}
+	require.NoError(t, err, "failed to write to temp file: %v", err)
 	tmpFile.Close()
 
 	var output map[string]interface{}
 	err = unmarshalJSONFromFilename(tmpFile.Name(), &output)
-	if err == nil || !strings.Contains(err.Error(), "failed to decode") {
-		t.Errorf("expected decode error, got: %v", err)
-	}
+	require.Error(t, err, "expected decode error, but got none")
+	require.ErrorContains(t, err, "failed to decode")
 }
 
 func TestExtractRootFsFromTarFilePath(t *testing.T) {
 	filePath := "testdata/zarf-package-mattermost-arm64-9.9.1-uds.0.tar.zst"
 
 	tmpDir, err := os.MkdirTemp("", "extract-rootfs-*")
-	if err != nil {
-		t.Fatalf("failed to create tmpdir: %s", err)
-	}
+	require.NoError(t, err, "failed to create tmpdir: %s", err)
 	defer os.RemoveAll(tmpDir)
 
 	refs, err := ExtractRootFsFromTarFilePath(tmpDir, filePath)
-	if err != nil {
-		t.Fatalf("Failed to extract images from tar: %v", err)
-	}
+	require.NoError(t, err, "failed to extract images from tar: %v", err)
 
-	if len(refs) != 1 {
-		t.Errorf("did not extract correct number of refs; want %d, got %d", 1, len(refs))
-	}
+	require.Len(t, refs, 1, "did not extract number of refs; want %d, got %d", 1, len(refs))
 }
 
 func TestReplacePathChars(t *testing.T) {
@@ -110,9 +97,7 @@ func TestReplacePathChars(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.input, func(t *testing.T) {
 			result := replacePathChars(testCase.input)
-			if result != testCase.expected {
-				t.Errorf("unexpected output; got %s, want %s", result, testCase.expected)
-			}
+			require.Equal(t, testCase.expected, result, "unexpected output")
 		})
 	}
 }
@@ -139,9 +124,7 @@ func TestScannableImage(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.imageName, func(t *testing.T) {
 			result := scannableImage(testCase.imageName)
-			if result != testCase.expected {
-				t.Errorf("unexpected output; got %v, want %v", result, testCase.expected)
-			}
+			require.Equal(t, testCase.expected, result, "unexpected output")
 		})
 	}
 }
