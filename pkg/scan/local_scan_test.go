@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -301,4 +302,83 @@ func TestScan_TmpDirError(t *testing.T) {
 	_, err := lps.Scan(ctx)
 	require.Error(t, err, "expected an error from os.MkdirTemp due to invalid directory")
 	require.Contains(t, err.Error(), "failed to create tmp dir", "unexpected error message")
+}
+
+func TestLocalPackageScanner_Scan_SwitchCases(t *testing.T) {
+	packagePath := "/path/to/package"
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	tests := []struct {
+		name            string
+		scannerType     ScannerType
+		mockExtractFunc func(tmpDir, packagePath string) ([]trivyScannable, error)
+		expectError     bool
+		errorMessage    string
+	}{
+		{
+			name:        "SBOM extraction success",
+			scannerType: SBOMScannerType,
+			mockExtractFunc: func(tmpDir, packagePath string) ([]trivyScannable, error) {
+				return []trivyScannable{}, nil
+			},
+			expectError: false,
+		},
+		{
+			name:        "SBOM extraction failure",
+			scannerType: SBOMScannerType,
+			mockExtractFunc: func(tmpDir, packagePath string) ([]trivyScannable, error) {
+				return nil, fmt.Errorf("failed to extract sboms")
+			},
+			expectError:  true,
+			errorMessage: "failed to extract sboms from tar",
+		},
+		{
+			name:        "RootFS extraction success",
+			scannerType: RootFSScannerType,
+			mockExtractFunc: func(tmpDir, packagePath string) ([]trivyScannable, error) {
+				return []trivyScannable{}, nil
+			},
+			expectError: false,
+		},
+		{
+			name:        "RootFS extraction failure",
+			scannerType: RootFSScannerType,
+			mockExtractFunc: func(tmpDir, packagePath string) ([]trivyScannable, error) {
+				return nil, fmt.Errorf("failed to extract rootfs")
+			},
+			expectError:  true,
+			errorMessage: "failed to extract rootfs from tar",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.scannerType == SBOMScannerType {
+				extractSBOMs = tt.mockExtractFunc
+			} else if tt.scannerType == RootFSScannerType {
+				extractRootFS = tt.mockExtractFunc
+			}
+
+			defer func() {
+				extractSBOMs = ExtractSBOMsFromZarfTarFile
+				extractRootFS = ExtractRootFsFromTarFilePath
+			}()
+
+			lps := &LocalPackageScanner{
+				logger:      logger,
+				packagePath: packagePath,
+				scannerType: tt.scannerType,
+			}
+
+			_, err := lps.Scan(ctx)
+
+			if tt.expectError {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.errorMessage)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
