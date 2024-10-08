@@ -1,8 +1,8 @@
 name: OSV-Scanner Scheduled Scan
 
 on:
-  schedule:
-    - cron: "30 12 * * 1"
+  # schedule:
+  #   - cron: "30 12 * * 1"
   push:
     branches: [main]
 
