@@ -1,4 +1,4 @@
-# UDS Security Hub - Scan Package
+# [DEPRECATED] UDS Security Hub - Scan Package
 
 [![Build and Test](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/build.yaml/badge.svg)](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/build.yaml)
 [![E2E Tests](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/test.yaml/badge.svg)](https://github.com/defenseunicorns/uds-security-hub/actions/workflows/test.yaml)
